@@ -1,14 +1,15 @@
 const { randomUUID } = require('crypto');
 
 const User = require('../models/user.js');
-const { generatePasswordHash, validatePassword } = require('../utils/password.js');
+const { generatePasswordHash } = require('../utils/password.js');
+const { generateToken } = require('../utils/jwt.js');
 
 class UserService {
   static async list() {
     try {
       return User.find();
     } catch (err) {
-      throw `Database error while listing users: ${err}`;
+      throw new Error(`Database error while listing users: ${err}`);
     }
   }
 
@@ -16,7 +17,7 @@ class UserService {
     try {
       return User.findOne({ _id: id }).exec();
     } catch (err) {
-      throw `Database error while getting the user by their ID: ${err}`;
+      throw new Error(`Database error while getting the user by their ID: ${err}`);
     }
   }
 
@@ -24,7 +25,7 @@ class UserService {
     try {
       return User.findOne({ email }).exec();
     } catch (err) {
-      throw `Database error while getting the user by their email: ${err}`;
+      throw new Error(`Database error while getting the user by their email: ${err}`);
     }
   }
 
@@ -32,7 +33,7 @@ class UserService {
     try {
       return User.findOneAndUpdate({ _id: id }, data, { new: true, upsert: false });
     } catch (err) {
-      throw `Database error while updating user ${id}: ${err}`;
+      throw new Error(`Database error while updating user ${id}: ${err}`);
     }
   }
 
@@ -41,14 +42,14 @@ class UserService {
       const result = await User.deleteOne({ _id: id }).exec();
       return (result.deletedCount === 1);
     } catch (err) {
-      throw `Database error while deleting user ${id}: ${err}`;
+      throw new Error(`Database error while deleting user ${id}: ${err}`);
     }
   }
 
   static async authenticateWithPassword(email, password) {
     console.log('Starting authentication for email:', email);
-    if (!email) throw 'Email is required';
-    if (!password) throw 'Password is required';
+    if (!email) throw new Error('Email is required');
+    if (!password) throw new Error('Password is required');
 
     try {
       console.log('Looking up user in database...');
@@ -76,7 +77,7 @@ class UserService {
       return updatedUser;
     } catch (err) {
       console.error('Error in authenticateWithPassword:', err);
-      throw `Database error while authenticating user ${email} with password: ${err}`;
+      throw new Error(`Database error while authenticating user ${email} with password: ${err}`);
     }
   }
 
@@ -84,12 +85,12 @@ class UserService {
     try {
       return User.findOne({ token }).exec();
     } catch (err) {
-      throw `Database error while authenticating user ${email} with token: ${err}`;
+      throw new Error(`Database error while authenticating user with token: ${err}`);
     }
   }
 
   static async regenerateToken(user) {
-    user.token = randomUUID(); // eslint-disable-line
+    user.token = randomUUID();
 
     try {
       if (!user.isNew) {
@@ -98,16 +99,16 @@ class UserService {
 
       return user;
     } catch (err) {
-      throw `Database error while generating user token: ${err}`;
+      throw new Error(`Database error while generating user token: ${err}`);
     }
   }
 
   static async createUser({ email, password, name = '' }) {
-    if (!email) throw 'Email is required';
-    if (!password) throw 'Password is required';
+    if (!email) throw new Error('Email is required');
+    if (!password) throw new Error('Password is required');
 
     const existingUser = await UserService.getByEmail(email);
-    if (existingUser) throw 'User with this email already exists';
+    if (existingUser) throw new Error('User with this email already exists');
 
     const hash = await generatePasswordHash(password);
 
@@ -120,15 +121,16 @@ class UserService {
       });
 
       await user.save();
-      return user;
+      const token = generateToken(user);
+      return { user, token };
     } catch (err) {
-      throw `Database error while creating new user: ${err}`;
+      throw new Error(`Database error while creating new user: ${err}`);
     }
   }
 
   static async setPassword(user, password) {
-    if (!password) throw 'Password is required';
-    user.password = await generatePasswordHash(password); // eslint-disable-line
+    if (!password) throw new Error('Password is required');
+    user.password = await generatePasswordHash(password);
 
     try {
       if (!user.isNew) {
@@ -137,7 +139,7 @@ class UserService {
 
       return user;
     } catch (err) {
-      throw `Database error while setting user password: ${err}`;
+      throw new Error(`Database error while setting user password: ${err}`);
     }
   }
 }

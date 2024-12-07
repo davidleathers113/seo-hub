@@ -38,16 +38,14 @@ router.post('/login', async (req, res) => {
   }
 });
 
-router.post('/register', async (req, res, next) => {
-  if (req.user) {
-    return res.json({ user: req.user });
-  }
+router.post('/register', async (req, res) => {
   try {
     const user = await UserService.createUser(req.body);
-    return res.status(201).json(user);
+    const token = generateToken(user);
+    return res.status(201).json({ user, token });
   } catch (error) {
     log.error('Error while registering user', error);
-    return res.status(400).json({ error });
+    return res.status(400).json({ error: error.message });
   }
 });
 
