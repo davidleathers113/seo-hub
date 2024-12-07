@@ -1,0 +1,36 @@
+{
+  "name": "Content Creation App",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "postinstall": "concurrently -n \"client,server\" \"npm run client-install\" \"npm run server-install\"",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "client": "cd client && npm run dev",
+    "client-install": "cd client && npm install",
+    "server": "cd server && npm run dev",
+    "server-install": "cd server && npm install",
+    "start": "concurrently -n \"client,server\" \"npm run client\" \"npm run server\""
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@tanstack/react-query": "^5.62.3",
+    "concurrently": "^9.1.0",
+    "dotenv": "^16.4.7",
+    "jsonwebtoken": "^9.0.2",
+    "marked": "^15.0.3",
+    "react-router-dom": "^7.0.2",
+    "reactflow": "^11.11.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.15",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/user-event": "^14.5.2",
+    "@types/marked": "^5.0.2",
+    "jsdom": "^25.0.1",
+    "vitest": "^2.1.8"
+  }
+}
