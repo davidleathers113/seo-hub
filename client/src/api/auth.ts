@@ -40,17 +40,7 @@ export const register = (data: { email: string; password: string }) => {
 
 // Logout
 // POST /auth/logout
-// Response: { success: boolean }
+// Response: { success: boolean, message: string }
 export const logout = () => {
-  // Mock response
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        data: {
-          success: true
-        }
-      });
-    }, 1000);
-  });
-  // return api.post('/auth/logout');
+  return api.post('/auth/logout');
 };

@@ -1,11 +1,20 @@
 const express = require('express');
 const UserService = require('../services/user.js');
-const { generateToken } = require('../utils/jwt.js');
+const { generateToken, verifyToken } = require('../utils/jwt.js');
 const logger = require('../utils/log.js');
-const { requireUser } = require('./middleware/auth.js');
+const { authenticateWithToken } = require('./middleware/auth.js');
+const redis = require('redis');
 
 const router = express.Router();
 const log = logger('api/routes/authRoutes');
+
+// Initialize Redis client
+const redisClient = redis.createClient({
+  url: process.env.REDIS_URL || 'redis://localhost:6379'
+});
+
+redisClient.on('error', (err) => console.log('Redis Client Error', err));
+redisClient.connect();
 
 router.post('/login', async (req, res) => {
   const sendError = msg => res.status(400).json({ error: msg });
@@ -49,24 +58,43 @@ router.post('/register', async (req, res) => {
   }
 });
 
-router.post('/logout', (req, res) => {
-  req.session.destroy(err => {
-    if (err) {
-      console.error('Error during session destruction:', err);
-      return res.status(500).json({ success: false, message: 'Error logging out' });
-    }
-    res.json({ success: true, message: 'Logged out successfully' });
-  });
-});
+router.post('/logout', authenticateWithToken, async (req, res) => {
+  console.log('\n=== Logout Process Start ===');
+  const authHeader = req.get('Authorization');
+  console.log('Auth header:', authHeader ? 'Present' : 'Missing');
 
-router.all('/api/auth/logout', async (req, res) => {
-  if (req.user) {
-    await UserService.regenerateToken(req.user);
+  if (!authHeader) {
+    console.log('Logout failed: No token provided');
+    return res.status(400).json({ error: 'No token provided' });
   }
-  return res.status(204).send();
+
+  const token = authHeader.split(' ')[1];
+  console.log('Token extracted:', token.substring(0, 10) + '...');
+
+  try {
+    console.log('Verifying token...');
+    const decoded = verifyToken(token);
+    const expirationTime = decoded.exp - Math.floor(Date.now() / 1000);
+    console.log('Token expiration time:', expirationTime, 'seconds');
+
+    console.log('Adding token to blacklist...');
+    await redisClient.set(`bl_${token}`, 'true', {
+      EX: expirationTime > 0 ? expirationTime : 3600
+    });
+    console.log('Token blacklisted successfully');
+
+    console.log('=== Logout Process Complete ===\n');
+    res.json({ success: true, message: 'Logged out successfully' });
+  } catch (error) {
+    console.error('=== Logout Process Error ===');
+    console.error('Error type:', error.constructor.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ error: 'Internal server error during logout' });
+  }
 });
 
-router.get('/me', requireUser, async (req, res) => {
+router.get('/me', authenticateWithToken, async (req, res) => {
   return res.status(200).json(req.user);
 });
 

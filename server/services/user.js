@@ -1,9 +1,8 @@
 const { randomUUID } = require('crypto');
 
-const User = require('../models/user.js');
-const { generatePasswordHash } = require('../utils/password.js');
-const { generateToken } = require('../utils/jwt.js');
-
+const User = require('../models/User');
+const { generateToken } = require('../utils/jwt');
+const { validatePassword, generatePasswordHash } = require('../utils/password');
 class UserService {
   static async list() {
     try {
@@ -15,9 +14,9 @@ class UserService {
 
   static async get(id) {
     try {
-      return User.findOne({ _id: id }).exec();
+      return User.findById(id).exec();
     } catch (err) {
-      throw new Error(`Database error while getting the user by their ID: ${err}`);
+      throw new Error(`Database error while getting user: ${err}`);
     }
   }
 
@@ -25,7 +24,7 @@ class UserService {
     try {
       return User.findOne({ email }).exec();
     } catch (err) {
-      throw new Error(`Database error while getting the user by their email: ${err}`);
+      throw new Error(`Database error while getting user by email: ${err}`);
     }
   }
 
@@ -47,36 +46,20 @@ class UserService {
   }
 
   static async authenticateWithPassword(email, password) {
-    console.log('Starting authentication for email:', email);
-    if (!email) throw new Error('Email is required');
-    if (!password) throw new Error('Password is required');
-
     try {
+      const user = await UserService.getByEmail(email);
+      if (!user) return null;
+
       console.log('Looking up user in database...');
-      const user = await User.findOne({email}).exec();
       console.log('User found?', !!user);
-
-      if (!user) {
-        console.log('No user found with this email');
-        return null;
-      }
-
       console.log('Validating password...');
+
       const passwordValid = await validatePassword(password, user.password);
-      console.log('Password valid?', passwordValid);
+      if (!passwordValid) return null;
 
-      if (!passwordValid) {
-        console.log('Password validation failed');
-        return null;
-      }
-
-      console.log('Updating lastLoginAt...');
       user.lastLoginAt = Date.now();
-      const updatedUser = await user.save();
-      console.log('User updated successfully');
-      return updatedUser;
+      return user.save();
     } catch (err) {
-      console.error('Error in authenticateWithPassword:', err);
       throw new Error(`Database error while authenticating user ${email} with password: ${err}`);
     }
   }

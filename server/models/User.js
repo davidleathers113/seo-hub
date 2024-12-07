@@ -75,6 +75,6 @@ schema.methods.generateAuthToken = function() {
   return generateToken(this);
 };
 
-const User = mongoose.model('User', schema);
+const User = mongoose.models.User || mongoose.model('User', schema);
 
 module.exports = User;

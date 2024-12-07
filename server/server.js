@@ -26,6 +26,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 // Database connection
+require('./models/init');
+
 mongoose
   .connect(process.env.DATABASE_URL)
   .then(() => {
@@ -69,11 +71,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// Add auth middleware and routes in the correct order
-app.use(authenticateWithToken);
+// Add auth routes first (unprotected)
 app.use('/api/auth', authRoutes);
 
-// Basic Routes
+// Then add auth middleware for all other routes
+app.use(authenticateWithToken);
+
+// Basic Routes (protected)
 app.use(basicRoutes);
 
 // If no routes handled the request, it's a 404
