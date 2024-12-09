@@ -6,6 +6,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
   const location = useLocation()
 
+  console.log('ProtectedRoute: Checking authentication status', { isAuthenticated, isLoading });
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -15,8 +16,10 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
+    console.log('ProtectedRoute: User not authenticated, redirecting to login');
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
+  console.log('ProtectedRoute: User authenticated, rendering protected content');
   return <Layout>{children}</Layout>
 }

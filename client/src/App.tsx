@@ -1,5 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom"
-import { useEffect } from "react" // Add this import
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom"
+import { useEffect } from "react"
 import { ThemeProvider } from "./components/ui/theme-provider"
 import { Toaster } from "./components/ui/toaster"
 import { AuthProvider } from "./contexts/AuthContext"
@@ -58,6 +58,7 @@ function App() {
                         <Layout>
                           <Routes>
                             <Route path="/" element={<Dashboard />} />
+                            <Route path="/dashboard" element={<Navigate to="/" replace />} />
                             <Route path="/content" element={<Content />} />
                             <Route path="/settings" element={<Settings />} />
                             <Route path="/niche-selection" element={<NicheSelection />} />

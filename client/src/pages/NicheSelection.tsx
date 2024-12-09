@@ -1,153 +1,218 @@
-import { useState, useEffect } from "react"
-import { useForm } from "react-hook-form"
-import { useNavigate } from "react-router-dom"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { useToast } from "@/hooks/useToast"
-import { Plus, ArrowRight, Target, BarChart } from "lucide-react"
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../api/api';
+import { Card } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { useToast } from '../hooks/useToast';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
-type NicheForm = {
-  nicheName: string
+interface Niche {
+  id: string;
+  name: string;
+  pillars: Array<any>;
+  pillarsCount: number;
+  progress: number;
+  status: string;
+  lastUpdated: string;
 }
 
-type Niche = {
-  id: string
-  name: string
-  pillarsCount: number
-  progress: number
-  status: 'new' | 'in-progress' | 'completed'
-  lastUpdated: string
+interface ApiResponse {
+  data: Niche[];
 }
 
 export function NicheSelection() {
-  const [loading, setLoading] = useState(false)
-  const [niches, setNiches] = useState<Niche[]>([])
-  const { toast } = useToast()
-  const navigate = useNavigate()
-  const { register, handleSubmit, reset } = useForm<NicheForm>()
+  const [niches, setNiches] = useState<Niche[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
+  const [nicheName, setNicheName] = useState<string>('');
+  const [submitting, setSubmitting] = useState<boolean>(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
-    // TODO: Fetch niches from API
     const fetchNiches = async () => {
-      // Mock data for now
-      setNiches([
-        {
-          id: '1',
-          name: 'Digital Marketing',
-          pillarsCount: 5,
-          progress: 60,
-          status: 'in-progress',
-          lastUpdated: '2024-03-15'
-        },
-        {
-          id: '2',
-          name: 'Personal Finance',
-          pillarsCount: 3,
-          progress: 30,
-          status: 'new',
-          lastUpdated: '2024-03-14'
+      try {
+        const response = await api.get<{ data: Niche[] }>('/api/niches');
+        if (Array.isArray(response.data.data)) {
+          setNiches(response.data.data);
+        } else {
+          throw new Error('Invalid data format received for niches');
         }
-      ])
-    }
-    fetchNiches()
-  }, [])
+      } catch (err: any) {
+        setError('Error loading niches');
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: err.message || 'Failed to load niches',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const onSubmit = async (data: NicheForm) => {
+    fetchNiches();
+  }, [toast]);
+
+  const validateForm = (): boolean => {
+    if (!nicheName.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Niche name is required',
+      });
+      return false;
+    }
+    if (!/^[a-zA-Z0-9 ]+$/.test(nicheName)) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Niche name can only contain letters, numbers, and spaces',
+      });
+      return false;
+    }
+    return true;
+  };
+
+  const handleCreateNiche = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    console.log('Create niche button clicked');
+    
+    if (!validateForm()) {
+      console.log('Form validation failed');
+      return;
+    }
+
+    setSubmitting(true);
     try {
-      setLoading(true)
-      // TODO: API call to create niche
+      console.log('Making API request to create niche:', nicheName);
+      const response = await api.post('/api/niches', { name: nicheName });
+      console.log('Niche creation response:', response);
+      
       toast({
-        title: "Success",
-        description: "Niche created successfully",
-      })
-      reset()
-      navigate(`/content?niche=${encodeURIComponent(data.nicheName)}`)
-    } catch (error) {
+        variant: 'default',
+        title: 'Success',
+        description: 'Niche created successfully',
+      });
+      setNicheName('');
+      
+      // Refresh the list of niches
+      console.log('Refreshing niches list...');
+      const nichesResponse = await api.get<{ data: Niche[] }>('/api/niches');
+      console.log('Updated niches:', nichesResponse.data);
+      setNiches(nichesResponse.data.data);
+    } catch (error: any) {
+      console.error('Error creating niche:', error);
       toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to create niche",
-      })
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to create niche. Please try again.',
+      });
     } finally {
-      setLoading(false)
+      setSubmitting(false);
     }
-  }
+  };
 
-  const getStatusColor = (status: Niche['status']) => {
-    switch (status) {
-      case 'new': return 'text-blue-500'
-      case 'in-progress': return 'text-yellow-500'
-      case 'completed': return 'text-green-500'
-      default: return 'text-gray-500'
+  const handleNicheClick = (nicheId: string) => {
+    try {
+      navigate(`/niches/${nicheId}`);
+    } catch (err: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Error navigating to niche',
+      });
     }
-  }
+  };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Create New Niche</CardTitle>
-          <CardDescription>Enter a niche to generate content pillars</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <div className="space-y-6" data-testid="niche-selection">
+      <Card className="rounded-lg border bg-card text-card-foreground shadow-sm">
+        <div className="flex flex-col space-y-1.5 p-6">
+          <div className="text-2xl font-semibold leading-none tracking-tight">
+            Create New Niche
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Enter a niche to generate content pillars
+          </div>
+        </div>
+        <div className="p-6 pt-0">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="nicheName">Niche Name</Label>
               <Input
                 id="nicheName"
+                name="nicheName"
                 placeholder="e.g., Digital Marketing"
-                {...register("nicheName", { required: true })}
+                value={nicheName}
+                onChange={(e) => {
+                  console.log('Input value changed:', e.target.value);
+                  setNicheName(e.target.value);
+                }}
+                required
               />
             </div>
-            <Button type="submit" disabled={loading}>
-              {loading ? (
-                "Creating..."
-              ) : (
-                <>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Niche
-                </>
-              )}
+            <Button 
+              onClick={handleCreateNiche}
+              disabled={submitting}
+              type="button"
+              className="w-full"
+            >
+              {submitting ? 'Creating Niche...' : 'Create Niche'}
             </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Your Niches</CardTitle>
-          <CardDescription>Select a niche to view its content pillars</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {niches.map((niche) => (
-              <Card key={niche.id} className="cursor-pointer hover:bg-accent/50 transition-colors">
-                <CardContent className="p-4" onClick={() => navigate(`/pillars/${niche.id}`)}>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold">{niche.name}</h3>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Target className="h-4 w-4 mr-2" />
-                      {niche.pillarsCount} Pillars
-                    </div>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <BarChart className="h-4 w-4 mr-2" />
-                      {niche.progress}% Complete
-                    </div>
-                    <div className={`text-sm ${getStatusColor(niche.status)}`}>
-                      {niche.status.charAt(0).toUpperCase() + niche.status.slice(1)}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
           </div>
-        </CardContent>
+        </div>
+      </Card>
+      <Card className="rounded-lg border bg-card text-card-foreground shadow-sm">
+        <div className="flex flex-col space-y-1.5 p-6">
+          <div className="text-2xl font-semibold leading-none tracking-tight">
+            Your Niches
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Select a niche to view its content pillars
+          </div>
+        </div>
+        <div className="p-6 pt-0">
+          {loading ? (
+            <div className="flex h-[calc(100vh-12rem)] items-center justify-center">
+              <div role="progressbar" aria-label="Loading niches">
+                <LoadingSpinner />
+              </div>
+            </div>
+          ) : error ? (
+            <p>{error}</p>
+          ) : niches.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {niches.map((niche) => (
+                <Card
+                  key={niche.id}
+                  className="cursor-pointer niche-card"
+                  onClick={() => handleNicheClick(niche.id)}
+                  data-testid={`niche-card-${niche.id}`}
+                >
+                  <div className="p-4">
+                    <h3 className="text-lg font-medium">{niche.name}</h3>
+                    <p>{`${niche.pillarsCount} Pillars`}</p>
+                    <div className="mt-2">
+                      <progress
+                        className="w-full"
+                        value={niche.progress}
+                        max="100"
+                        aria-valuenow={niche.progress}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                      />
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <p>No niches found.</p>
+          )}
+        </div>
       </Card>
     </div>
-  )
+  );
 }

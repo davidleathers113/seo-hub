@@ -1,52 +1,70 @@
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { useNavigate } from "react-router-dom"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "@/components/ui/card"
-import { useToast } from "@/hooks/useToast"
-import { UserPlus } from "lucide-react"
-import { register as registerUser } from "@/api/auth"
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import axios from "axios";
+import { useToast } from "../hooks/useToast";
+import { useAuth } from "../contexts/AuthContext";
+import { ErrorBoundary } from "../components/ErrorBoundary";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../components/ui/card";
 
-type RegisterForm = {
-  email: string
-  password: string
+interface RegistrationFormData {
+  email: string;
+  password: string;
 }
 
-export function Register() {
-  const [loading, setLoading] = useState(false)
-  const { toast } = useToast()
-  const navigate = useNavigate()
-  const { register, handleSubmit } = useForm<RegisterForm>()
+export const Register: React.FC = () => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { register: registerAuth } = useAuth();
+  const { register, handleSubmit, setError, reset, formState: { errors } } = useForm<RegistrationFormData>();
+  const [submitting, setSubmitting] = useState(false);
 
-  const onSubmit = async (data: RegisterForm) => {
+  const onSubmit = async (data: RegistrationFormData) => {
+    console.log('Registration form submitted with data:', data);
+    setSubmitting(true);
     try {
-      setLoading(true)
-      await registerUser(data);
+      console.log('Sending registration request to server...');
+      await registerAuth(data.email, data.password);
+      console.log('Registration successful');
+      
       toast({
-        title: "Success",
-        description: "Account created successfully",
-      })
-      navigate("/login")
+        variant: 'default',
+        title: 'Success',
+        description: 'Account created successfully',
+      });
+      console.log('Navigating to niche selection...');
+      navigate('/niche-selection');
     } catch (error) {
-      console.log("Register error:", error)
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.response?.data?.error,
-      })
+      console.error('Registration error:', error);
+      if (axios.isAxiosError(error) && error.response) {
+        if (error.response.status === 400 && error.response.data.error === 'User with this email already exists') {
+          setError('email', {
+            type: 'manual',
+            message: 'An account with this email already exists. Please use a different email or try logging in.'
+          });
+          // Reset the form when email already exists
+          reset({ email: '', password: '' });
+        } else {
+          console.error('Registration failed', error.response.data);
+          setError('root', {
+            type: 'manual',
+            message: error.response.data.error || 'Registration failed. Please try again.'
+          });
+        }
+      } else {
+        console.error('Unexpected error', error);
+        setError('root', {
+          type: 'manual',
+          message: 'An unexpected error occurred. Please try again later.'
+        });
+      }
     } finally {
-      setLoading(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary p-4">
@@ -56,47 +74,58 @@ export function Register() {
           <CardDescription>Enter your details to get started</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
+                {...register("email", { required: true })}
                 type="email"
                 placeholder="Enter your email"
-                {...register("email", { required: true })}
+                disabled={submitting}
               />
+              {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
+                {...register("password", { required: true, minLength: 8 })}
                 type="password"
                 placeholder="Choose a password"
-                {...register("password", { required: true })}
+                disabled={submitting}
               />
+              {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
-                "Loading..."
-              ) : (
-                <>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Create Account
-                </>
-              )}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={submitting}
+            >
+              {submitting ? 'Creating Account...' : 'Create Account'}
             </Button>
+            {errors.root && <p className="text-red-500 text-sm text-center">{errors.root.message}</p>}
           </form>
+          <div className="mt-6 text-center">
+            <Button
+              variant="link"
+              className="text-sm text-muted-foreground"
+              onClick={() => navigate('/login')}
+              disabled={submitting}
+            >
+              Already have an account? Sign in
+            </Button>
+          </div>
         </CardContent>
-        <CardFooter className="flex justify-center">
-          <Button
-            variant="link"
-            className="text-sm text-muted-foreground"
-            onClick={() => navigate("/login")}
-          >
-            Already have an account? Sign in
-          </Button>
-        </CardFooter>
       </Card>
     </div>
-  )
-}
+  );
+};
+
+export const RegisterPage: React.FC = () => (
+  <ErrorBoundary>
+    <Register />
+  </ErrorBoundary>
+);
+
+export default RegisterPage;

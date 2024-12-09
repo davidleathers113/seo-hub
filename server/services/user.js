@@ -87,12 +87,17 @@ class UserService {
   }
 
   static async createUser({ email, password, name = '' }) {
+    console.log('Creating new user:', email);
     if (!email) throw new Error('Email is required');
     if (!password) throw new Error('Password is required');
 
     const existingUser = await UserService.getByEmail(email);
-    if (existingUser) throw new Error('User with this email already exists');
+    if (existingUser) {
+      console.log('User already exists:', email);
+      throw new Error('User with this email already exists');
+    }
 
+    console.log('Generating password hash');
     const hash = await generatePasswordHash(password);
 
     try {
@@ -103,10 +108,15 @@ class UserService {
         token: randomUUID(),
       });
 
+      console.log('Saving new user to database');
       await user.save();
+      console.log('User saved successfully:', user.email);
       const token = generateToken(user);
+      console.log('Token generated for new user');
       return { user, token };
     } catch (err) {
+      console.error('Error creating new user:', err.message);
+      console.error('Full error:', err);
       throw new Error(`Database error while creating new user: ${err}`);
     }
   }

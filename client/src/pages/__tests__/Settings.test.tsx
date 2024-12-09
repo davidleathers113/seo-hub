@@ -1,24 +1,8 @@
-import { render, screen } from '@testing-library/react'
+import { screen, renderWithProviders } from '@/test/test-utils'
 import { BrowserRouter } from 'react-router-dom'
 import { ThemeProvider } from '@/components/ui/theme-provider'
 import { Settings } from '../Settings'
 import { describe, it, expect, beforeEach } from 'vitest'
-
-const renderWithProviders = (component: React.ReactNode) => {
-  console.log('Rendering with providers...')
-  try {
-    return render(
-      <BrowserRouter>
-        <ThemeProvider defaultTheme="light" storageKey="ui-theme">
-          {component}
-        </ThemeProvider>
-      </BrowserRouter>
-    )
-  } catch (error) {
-    console.error('Error rendering component:', error)
-    throw error
-  }
-}
 
 describe('Settings Component', () => {
   beforeEach(() => {
@@ -54,3 +38,4 @@ describe('Settings Component', () => {
     }
   })
 })
+

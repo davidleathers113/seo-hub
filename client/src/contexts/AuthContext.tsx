@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { login as apiLogin, register as apiRegister, logout as apiLogout } from "@/api/auth";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { login as apiLogin, register as apiRegister, logout as apiLogout } from "../api/auth";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 
 type AuthContextType = {
   isAuthenticated: boolean;
@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (email: string, password: string) => {
     try {
-      const response = await apiRegister(email, password);
+      const response = await apiRegister({ email, password });
       if (response.data?.token) {
         localStorage.setItem("token", response.data.token);
         setIsAuthenticated(true);

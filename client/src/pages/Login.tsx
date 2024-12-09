@@ -1,9 +1,9 @@
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Button } from "components/ui/button"
+import { Input } from "components/ui/input"
+import { Label } from "components/ui/label"
 import {
   Card,
   CardContent,
@@ -11,10 +11,10 @@ import {
   CardHeader,
   CardTitle,
   CardFooter,
-} from "@/components/ui/card"
-import { useToast } from "@/hooks/useToast"
+} from "components/ui/card"
+import { useToast } from "hooks/useToast"
 import { LogIn } from "lucide-react"
-import { useAuth } from "@/contexts/AuthContext"
+import { useAuth } from "contexts/AuthContext"
 
 type LoginForm = {
   email: string

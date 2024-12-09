@@ -6,8 +6,16 @@ const session = require("express-session");
 const MongoStore = require('connect-mongo');
 const basicRoutes = require("./routes/index");
 const authRoutes = require("./routes/auth");
+const nicheRoutes = require('./routes/niches');
 const { authenticateWithToken } = require('./routes/middleware/auth');
+const UserService = require('./services/user');
+const { generateToken } = require('./utils/jwt');
+const logger = require('./utils/log');
 const cors = require("cors");
+
+const log = logger('server');
+
+console.log("Backend starting up...");
 
 if (!process.env.DATABASE_URL || !process.env.SESSION_SECRET) {
   console.error("Error: DATABASE_URL or SESSION_SECRET variables in .env missing.");
@@ -21,17 +29,25 @@ app.enable('json spaces');
 // We want to be consistent with URL paths, so we enable strict routing
 app.enable('strict routing');
 
+// Basic middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+
+// CORS middleware - moved before routes
+app.use(cors({
+  origin: 'http://localhost:5174',
+  credentials: true
+}));
 
 // Database connection
 require('./models/init');
 
+console.log("Attempting to connect to database...");
+
 mongoose
   .connect(process.env.DATABASE_URL)
   .then(() => {
-    console.log("Database connected successfully");
+    console.log(`Database connected successfully to ${process.env.DATABASE_URL}`);
   })
   .catch((err) => {
     console.error(`Database connection error: ${err.message}`);
@@ -71,14 +87,48 @@ app.use((req, res, next) => {
   next();
 });
 
-// Add auth routes first (unprotected)
-app.use('/api/auth', authRoutes);
+// Public routes (no authentication required)
+app.post('/api/register', authRoutes.registerUser);
+app.post('/api/auth/login', async (req, res) => {
+  const sendError = msg => res.status(400).json({ error: msg });
+  const { email, password } = req.body;
 
-// Then add auth middleware for all other routes
+  console.log('Login request received for email:', email);
+
+  if (!email || !password) {
+    console.log('Missing email or password in request');
+    return sendError('Email and password are required');
+  }
+
+  try {
+    console.log('Attempting to authenticate user...');
+    const user = await UserService.authenticateWithPassword(email, password);
+    console.log('Authentication result:', user ? 'success' : 'failed');
+
+    if (user) {
+      console.log('Generating token for user...');
+      const token = generateToken(user);
+      return res.json({ user, token });
+    } else {
+      return sendError('Email or password is incorrect');
+    }
+  } catch (error) {
+    console.error('Full login error:', error);
+    console.error('Error stack:', error.stack);
+    log.error('Error during login:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Protected routes (authentication required)
 app.use(authenticateWithToken);
 
-// Basic Routes (protected)
+// Protected auth routes (must come after authenticateWithToken)
+app.use('/api/auth', authRoutes.router);
+
+// Other protected routes
 app.use(basicRoutes);
+app.use('/api/niches', nicheRoutes);
 
 // If no routes handled the request, it's a 404
 app.use((req, res, next) => {
@@ -92,6 +142,8 @@ app.use((err, req, res, next) => {
   res.status(500).send("There was an error serving your request.");
 });
 
+console.log(`Attempting to start server on port ${port}...`);
+
 app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+  console.log(`Server is now running and listening on port ${port}`);
 });

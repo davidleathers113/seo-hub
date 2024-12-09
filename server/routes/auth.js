@@ -48,12 +48,17 @@ router.post('/login', async (req, res) => {
 });
 
 router.post('/register', async (req, res) => {
+  console.log('Registration attempt received:', req.body.email);
   try {
-    const user = await UserService.createUser(req.body);
-    const token = generateToken(user);
-    return res.status(201).json({ user, token });
+    const result = await UserService.createUser(req.body);
+    console.log('User registration successful:', result.user.email);
+    return res.status(201).json({
+      user: result.user,
+      token: result.token
+    });
   } catch (error) {
-    log.error('Error while registering user', error);
+    console.error('Error during registration:', error.message);
+    console.error('Full error:', error);
     return res.status(400).json({ error: error.message });
   }
 });
@@ -98,4 +103,21 @@ router.get('/me', authenticateWithToken, async (req, res) => {
   return res.status(200).json(req.user);
 });
 
-module.exports = router;
+module.exports = {
+  router,
+  registerUser: async (req, res) => {
+    console.log('Registration attempt received:', req.body.email);
+    try {
+      const result = await UserService.createUser(req.body);
+      console.log('User created successfully:', result.user.email);
+      return res.status(201).json({
+        user: result.user,
+        token: result.token
+      });
+    } catch (error) {
+      console.error('Error during registration:', error.message);
+      console.error('Full error:', error);
+      return res.status(400).json({ error: error.message });
+    }
+  }
+};

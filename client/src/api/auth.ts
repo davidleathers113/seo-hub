@@ -1,46 +1,27 @@
 import api from './api';
 
 // Login
-// POST /auth/login
+// POST /api/auth/login
 // Request: { email: string, password: string }
 // Response: { token: string, user: { id: string, email: string } }
 export const login = (email: string, password: string) => {
-  // Mock response
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        data: {
-          token: "mock-token",
-          user: { id: "1", email }
-        }
-      });
-    }, 1000);
-  });
-  // return api.post('/auth/login', { email, password });
+  return api.post('/api/auth/login', { email, password });
 };
 
 // Register
-// POST /auth/register
+// POST /api/register
 // Request: { email: string, password: string }
 // Response: { success: boolean, message: string }
 export const register = (data: { email: string; password: string }) => {
-  // Mock response
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        data: {
-          success: true,
-          message: "Registration successful"
-        }
-      });
-    }, 1000);
+  return api.post('/api/register', {
+    email: data.email,
+    password: data.password
   });
-  // return api.post('/auth/register', data);
 };
 
 // Logout
-// POST /auth/logout
+// POST /api/auth/logout
 // Response: { success: boolean, message: string }
 export const logout = () => {
-  return api.post('/auth/logout');
+  return api.post('/api/auth/logout');
 };

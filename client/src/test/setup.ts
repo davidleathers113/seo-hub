@@ -1,40 +1,42 @@
 import '@testing-library/jest-dom'
-import { vi } from 'vitest'
-import { expect, afterEach } from 'vitest'
 import { cleanup } from '@testing-library/react'
-import * as matchers from '@testing-library/jest-dom/matchers'
+import { afterEach, vi } from 'vitest'
+import { mockConfig } from './test-config'
 
-expect.extend(matchers)
+afterEach(cleanup)
 
-// Cleanup after each test
-afterEach(() => {
-  cleanup()
+// Unified mock setup
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom')
+  return {
+    ...actual,
+    useNavigate: () => mockConfig.router.navigate,
+    useLocation: mockConfig.router.location,
+    useParams: mockConfig.router.params,
+    BrowserRouter: ({ children }) => children
+  }
 })
 
-// Mock the AuthContext
-vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({
-    isAuthenticated: true,
-    login: vi.fn(),
-    logout: vi.fn(),
-  }),
+vi.mock('@/api/Api', () => ({
+  api: mockConfig.api,
+  default: mockConfig.api
 }))
 
-// Mock the toast hook
 vi.mock('@/hooks/useToast', () => ({
-  useToast: () => ({
-    toast: vi.fn(),
-  }),
+  useToast: () => ({ toast: mockConfig.toast })
 }))
 
-// Mock ResizeObserver
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => mockConfig.auth
+}))
+
+// Browser APIs
 global.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
-  disconnect: vi.fn(),
+  disconnect: vi.fn()
 }))
 
-// Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation(query => ({
@@ -45,6 +47,7 @@ Object.defineProperty(window, 'matchMedia', {
     removeListener: vi.fn(),
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
+    dispatchEvent: vi.fn()
+  }))
 })
+
