@@ -6,7 +6,9 @@ const { requireUser } = require('./middleware/auth');
 // Get all niches for the current user
 router.get('/', requireUser, async (req, res) => {
   try {
+    console.log(`Fetching niches for user: ${req.user.id}`);
     const niches = await NicheService.list(req.user.id);
+    console.log(`Sending niches response:`, JSON.stringify(niches, null, 2));
     res.json({ data: niches });
   } catch (error) {
     console.error('Error fetching niches:', error);

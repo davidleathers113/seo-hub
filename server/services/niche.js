@@ -3,8 +3,10 @@ const Niche = require('../models/Niche');
 class NicheService {
   static async list(userId) {
     try {
+      console.log(`Fetching niches for user: ${userId}`);
       const niches = await Niche.find({ userId }).sort({ createdAt: -1 });
-      return niches.map(niche => ({
+      console.log(`Found ${niches.length} niches for user ${userId}`);
+      const mappedNiches = niches.map(niche => ({
         id: niche._id,
         name: niche.name,
         pillars: niche.pillars || [],
@@ -13,6 +15,8 @@ class NicheService {
         status: niche.status || 'new',
         lastUpdated: niche.updatedAt || niche.createdAt
       }));
+      console.log('Mapped niches:', JSON.stringify(mappedNiches, null, 2));
+      return mappedNiches;
     } catch (error) {
       console.error('Error in NicheService.list:', error);
       throw error;

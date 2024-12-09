@@ -34,13 +34,17 @@ export function NicheSelection() {
   useEffect(() => {
     const fetchNiches = async () => {
       try {
+        console.log('Fetching niches from API');
         const response = await api.get<{ data: Niche[] }>('/api/niches');
+        console.log('API response:', response.data);
         if (Array.isArray(response.data.data)) {
+          console.log('Setting niches:', response.data.data);
           setNiches(response.data.data);
         } else {
           throw new Error('Invalid data format received for niches');
         }
       } catch (err: any) {
+        console.error('Error loading niches:', err);
         setError('Error loading niches');
         toast({
           variant: 'destructive',
@@ -78,7 +82,7 @@ export function NicheSelection() {
   const handleCreateNiche = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     console.log('Create niche button clicked');
-    
+
     if (!validateForm()) {
       console.log('Form validation failed');
       return;
@@ -89,14 +93,14 @@ export function NicheSelection() {
       console.log('Making API request to create niche:', nicheName);
       const response = await api.post('/api/niches', { name: nicheName });
       console.log('Niche creation response:', response);
-      
+
       toast({
         variant: 'default',
         title: 'Success',
         description: 'Niche created successfully',
       });
       setNicheName('');
-      
+
       // Refresh the list of niches
       console.log('Refreshing niches list...');
       const nichesResponse = await api.get<{ data: Niche[] }>('/api/niches');
@@ -153,7 +157,7 @@ export function NicheSelection() {
                 required
               />
             </div>
-            <Button 
+            <Button
               onClick={handleCreateNiche}
               disabled={submitting}
               type="button"
@@ -194,16 +198,9 @@ export function NicheSelection() {
                   <div className="p-4">
                     <h3 className="text-lg font-medium">{niche.name}</h3>
                     <p>{`${niche.pillarsCount} Pillars`}</p>
-                    <div className="mt-2">
-                      <progress
-                        className="w-full"
-                        value={niche.progress}
-                        max="100"
-                        aria-valuenow={niche.progress}
-                        aria-valuemin={0}
-                        aria-valuemax={100}
-                      />
-                    </div>
+                    <p>Progress: {niche.progress}%</p>
+                    <p>Status: {niche.status}</p>
+                    {console.log('Rendering niche:', JSON.stringify(niche, null, 2))}
                   </div>
                 </Card>
               ))}
