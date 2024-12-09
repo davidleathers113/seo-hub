@@ -107,6 +107,22 @@ class NicheService {
       throw error;
     }
   }
+
+  static async delete(nicheId, userId) {
+    console.log(`Attempting to delete niche with ID: ${nicheId} for user: ${userId}`);
+    try {
+      const result = await Niche.findOneAndDelete({ _id: nicheId, userId });
+      if (!result) {
+        console.log(`Niche not found or not owned by user: ${nicheId}`);
+        return null;
+      }
+      console.log(`Niche deleted successfully: ${nicheId}`);
+      return result;
+    } catch (error) {
+      console.error('Error in NicheService.delete:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = NicheService;

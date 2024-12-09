@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/api';
+import { Button } from '../components/ui/button';
+import { useToast } from '../hooks/useToast';
 
 interface Niche {
   id: string;
@@ -13,18 +15,20 @@ interface Niche {
 }
 
 export const NicheDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id: nicheId } = useParams<{ id: string }>();
   const [niche, setNiche] = useState<Niche | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchNiche = async () => {
       try {
         setLoading(true);
         setError(null);
-        console.log('Fetching niche with ID:', id);
-        const response = await api.get(`/niches/${id}`);
+        console.log('Fetching niche with ID:', nicheId);
+        const response = await api.get(`/niches/${nicheId}`);
         console.log('Niche response:', response.data);
         setNiche(response.data.data);
       } catch (error: any) {
@@ -35,10 +39,31 @@ export const NicheDetail: React.FC = () => {
       }
     };
 
-    if (id) {
+    if (nicheId) {
       fetchNiche();
     }
-  }, [id]);
+  }, [nicheId]);
+
+  const handleDeleteNiche = async () => {
+    try {
+      console.log(`Attempting to delete niche with ID: ${nicheId}`);
+      await api.delete(`/niches/${nicheId}`);
+      console.log('Niche deleted successfully');
+      toast({
+        title: "Niche deleted",
+        description: "The niche has been successfully deleted.",
+      });
+      console.log('About to navigate to /niche-selection');
+      navigate('/niche-selection');
+    } catch (error: any) {
+      console.error('Error deleting niche:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete the niche. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (loading) {
     return <div>Loading niche details...</div>;
@@ -63,7 +88,7 @@ export const NicheDetail: React.FC = () => {
         <p><strong>Pillars Count:</strong> {niche.pillarsCount}</p>
         <p><strong>Last Updated:</strong> {new Date(niche.lastUpdated).toLocaleDateString()}</p>
       </div>
-
+      <Button onClick={handleDeleteNiche} variant="destructive">Delete Niche</Button>
       {niche.pillars && niche.pillars.length > 0 ? (
         <div className="pillars-section">
           <h2>Pillars</h2>

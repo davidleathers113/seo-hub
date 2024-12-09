@@ -122,6 +122,7 @@ export function NicheSelection() {
     try {
       navigate(`/niches/${nicheId}`);
     } catch (err: any) {
+      console.error('Error navigating to niche:', err);
       toast({
         variant: 'destructive',
         title: 'Error',

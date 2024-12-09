@@ -86,4 +86,25 @@ router.put('/:id', requireUser, async (req, res) => {
   }
 });
 
+// Delete a niche
+router.delete('/:id', requireUser, async (req, res) => {
+  console.log('Received DELETE request to remove a niche');
+  try {
+    const { id } = req.params;
+    console.log(`Deleting niche with ID: ${id} for user: ${req.user.id}`);
+    const deletedNiche = await NicheService.delete(id, req.user.id);
+
+    if (!deletedNiche) {
+      console.log('Niche not found or not owned by user');
+      return res.status(404).json({ error: 'Niche not found or not owned by the user' });
+    }
+
+    console.log(`Niche deleted successfully: ${id}`);
+    res.json({ message: 'Niche deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting niche:', error);
+    res.status(500).json({ error: 'Failed to delete niche' });
+  }
+});
+
 module.exports = router;
