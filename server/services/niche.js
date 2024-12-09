@@ -48,6 +48,35 @@ class NicheService {
       throw error;
     }
   }
+
+  static async getById(nicheId, userId) {
+    console.log(`Attempting to fetch niche with ID: ${nicheId} for user: ${userId}`);
+    try {
+      const niche = await Niche.findOne({ _id: nicheId, userId });
+
+      if (!niche) {
+        console.log(`Niche not found in database for ID: ${nicheId} and user: ${userId}`);
+        return null;
+      }
+
+      console.log('Niche found in database:', niche);
+      const mappedNiche = {
+        id: niche._id,
+        name: niche.name,
+        pillars: niche.pillars || [],
+        pillarsCount: niche.pillars ? niche.pillars.length : 0,
+        progress: niche.progress || 0,
+        status: niche.status || 'new',
+        lastUpdated: niche.updatedAt || niche.createdAt
+      };
+
+      console.log('Mapped niche:', JSON.stringify(mappedNiche, null, 2));
+      return mappedNiche;
+    } catch (error) {
+      console.error('Error in NicheService.getById:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = NicheService;

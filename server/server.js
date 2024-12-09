@@ -12,6 +12,7 @@ const UserService = require('./services/user');
 const { generateToken } = require('./utils/jwt');
 const logger = require('./utils/log');
 const cors = require("cors");
+const net = require('net');
 
 const log = logger('server');
 
@@ -23,7 +24,8 @@ if (!process.env.DATABASE_URL || !process.env.SESSION_SECRET) {
 }
 
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3001; // INPUT_REQUIRED {config_description: "Set the server port, default is 3001"}
+
 // Pretty-print JSON responses
 app.enable('json spaces');
 // We want to be consistent with URL paths, so we enable strict routing
@@ -35,7 +37,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // CORS middleware - moved before routes
 app.use(cors({
-  origin: 'http://localhost:5174',
+  origin: 'http://localhost:5174', // INPUT_REQUIRED {config_description: "Set the CORS origin URL, default is http://localhost:5174"}
   credentials: true
 }));
 
@@ -142,8 +144,24 @@ app.use((err, req, res, next) => {
   res.status(500).send("There was an error serving your request.");
 });
 
-console.log(`Attempting to start server on port ${port}...`);
+async function startServer() {
+  if (await portInUse(port)) {
+    console.error(`Port ${port} is already in use. Please free up the port and try again.`);
+    process.exit(1);
+  }
 
-app.listen(port, () => {
-  console.log(`Server is now running and listening on port ${port}`);
-});
+  app.listen(port, () => {
+    console.log(`Server is now running and listening on port ${port}`);
+  });
+}
+
+function portInUse(port) {
+  return new Promise((resolve) => {
+    const server = net.createServer()
+      .once('error', () => resolve(true))
+      .once('listening', () => server.once('close', () => resolve(false)).close())
+      .listen(port);
+  });
+}
+
+startServer();

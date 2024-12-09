@@ -4,7 +4,7 @@ import axios from 'axios';
 console.log('API connecting to:', 'http://localhost:3001');
 
 const api = axios.create({
-  baseURL: 'http://localhost:3001',
+  baseURL: 'http://localhost:3001/api', // Added /api prefix
   headers: {
     'Content-Type': 'application/json',
   },
@@ -15,23 +15,18 @@ const api = axios.create({
 api.interceptors.request.use(request => {
   const currentUrl = request.url || '';
   console.log('Outgoing request:', request.method, currentUrl, request.data);
-  
+
   // Skip token check for public endpoints
-  const publicEndpoints = ['/api/register', '/api/auth/login'];
+  const publicEndpoints = ['/register', '/auth/login']; // Removed /api prefix since it's in baseURL
   const isPublicEndpoint = publicEndpoints.some(endpoint => currentUrl.includes(endpoint));
-  
-  // Only check token for protected endpoints
+
   if (!isPublicEndpoint) {
     const token = localStorage.getItem('token');
-    if (!token || typeof token !== 'string' || token.split('.').length !== 3) {
-      console.error('Invalid or missing token for protected endpoint');
-      localStorage.removeItem('token'); // Remove any invalid token
-      window.location.href = '/login'; // Redirect to login page
-      return Promise.reject('Invalid token'); // Prevent the request from being sent
+    if (token) {
+      request.headers['Authorization'] = `Bearer ${token}`;
     }
-    request.headers.Authorization = `Bearer ${token}`;
   }
-  
+
   const requestUrl = `${request.baseURL || ''}${currentUrl}`;
   console.log('API Request:', request.method?.toUpperCase(), requestUrl);
   return request;
@@ -45,7 +40,7 @@ api.interceptors.response.use(
   response => response,
   error => {
     if (axios.isAxiosError(error)) {
-      console.error('API Response Error:', error.response?.data || error.message);
+      console.error('API Response Error:', error.response?.data?.error || error.message);
       // Handle specific error cases
       if (error.response?.status === 401) {
         localStorage.removeItem('token');

@@ -1,3 +1,4 @@
+const jwt = require('jsonwebtoken');
 const { verifyToken } = require('../../utils/jwt');
 const UserService = require('../../services/user');
 const redis = require('redis');
@@ -34,20 +35,25 @@ const authenticateWithToken = async (req, res, next) => {
       return res.status(401).json({ error: 'Token has been invalidated' });
     }
 
-    const decoded = verifyToken(token);
-    console.log('Token decoded successfully for user:', decoded.email);
+    jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
+      if (err) {
+        console.log('Token verification failed:', err.message);
+        return res.status(403).json({ error: 'Token verification failed' });
+      }
+      console.log('Token decoded successfully for user:', decoded.email);
 
-    const user = await UserService.get(decoded.id);
-    console.log('User found:', user ? 'Yes' : 'No');
+      const user = await UserService.get(decoded.id);
+      console.log('User found:', user ? 'Yes' : 'No');
 
-    if (user) {
-      req.user = user;
-      console.log('=== Token Authentication Success ===\n');
-      next();
-    } else {
-      console.log('Authentication failed: User not found');
-      res.status(401).json({ error: 'User not found' });
-    }
+      if (user) {
+        req.user = user;
+        console.log('=== Token Authentication Success ===\n');
+        next();
+      } else {
+        console.log('Authentication failed: User not found');
+        res.status(401).json({ error: 'User not found' });
+      }
+    });
   } catch (error) {
     console.error('=== Token Authentication Error ===');
     console.error('Error type:', error.constructor.name);

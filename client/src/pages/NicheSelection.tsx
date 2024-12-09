@@ -35,7 +35,7 @@ export function NicheSelection() {
     const fetchNiches = async () => {
       try {
         console.log('Fetching niches from API');
-        const response = await api.get<{ data: Niche[] }>('/api/niches');
+        const response = await api.get<{ data: Niche[] }>('/niches');
         console.log('API response:', response.data);
         if (Array.isArray(response.data.data)) {
           console.log('Setting niches:', response.data.data);
@@ -91,7 +91,7 @@ export function NicheSelection() {
     setSubmitting(true);
     try {
       console.log('Making API request to create niche:', nicheName);
-      const response = await api.post('/api/niches', { name: nicheName });
+      const response = await api.post('/niches', { name: nicheName });
       console.log('Niche creation response:', response);
 
       toast({
@@ -103,7 +103,7 @@ export function NicheSelection() {
 
       // Refresh the list of niches
       console.log('Refreshing niches list...');
-      const nichesResponse = await api.get<{ data: Niche[] }>('/api/niches');
+      const nichesResponse = await api.get<{ data: Niche[] }>('/niches');
       console.log('Updated niches:', nichesResponse.data);
       setNiches(nichesResponse.data.data);
     } catch (error: any) {
@@ -128,6 +128,25 @@ export function NicheSelection() {
         description: 'Error navigating to niche',
       });
     }
+  };
+
+  const renderNiche = (niche: Niche) => {
+    console.log('Rendering niche:', JSON.stringify(niche, null, 2));
+    return (
+      <Card
+        key={niche.id}
+        className="cursor-pointer niche-card"
+        onClick={() => handleNicheClick(niche.id)}
+        data-testid={`niche-card-${niche.id}`}
+      >
+        <div className="p-4">
+          <h3 className="text-lg font-medium">{niche.name}</h3>
+          <p>{`${niche.pillarsCount} Pillars`}</p>
+          <p>Progress: {niche.progress}%</p>
+          <p>Status: {niche.status}</p>
+        </div>
+      </Card>
+    );
   };
 
   return (
@@ -188,22 +207,7 @@ export function NicheSelection() {
             <p>{error}</p>
           ) : niches.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {niches.map((niche) => (
-                <Card
-                  key={niche.id}
-                  className="cursor-pointer niche-card"
-                  onClick={() => handleNicheClick(niche.id)}
-                  data-testid={`niche-card-${niche.id}`}
-                >
-                  <div className="p-4">
-                    <h3 className="text-lg font-medium">{niche.name}</h3>
-                    <p>{`${niche.pillarsCount} Pillars`}</p>
-                    <p>Progress: {niche.progress}%</p>
-                    <p>Status: {niche.status}</p>
-                    {console.log('Rendering niche:', JSON.stringify(niche, null, 2))}
-                  </div>
-                </Card>
-              ))}
+              {niches.map(renderNiche)}
             </div>
           ) : (
             <p>No niches found.</p>

@@ -22,8 +22,8 @@ import { Sidebar } from "./components/Sidebar"
 import { Footer } from "./components/Footer"
 import { Header } from "./components/Header"
 import { ResearchManager } from "./pages/ResearchManager"
+import { NicheDetail } from "./pages/NicheDetail"
 
-// Create a RouteLogger component
 function RouteLogger() {
   const location = useLocation()
 
@@ -37,7 +37,7 @@ function RouteLogger() {
 function App() {
   return (
     <AuthProvider>
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <ThemeProvider defaultTheme="system">
         <Router>
           <RouteLogger />
           <div className="min-h-screen bg-background">
@@ -70,6 +70,7 @@ function App() {
                             <Route path="/articles" element={<FinalArticle />} />
                             <Route path="/articles/:articleId" element={<FinalArticle />} />
                             <Route path="/research/:subpillarId?" element={<ResearchManager />} />
+                            <Route path="/niches/:id" element={<NicheDetail />} />
                             <Route path="*" element={<NotFound />} />
                           </Routes>
                         </Layout>
