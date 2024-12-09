@@ -77,6 +77,36 @@ class NicheService {
       throw error;
     }
   }
+
+  static async update(nicheId, userId, updatedData) {
+    console.log(`Attempting to update niche with ID: ${nicheId} for user: ${userId}`);
+    try {
+      const niche = await Niche.findOneAndUpdate(
+        { _id: nicheId, userId },
+        { $set: updatedData },
+        { new: true, runValidators: true }
+      );
+
+      if (!niche) {
+        console.log(`Niche not found or not owned by user: ${nicheId}`);
+        return null;
+      }
+
+      console.log('Niche updated successfully:', niche);
+      return {
+        id: niche._id,
+        name: niche.name,
+        pillars: niche.pillars || [],
+        pillarsCount: niche.pillars ? niche.pillars.length : 0,
+        progress: niche.progress || 0,
+        status: niche.status || 'new',
+        lastUpdated: niche.updatedAt || niche.createdAt
+      };
+    } catch (error) {
+      console.error('Error in NicheService.update:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = NicheService;

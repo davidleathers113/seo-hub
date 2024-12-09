@@ -58,4 +58,32 @@ router.get('/:id', requireUser, async (req, res) => {
   }
 });
 
+// Update a niche
+router.put('/:id', requireUser, async (req, res) => {
+  console.log('Received PUT request to update a niche');
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+
+    if (!name) {
+      console.log('Niche name is required but not provided');
+      return res.status(400).json({ error: 'Niche name is required' });
+    }
+
+    console.log(`Updating niche with ID: ${id} for user: ${req.user.id}`);
+    const updatedNiche = await NicheService.update(id, req.user.id, { name });
+
+    if (!updatedNiche) {
+      console.log('Niche not found or not owned by user');
+      return res.status(404).json({ error: 'Niche not found or not owned by the user' });
+    }
+
+    console.log(`Niche updated successfully: ${JSON.stringify(updatedNiche)}`);
+    res.json(updatedNiche);
+  } catch (error) {
+    console.error('Error updating niche:', error);
+    res.status(500).json({ error: 'Failed to update niche' });
+  }
+});
+
 module.exports = router;
