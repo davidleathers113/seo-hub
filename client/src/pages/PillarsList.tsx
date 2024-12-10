@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft } from "lucide-react"
 import { useToast } from "@/hooks/useToast"
 import { PillarTreeView } from "@/components/PillarTreeView"
 import { PillarModifyDialog } from "@/components/PillarModifyDialog"
 import { PillarWhiteboardView } from "@/components/PillarWhiteboardView"
+import { generatePillars } from "@/api/content"
 
 interface Subpillar {
   id: string
@@ -25,7 +26,9 @@ interface Pillar {
 export function PillarsList() {
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { nicheId } = useParams<{ nicheId: string }>()
   const [loading, setLoading] = useState(true)
+  const [generating, setGenerating] = useState(false)
   const [nicheName, setNicheName] = useState("")
   const [pillars, setPillars] = useState<Pillar[]>([])
   const [modifyingPillar, setModifyingPillar] = useState<Pillar | null>(null)
@@ -97,6 +100,28 @@ export function PillarsList() {
       setLoading(false)
     }
   }
+
+  const handleGeneratePillars = async () => {
+    if (!nicheId) return;
+    setGenerating(true);
+    try {
+      const response = await generatePillars(nicheId);
+      setPillars(response.data);
+      toast({
+        title: "Success",
+        description: "Pillars generated successfully",
+      });
+    } catch (error) {
+      console.error('Error generating pillars:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to generate pillars",
+      });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const handleModify = async (title: string) => {
     try {
@@ -176,6 +201,12 @@ export function PillarsList() {
           </Button>
           <h2 className="text-2xl font-bold">{nicheName}</h2>
         </div>
+        <Button
+          onClick={handleGeneratePillars}
+          disabled={generating}
+        >
+          {generating ? "Generating..." : "Generate Pillars"}
+        </Button>
       </div>
 
       <div className="flex gap-4" style={{ height: '80vh' }}>

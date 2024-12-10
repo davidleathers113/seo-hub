@@ -1,26 +1,10 @@
 import api from './api';
 
 // Generate Pillars
-// POST /content/pillars
-// Request: { niche: string }
-// Response: { pillars: Array<{ id: string, title: string, approved: boolean }> }
-export const generatePillars = (niche: string) => {
-  // Mock response
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
-        data: {
-          pillars: [
-            { id: "1", title: "Content Strategy", approved: false },
-            { id: "2", title: "SEO Optimization", approved: false },
-            { id: "3", title: "Keyword Research", approved: false },
-            { id: "4", title: "Link Building", approved: false },
-            { id: "5", title: "Technical SEO", approved: false },
-          ]
-        }
-      });
-    }, 1000);
-  });
+// POST /niches/:nicheId/pillars/generate
+// Response: { data: Array<{ title: string, approved: boolean, status: string }> }
+export const generatePillars = (nicheId: string) => {
+  return api.post(`/niches/${nicheId}/pillars/generate`);
 };
 
 // Update Pillar

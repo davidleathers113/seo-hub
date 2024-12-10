@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+    <style>
+        .response { margin: 10px 0; padding: 10px; background: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <h2>API Test</h2>
+    <div id="output"></div>
+
+    <script>
+        async function testAPI() {
+            const output = document.getElementById('output');
+            
+            try {
+                // Login
+                const loginResponse = await fetch('http://localhost:3001/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'test@example.com',
+                        password: 'password123'
+                    })
+                });
+                
+                const loginData = await loginResponse.json();
+                output.innerHTML += `<div class="response">Login response: ${JSON.stringify(loginData, null, 2)}</div>`;
+                
+                if (loginData.token) {
+                    // Create pillar
+                    const pillarResponse = await fetch('http://localhost:3001/api/niches/67574d5601484735560b029f/pillars', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${loginData.token}`
+                        },
+                        body: JSON.stringify({
+                            title: 'Test Pillar',
+                            status: 'approved'
+                        })
+                    });
+                    
+                    const pillarData = await pillarResponse.json();
+                    output.innerHTML += `<div class="response">Create pillar response: ${JSON.stringify(pillarData, null, 2)}</div>`;
+
+                    // Create subpillar
+                    const subpillarResponse = await fetch(`http://localhost:3001/api/pillars/${pillarData._id}/subpillars`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${loginData.token}`
+                        },
+                        body: JSON.stringify({
+                            title: 'Test Subpillar',
+                            status: 'draft'
+                        })
+                    });
+                    
+                    const subpillarData = await subpillarResponse.json();
+                    output.innerHTML += `<div class="response">Create subpillar response: ${JSON.stringify(subpillarData, null, 2)}</div>`;
+
+                    // Create research item
+                    const researchResponse = await fetch(`http://localhost:3001/api/subpillars/${subpillarData._id}/research`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${loginData.token}`
+                        },
+                        body: JSON.stringify({
+                            content: 'Test research content',
+                            source: 'Test source',
+                            notes: 'Test notes'
+                        })
+                    });
+                    
+                    const researchData = await researchResponse.json();
+                    output.innerHTML += `<div class="response">Create research response: ${JSON.stringify(researchData, null, 2)}</div>`;
+                }
+            } catch (error) {
+                output.innerHTML += `<div class="response" style="color: red">Error: ${error.message}</div>`;
+            }
+        }
+
+        testAPI();
+    </script>
+</body>
+</html>

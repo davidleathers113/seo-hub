@@ -1,7 +1,12 @@
 const mongoose = require('mongoose');
-require('./User');
 
-// Add any additional model imports here as your application grows
+// Import all models in dependency order
+require('./User');
+require('./Niche');
+require('./Pillar');
+require('./Subpillar');
+require('./Research');
+require('./Outline');
 
 // Export the mongoose connection
 module.exports = mongoose.connection;

@@ -10,4 +10,6 @@ if (!pino.levels.values[level]) {
 
 const logger = (name) => pino({ name, level });
 
-module.exports = logger;
+module.exports = {
+  logger
+};

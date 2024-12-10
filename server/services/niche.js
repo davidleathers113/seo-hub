@@ -1,4 +1,9 @@
+const mongoose = require('mongoose');
 const Niche = require('../models/Niche');
+const { sendLLMRequest } = require('./llm');
+
+// Helper function to validate MongoDB ObjectId
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 class NicheService {
   static async list(userId) {
@@ -25,6 +30,7 @@ class NicheService {
 
   static async create(userId, name) {
     try {
+      console.log(`Attempting to create niche "${name}" for user ${userId}`);
       const niche = new Niche({
         name,
         userId,
@@ -120,6 +126,51 @@ class NicheService {
       return result;
     } catch (error) {
       console.error('Error in NicheService.delete:', error);
+      throw error;
+    }
+  }
+
+  static async generatePillars(nicheId, userId) {
+    console.log(`Generating pillars for niche: ${nicheId} and user: ${userId}`);
+    try {
+      if (!isValidObjectId(nicheId)) {
+        throw new Error('Invalid niche ID format');
+      }
+
+      const niche = await Niche.findOne({ _id: nicheId, userId });
+      if (!niche) {
+        console.log(`Niche not found or not owned by user: ${nicheId}`);
+        throw new Error('Niche not found or not owned by the user');
+      }
+
+      const prompt = `Generate 5 content pillars for the niche "${niche.name}". Each pillar should be a short, concise phrase.`;
+      const llmResponse = await sendLLMRequest('openai', 'gpt-3.5-turbo', prompt);
+
+      if (!llmResponse || llmResponse.trim() === '') {
+        throw new Error('No pillars generated');
+      }
+
+      const pillarTitles = llmResponse.split('\n')
+        .map(line => line.replace(/^\d+\.\s*/, '').trim())
+        .filter(title => title !== '');
+
+      if (pillarTitles.length === 0) {
+        throw new Error('No pillars generated');
+      }
+
+      const pillars = pillarTitles.map(title => ({
+        title,
+        status: 'pending',
+        approved: false
+      }));
+
+      niche.pillars = pillars;
+      await niche.save();
+
+      console.log(`Pillars generated and saved for niche: ${nicheId}`);
+      return pillars;
+    } catch (error) {
+      console.error('Error in NicheService.generatePillars:', error);
       throw error;
     }
   }

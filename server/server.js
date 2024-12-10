@@ -7,6 +7,8 @@ const MongoStore = require('connect-mongo');
 const basicRoutes = require("./routes/index");
 const authRoutes = require("./routes/auth");
 const nicheRoutes = require('./routes/niches');
+const pillarRoutes = require('./routes/pillars');
+const articlesRoutes = require('./routes/articles');
 const { authenticateWithToken } = require('./routes/middleware/auth');
 const UserService = require('./services/user');
 const { generateToken } = require('./utils/jwt');
@@ -16,7 +18,11 @@ const net = require('net');
 
 const log = logger('server');
 
-console.log("Backend starting up...");
+console.log("Starting backend server...");
+console.log("Environment variables:");
+console.log("PORT:", process.env.PORT);
+console.log("DATABASE_URL:", process.env.DATABASE_URL);
+console.log("SESSION_SECRET:", process.env.SESSION_SECRET ? "Set" : "Not set");
 
 if (!process.env.DATABASE_URL || !process.env.SESSION_SECRET) {
   console.error("Error: DATABASE_URL or SESSION_SECRET variables in .env missing.");
@@ -24,7 +30,7 @@ if (!process.env.DATABASE_URL || !process.env.SESSION_SECRET) {
 }
 
 const app = express();
-const port = process.env.PORT || 3001; // INPUT_REQUIRED {config_description: "Set the server port, default is 3001"}
+const port = process.env.PORT || 3001;
 
 // Pretty-print JSON responses
 app.enable('json spaces');
@@ -35,9 +41,9 @@ app.enable('strict routing');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// CORS middleware - moved before routes
+// CORS middleware - Allow all origins in development
 app.use(cors({
-  origin: 'http://localhost:5174', // INPUT_REQUIRED {config_description: "Set the CORS origin URL, default is http://localhost:5174"}
+  origin: true, // Allow all origins
   credentials: true
 }));
 
@@ -89,6 +95,8 @@ app.use((req, res, next) => {
   next();
 });
 
+console.log(`Attempting to start server on port ${port}...`);
+
 // Public routes (no authentication required)
 app.post('/api/register', authRoutes.registerUser);
 app.post('/api/auth/login', async (req, res) => {
@@ -131,6 +139,8 @@ app.use('/api/auth', authRoutes.router);
 // Other protected routes
 app.use(basicRoutes);
 app.use('/api/niches', nicheRoutes);
+app.use('/api', pillarRoutes); // Add pillar routes
+app.use('/api/articles', articlesRoutes); // Add articles routes
 
 // If no routes handled the request, it's a 404
 app.use((req, res, next) => {
@@ -151,7 +161,7 @@ async function startServer() {
   }
 
   app.listen(port, () => {
-    console.log(`Server is now running and listening on port ${port}`);
+    console.log(`Server is now running and listening on port ${port}. http://localhost:${port}`);
   });
 }
 

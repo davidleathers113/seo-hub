@@ -3,13 +3,24 @@ const { verifyToken } = require('../../utils/jwt');
 const UserService = require('../../services/user');
 const redis = require('redis');
 
-const redisClient = redis.createClient({
-  url: process.env.REDIS_URL || 'redis://localhost:6379'
-});
+let redisClient;
 
-redisClient.on('connect', () => console.log('Redis connected successfully'));
-redisClient.on('error', (err) => console.error('Redis Client Error:', err));
-redisClient.connect().catch(console.error);
+// Function to initialize Redis client
+const initRedis = (client) => {
+  if (client) {
+    redisClient = client;
+  } else {
+    redisClient = redis.createClient({
+      url: process.env.REDIS_URL || 'redis://localhost:6379'
+    });
+    redisClient.on('connect', () => console.log('Redis connected successfully'));
+    redisClient.on('error', (err) => console.error('Redis Client Error:', err));
+    redisClient.connect().catch(console.error);
+  }
+};
+
+// Initialize default Redis client
+initRedis();
 
 const authenticateWithToken = async (req, res, next) => {
   console.log('\n=== Token Authentication Start ===');
@@ -70,4 +81,4 @@ const requireUser = (req, res, next) => {
   next();
 };
 
-module.exports = { authenticateWithToken, requireUser };
+module.exports = { authenticateWithToken, requireUser, initRedis };

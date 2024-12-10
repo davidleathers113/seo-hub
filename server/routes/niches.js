@@ -1,109 +1,36 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
+const Niche = require('../models/Niche');
+const { authenticateWithToken: auth } = require('./middleware/auth');
 const NicheService = require('../services/niche');
-const { requireUser } = require('./middleware/auth');
 
-// Get all niches for the current user
-router.get('/', requireUser, async (req, res) => {
-  console.log('Received GET request for all niches');
+// Helper function to validate MongoDB ObjectId
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+// Generate pillars using AI
+router.post('/niches/:nicheId/pillars/generate', auth, async (req, res) => {
+  console.log('Received POST request to generate pillars for a niche');
   try {
-    console.log(`Fetching niches for user: ${req.user.id}`);
-    const niches = await NicheService.list(req.user.id);
-    console.log(`Sending niches response:`, JSON.stringify(niches, null, 2));
-    res.json({ data: niches });
-  } catch (error) {
-    console.error('Error fetching niches:', error);
-    res.status(500).json({ error: 'Failed to fetch niches' });
-  }
-});
+    const { nicheId } = req.params;
 
-// Create a new niche
-router.post('/', requireUser, async (req, res) => {
-  console.log('Received POST request to create a new niche');
-  try {
-    const { name } = req.body;
-    if (!name) {
-      console.log('Niche name is required but not provided');
-      return res.status(400).json({ error: 'Niche name is required' });
-    }
-    console.log(`Creating niche with name: ${name} for user: ${req.user.id}`);
-    const niche = await NicheService.create(req.user.id, name);
-    console.log(`Niche created successfully: ${JSON.stringify(niche)}`);
-    res.status(201).json(niche);
-  } catch (error) {
-    console.error('Error creating niche:', error);
-    res.status(500).json({ error: 'Failed to create niche' });
-  }
-});
-
-// Get a specific niche by ID
-router.get('/:id', requireUser, async (req, res) => {
-  console.log('Niche route hit for ID:', req.params.id);
-  try {
-    const nicheId = req.params.id;
-    const userId = req.user.id;
-    console.log('Fetching niche for user:', userId);
-    const niche = await NicheService.getById(nicheId, userId);
-
-    if (!niche) {
-      console.log('Niche not found or not owned by user');
-      return res.status(404).json({ error: 'Niche not found or not owned by the user' });
+    if (!isValidObjectId(nicheId)) {
+      return res.status(400).json({ error: 'Invalid niche ID format' });
     }
 
-    console.log('Niche found:', niche);
-    res.json({ data: niche });
+    console.log(`Generating pillars for niche: ${nicheId} and user: ${req.user._id}`);
+    const pillars = await NicheService.generatePillars(nicheId, req.user._id);
+    console.log('Pillars generated successfully:', JSON.stringify(pillars));
+    res.status(201).json({ data: pillars });
   } catch (error) {
-    console.error('Error fetching niche:', error);
-    res.status(500).json({ error: 'Failed to fetch niche' });
-  }
-});
-
-// Update a niche
-router.put('/:id', requireUser, async (req, res) => {
-  console.log('Received PUT request to update a niche');
-  try {
-    const { id } = req.params;
-    const { name } = req.body;
-
-    if (!name) {
-      console.log('Niche name is required but not provided');
-      return res.status(400).json({ error: 'Niche name is required' });
+    console.error('Error generating pillars:', error);
+    if (error.message === 'Invalid niche ID format' || error.message === 'No pillars generated') {
+      return res.status(400).json({ error: error.message });
     }
-
-    console.log(`Updating niche with ID: ${id} for user: ${req.user.id}`);
-    const updatedNiche = await NicheService.update(id, req.user.id, { name });
-
-    if (!updatedNiche) {
-      console.log('Niche not found or not owned by user');
-      return res.status(404).json({ error: 'Niche not found or not owned by the user' });
+    if (error.message === 'Niche not found or not owned by the user') {
+      return res.status(404).json({ error: error.message });
     }
-
-    console.log(`Niche updated successfully: ${JSON.stringify(updatedNiche)}`);
-    res.json(updatedNiche);
-  } catch (error) {
-    console.error('Error updating niche:', error);
-    res.status(500).json({ error: 'Failed to update niche' });
-  }
-});
-
-// Delete a niche
-router.delete('/:id', requireUser, async (req, res) => {
-  console.log('Received DELETE request to remove a niche');
-  try {
-    const { id } = req.params;
-    console.log(`Deleting niche with ID: ${id} for user: ${req.user.id}`);
-    const deletedNiche = await NicheService.delete(id, req.user.id);
-
-    if (!deletedNiche) {
-      console.log('Niche not found or not owned by user');
-      return res.status(404).json({ error: 'Niche not found or not owned by the user' });
-    }
-
-    console.log(`Niche deleted successfully: ${id}`);
-    res.json({ message: 'Niche deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting niche:', error);
-    res.status(500).json({ error: 'Failed to delete niche' });
+    res.status(500).json({ error: 'Failed to generate pillars' });
   }
 });
 
