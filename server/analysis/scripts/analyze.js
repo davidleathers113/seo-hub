@@ -1,115 +1,89 @@
-#!/usr/bin/env node
-
 const path = require('path');
-const fs = require('fs').promises;
+const glob = require('glob');
 const CodeAnalyzer = require('../codeAnalyzer');
 
-async function analyzeProject(projectPath) {
-    const analyzer = new CodeAnalyzer(projectPath);
-    const results = {
-        patterns: [],
-        security: [],
-        apiUsage: {},
-        complexity: {},
-        refactoring: []
-    };
+async function analyzeProject(projectRoot) {
+    const analyzer = new CodeAnalyzer(projectRoot);
+    const patterns = '{**/*.js,**/*.jsx,**/*.ts,**/*.tsx}';
+    const ignorePatterns = [
+        '**/node_modules/**',
+        '**/dist/**',
+        '**/build/**',
+        '**/coverage/**',
+        '**/.git/**'
+    ];
 
     try {
-        // Analyze all JavaScript/TypeScript files
-        console.log('Analyzing source files...');
-        const files = await getAllSourceFiles(projectPath);
+        // Find all files to analyze
+        const files = await new Promise((resolve, reject) => {
+            glob(patterns, {
+                cwd: projectRoot,
+                ignore: ignorePatterns,
+                absolute: true,
+                nodir: true
+            }, (err, matches) => {
+                if (err) reject(err);
+                else resolve(matches);
+            });
+        });
 
+        console.log(`Found ${files.length} files to analyze...`);
+
+        // Analyze each file
+        const results = [];
         for (const file of files) {
-            console.log(`Analyzing ${file}...`);
-            const analysis = await analyzer.analyzeFile(file);
+            const relativePath = path.relative(projectRoot, file);
+            console.log(`Analyzing ${relativePath}...`);
 
-            // Aggregate results
-            if (analysis.patterns) {
-                Object.values(analysis.patterns).forEach(patternArray => {
-                    results.patterns.push(...(patternArray || []));
-                });
-            }
-            if (analysis.security) {
-                results.security.push(...(analysis.security || []));
-            }
-            results.apiUsage[file] = analysis.apiUsage || {};
-            results.complexity[file] = analysis.complexity || {};
-            if (analysis.refactoring) {
-                results.refactoring.push(...(analysis.refactoring || []));
+            const result = await analyzer.analyzeFile(file);
+            if (result) {
+                results.push(result);
             }
         }
 
         // Generate report
-        const reportPath = path.join(projectPath, 'analysis-report.json');
-        await fs.writeFile(reportPath, JSON.stringify(results, null, 2));
-        console.log(`Analysis complete! Report saved to ${reportPath}`);
+        const report = await analyzer.generateReport(results);
 
         // Print summary
-        printSummary(results);
+        console.log('\nAnalysis Summary:');
+        console.log('----------------');
+
+        console.log('\nPatterns Detected:');
+        console.log(`- Singletons: ${report.summary.patterns.singletons}`);
+        console.log(`- Factories: ${report.summary.patterns.factories}`);
+        console.log(`- Observers: ${report.summary.patterns.observers}`);
+        console.log(`- Anti-patterns: ${report.summary.patterns.antiPatterns}`);
+
+        console.log('\nSecurity Issues:');
+        console.log(`- Critical: ${report.summary.security.critical}`);
+        console.log(`- High: ${report.summary.security.high}`);
+        console.log(`- Medium: ${report.summary.security.medium}`);
+        console.log(`- Low: ${report.summary.security.low}`);
+
+        console.log('\nAPI Usage:');
+        console.log(`- OpenAI API Calls: ${report.summary.apiUsage.openai.totalCalls}`);
+        console.log(`- Unique OpenAI Endpoints: ${report.summary.apiUsage.openai.uniqueEndpoints}`);
+        console.log(`- TypeScript Features: ${report.summary.apiUsage.typescript.totalUsage}`);
+
+        console.log('\nRecommendations:');
+        report.recommendations.forEach((rec, index) => {
+            console.log(`${index + 1}. [${rec.priority.toUpperCase()}] ${rec.message}`);
+        });
+
+        // Save detailed report
+        const reportPath = path.join(projectRoot, 'analysis-report.json');
+        await require('fs').promises.writeFile(
+            reportPath,
+            JSON.stringify(report, null, 2)
+        );
+        console.log(`\nDetailed report saved to: ${reportPath}`);
 
     } catch (error) {
-        console.error('Analysis failed:', error);
+        console.error('Analysis failed:', error.message);
         process.exit(1);
     }
 }
 
-async function getAllSourceFiles(dir) {
-    const files = [];
-
-    async function walk(directory) {
-        const items = await fs.readdir(directory, { withFileTypes: true });
-
-        for (const item of items) {
-            const fullPath = path.join(directory, item.name);
-
-            if (item.isDirectory() && !item.name.startsWith('.') && item.name !== 'node_modules') {
-                await walk(fullPath);
-            } else if (item.isFile() && /\.(js|ts|jsx|tsx)$/.test(item.name)) {
-                files.push(fullPath);
-            }
-        }
-    }
-
-    await walk(dir);
-    return files;
-}
-
-function printSummary(results) {
-    console.log('\nAnalysis Summary:');
-    console.log('----------------');
-
-    // Pattern summary
-    console.log('\nArchitectural Patterns:');
-    console.log(`- Found ${results.patterns.length} pattern instances`);
-
-    // Security summary
-    console.log('\nSecurity Vulnerabilities:');
-    const criticalVulns = results.security.filter(v => v && v.severity === 'critical').length;
-    const highVulns = results.security.filter(v => v && v.severity === 'high').length;
-    console.log(`- Critical: ${criticalVulns}`);
-    console.log(`- High: ${highVulns}`);
-
-    // API Usage summary
-    console.log('\nOpenAI API Usage:');
-    const totalCalls = Object.values(results.apiUsage)
-        .reduce((sum, file) => sum + ((file.openai && file.openai.totalCalls) || 0), 0);
-    console.log(`- Total API Calls: ${totalCalls}`);
-
-    // Complexity summary
-    console.log('\nCode Complexity:');
-    const complexityValues = Object.values(results.complexity).filter(c => c && typeof c.cyclomaticComplexity === 'number');
-    const avgComplexity = complexityValues.length > 0
-        ? complexityValues.reduce((sum, file) => sum + file.cyclomaticComplexity, 0) / complexityValues.length
-        : 0;
-    console.log(`- Average Cyclomatic Complexity: ${avgComplexity.toFixed(2)}`);
-
-    // Refactoring suggestions
-    console.log('\nRefactoring Suggestions:');
-    console.log(`- Total Suggestions: ${results.refactoring.length}`);
-}
-
-// Run analysis if called directly
-if (require.main === module) {
-    const projectPath = process.argv[2] || process.cwd();
-    analyzeProject(projectPath).catch(console.error);
-}
+// Get project root from command line or use current directory
+const projectRoot = process.argv[2] || process.cwd();
+analyzeProject(projectRoot);

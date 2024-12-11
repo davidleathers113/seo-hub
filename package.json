@@ -1,57 +1,21 @@
 {
-  "name": "Content Creation App",
+  "name": "code-analyzer",
   "version": "1.0.0",
-  "main": "index.js",
+  "description": "Static code analysis tool for detecting patterns, security issues, and API usage",
+  "main": "server/analysis/scripts/analyze.js",
   "scripts": {
-    "postinstall": "concurrently -n \"client,server\" \"npm run client-install\" \"npm run server-install\"",
-    "test": "cd client && npm test",
-    "client": "cd client && npm run dev",
-    "client-install": "cd client && npm install",
-    "server": "cd server && npm run dev",
-    "server-install": "cd server && npm install",
-    "start": "echo 'Starting application...' && concurrently \"npm run server\" \"npm run client\"",
     "analyze": "node server/analysis/scripts/analyze.js",
-    "install-analysis": "cd server/analysis && npm install"
+    "test": "jest"
   },
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
-    "@tanstack/react-query": "^5.62.3",
-    "concurrently": "^9.1.0",
-    "dotenv": "^16.4.7",
-    "jsonwebtoken": "^9.0.2",
-    "marked": "^15.0.3",
-    "react-router-dom": "^7.0.2",
-    "reactflow": "^11.11.4",
-    "redis": "^4.7.0"
+    "@babel/parser": "^7.23.6",
+    "@babel/traverse": "^7.23.6",
+    "@babel/types": "^7.23.6",
+    "@babel/core": "^7.23.6",
+    "estraverse": "^5.3.0",
+    "glob": "^10.3.10"
   },
   "devDependencies": {
-    "@babel/core": "^7.26.0",
-    "@babel/preset-env": "^7.26.0",
-    "@tailwindcss/typography": "^0.5.15",
-    "@testing-library/cypress": "^10.0.2",
-    "@testing-library/dom": "^10.4.0",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.1.0",
-    "@testing-library/user-event": "^14.5.2",
-    "@types/chai": "^5.0.1",
-    "@types/jest": "^29.5.14",
-    "@types/marked": "^5.0.2",
-    "@types/mocha": "^10.0.10",
-    "@types/sinon": "^17.0.3",
-    "babel-jest": "^29.7.0",
-    "chai": "^5.1.2",
-    "cypress": "^13.16.1",
-    "jest": "^29.7.0",
-    "jsdom": "^25.0.1",
-    "mocha": "^11.0.1",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "sinon": "^19.0.2",
-    "ts-jest": "^29.2.5",
-    "ts-node": "^10.9.2",
-    "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^2.1.8"
+    "jest": "^29.7.0"
   }
 }
