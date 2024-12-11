@@ -1,76 +1,61 @@
-const jwt = require('jsonwebtoken');
+const { createClient } = require('redis');
 const { verifyToken } = require('../../utils/jwt');
-const UserService = require('../../services/user');
-const redis = require('redis');
+const { logger } = require('../../utils/log');
+
+const log = logger('auth-middleware');
 
 let redisClient;
 
-// Function to initialize Redis client
-const initRedis = (client) => {
+const initRedis = async (client) => {
   if (client) {
     redisClient = client;
-  } else {
-    redisClient = redis.createClient({
+    return client;
+  }
+
+  if (!redisClient) {
+    redisClient = createClient({
       url: process.env.REDIS_URL || 'redis://localhost:6379'
     });
-    redisClient.on('connect', () => console.log('Redis connected successfully'));
-    redisClient.on('error', (err) => console.error('Redis Client Error:', err));
-    redisClient.connect().catch(console.error);
+
+    redisClient.on('connect', () => log.info('Redis connected successfully'));
+    redisClient.on('error', (err) => log.error('Redis Client Error:', err));
+
+    try {
+      await redisClient.connect();
+    } catch (error) {
+      log.error('Redis connection failed:', error);
+      throw error;
+    }
   }
+
+  return redisClient;
 };
 
-// Initialize default Redis client
-initRedis();
-
 const authenticateWithToken = async (req, res, next) => {
-  console.log('\n=== Token Authentication Start ===');
   const authHeader = req.get('Authorization');
-  console.log('Auth header:', authHeader ? 'Present' : 'Missing');
-
-  if (!authHeader || !authHeader.match(/^Bearer /i)) {
-    console.log('Authentication failed: No valid auth header');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Authentication required' });
   }
 
-  const token = authHeader.split(' ')[1];
-  console.log('Token extracted:', token.substring(0, 10) + '...');
-
   try {
-    console.log('Checking Redis connection status:', redisClient.isReady ? 'Connected' : 'Not connected');
-    console.log('Checking token in blacklist...');
-    const isBlacklisted = await redisClient.get(`bl_${token}`);
-    console.log('Token blacklist status:', isBlacklisted ? 'Blacklisted' : 'Not blacklisted');
+    const token = authHeader.split(' ')[1];
+    const decoded = verifyToken(token);
 
+    // Check if token is blacklisted
+    const client = await initRedis();
+    const isBlacklisted = await client.get(`blacklist:${token}`);
     if (isBlacklisted) {
-      console.log('Authentication failed: Token is blacklisted');
       return res.status(401).json({ error: 'Token has been invalidated' });
     }
 
-    jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
-      if (err) {
-        console.log('Token verification failed:', err.message);
-        return res.status(403).json({ error: 'Token verification failed' });
-      }
-      console.log('Token decoded successfully for user:', decoded.email);
-
-      const user = await UserService.get(decoded.id);
-      console.log('User found:', user ? 'Yes' : 'No');
-
-      if (user) {
-        req.user = user;
-        console.log('=== Token Authentication Success ===\n');
-        next();
-      } else {
-        console.log('Authentication failed: User not found');
-        res.status(401).json({ error: 'User not found' });
-      }
-    });
+    req.user = decoded;
+    next();
   } catch (error) {
-    console.error('=== Token Authentication Error ===');
-    console.error('Error type:', error.constructor.name);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
-    res.status(401).json({ error: 'Invalid token' });
+    log.error('Authentication failed:', error);
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(403).json({ error: 'Token verification failed' });
+    }
+    res.status(401).json({ error: 'Authentication failed' });
   }
 };
 
@@ -81,4 +66,8 @@ const requireUser = (req, res, next) => {
   next();
 };
 
-module.exports = { authenticateWithToken, requireUser, initRedis };
+module.exports = {
+  authenticateWithToken,
+  requireUser,
+  initRedis
+};

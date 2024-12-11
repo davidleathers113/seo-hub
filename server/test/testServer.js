@@ -4,6 +4,7 @@ const { logger } = require('../utils/log');
 const routeConfig = require('../utils/routeConfig');
 const path = require('path');
 const mongoose = require('mongoose');
+const { MongoMemoryServer } = require('mongodb-memory-server');
 
 const log = logger('testServer');
 
@@ -33,6 +34,8 @@ const TEST_JWT_SECRET = 'test-secret-key';
 process.env.JWT_SECRET = TEST_JWT_SECRET;
 process.env.NODE_ENV = 'test';
 
+let mongoServer;
+
 async function createTestServer() {
   const app = express();
 
@@ -56,149 +59,22 @@ async function createTestServer() {
     auth.initRedis(mockRedisClient);
     mockRedisClient.get.mockImplementation((key) => Promise.resolve(null));
 
-    // Load routes and handlers
-    const { handlers: subpillarsHandlers } = require('../routes/subpillars');
-
-    // Create routers
-    const pillarsRouter = express.Router({ mergeParams: true });
-    const subpillarRouter = express.Router({ mergeParams: true });
-
-    // Error handling middleware
-    const errorHandler = (err, req, res, next) => {
-      log.error('API Error:', err);
-
-      // Map error types to status codes and messages
-      const errorMap = {
-        ValidationError: {
-          status: 400,
-          getMessage: (err) => err.message
-        },
-        AuthorizationError: {
-          status: 403,
-          getMessage: (err) => {
-            // Map authorization errors to specific messages based on the resource type
-            const resourceType = err.resourceType || 'resource';
-            const action = err.action || 'modify';
-            return `Not authorized to ${action} this ${resourceType.toLowerCase()}`;
-          }
-        },
-        NotFoundError: {
-          status: 404,
-          getMessage: (err) => err.message
-        },
-        InternalError: {
-          status: 500,
-          getMessage: (err) => err.message
-        },
-        default: {
-          status: 500,
-          getMessage: () => 'Internal server error'
-        }
-      };
-
-      const errorConfig = errorMap[err.type] || errorMap.default;
-      res.status(errorConfig.status).json({ error: errorConfig.getMessage(err) });
-    };
-
-    // Resource validation middleware factory
-    const validateResource = (resourceType, idParam) => async (req, res, next) => {
-      try {
-        const id = req.params[idParam];
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-          const error = new Error(`${resourceType} not found`);
-          error.type = 'NotFoundError';
-          throw error;
-        }
-
-        const Model = require(`../models/${resourceType}`);
-        const resource = await Model.findById(id);
-
-        if (!resource) {
-          const error = new Error(`${resourceType} not found`);
-          error.type = 'NotFoundError';
-          throw error;
-        }
-
-        req[resourceType.toLowerCase()] = resource;
-        next();
-      } catch (error) {
-        if (!error.type) {
-          error.type = 'NotFoundError';
-          error.message = `${resourceType} not found`;
-        }
-        next(error);
-      }
-    };
-
-    // Authorization middleware factory
-    const authorizeResource = (resourceType, action) => async (req, res, next) => {
-      try {
-        const resource = req[resourceType.toLowerCase()];
-        if (!resource) {
-          const error = new Error(`${resourceType} not loaded`);
-          error.type = 'ValidationError';
-          throw error;
-        }
-
-        if (resource.createdBy.toString() !== req.user._id.toString()) {
-          const error = new Error(`Not authorized to ${action} this ${resourceType.toLowerCase()}`);
-          error.type = 'AuthorizationError';
-          error.resourceType = resourceType;
-          error.action = action;
-          throw error;
-        }
-        next();
-      } catch (error) {
-        next(error);
-      }
-    };
-
-    // Apply base middleware
-    pillarsRouter.use(authenticateWithToken);
-    subpillarRouter.use(authenticateWithToken);
-
     // Mount auth routes
-    app.use(routeConfig.AUTH_BASE, auth.router);
-
-    // Mount pillar-scoped routes with proper middleware chain
-    app.use('/api/pillars', pillarsRouter);
-
-    // Pillar-specific subpillar routes with validation
-    pillarsRouter.get('/:pillarId/subpillars',
-      validateResource('Pillar', 'pillarId'),
-      subpillarsHandlers.listSubpillars
-    );
-
-    pillarsRouter.post('/:pillarId/subpillars/generate',
-      validateResource('Pillar', 'pillarId'),
-      authorizeResource('Pillar', 'modify'),
-      subpillarsHandlers.generateSubpillars
-    );
-
-    // Mount standalone subpillar operations
-    app.use('/api/pillars/subpillar', subpillarRouter);
-
-    subpillarRouter.put('/:id',
-      validateResource('Subpillar', 'id'),
-      authorizeResource('Subpillar', 'modify'),
-      subpillarsHandlers.updateSubpillar
-    );
-
-    subpillarRouter.delete('/:id',
-      validateResource('Subpillar', 'id'),
-      authorizeResource('Subpillar', 'delete'),
-      subpillarsHandlers.deleteSubpillar
-    );
-
-    // Apply error handling middleware last
-    app.use(errorHandler);
+    app.use('/auth', auth.router);
 
     // Mount other API routes
-    app.use(routeConfig.NICHES_BASE, require('../routes/niches'));
-    app.use(routeConfig.RESEARCH_BASE, require('../routes/research'));
-    app.use(routeConfig.OUTLINES_BASE, require('../routes/outlines'));
-    app.use(routeConfig.ARTICLES_BASE, require('../routes/articles'));
-    app.use(routeConfig.SEO_BASE, require('../routes/seo'));
+    const niches = require('../routes/niches');
+    const research = require('../routes/research');
+    const outlines = require('../routes/outlines');
+    const articles = require('../routes/articles');
+    const seo = require('../routes/seo');
+
+    // Mount routes
+    app.use('/api/niches', niches);
+    app.use('/api/research', research);
+    app.use('/api/outlines', outlines);
+    app.use('/api/articles', articles);
+    app.use('/api/seo', seo);
 
     // Add MongoDB ID validation error handler
     app.use((err, req, res, next) => {
@@ -245,4 +121,16 @@ async function createTestServer() {
   }
 }
 
-module.exports = { createTestServer };
+async function setupTestServer() {
+  return createTestServer();
+}
+
+async function teardownTestServer() {
+  // No need to disconnect here as it's handled in test/setup.js
+}
+
+module.exports = {
+  createTestServer,
+  setupTestServer,
+  teardownTestServer
+};

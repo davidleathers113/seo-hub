@@ -1,92 +1,85 @@
-
 // Unit tests for: generateContentPoints
 
-
-
-
-const { sendLLMRequest, generateContentPoints } = require('../llm');
+const { generateContentPoints, sendLLMRequest } = require('../llm');
 const { logger } = require('../../utils/log');
-const { sendLLMRequest } = require('../server/services/llm');
 
-jest.mock("../server/services/llm", () => ({
-  sendLLMRequest: jest.fn(),
+jest.mock('../llm', () => ({
+  generateContentPoints: jest.requireActual('../llm').generateContentPoints,
+  sendLLMRequest: jest.fn()
+}));
+
+jest.mock('../../utils/log', () => ({
+  logger: jest.fn(() => ({
+    error: jest.fn(),
+    warn: jest.fn(),
+    info: jest.fn(),
+    debug: jest.fn()
+  }))
 }));
 
 describe('generateContentPoints() generateContentPoints method', () => {
-  const mockOutlineSection = { title: 'Sample Section' };
-  const mockResearch = [
-    { source: 'Source 1', content: 'Content 1' },
-    { source: 'Source 2', content: 'Content 2' },
-  ];
+  let mockOutline;
+  let mockLLMResponse;
 
   beforeEach(() => {
+    mockOutline = {
+      sections: [
+        { title: 'Introduction', contentPoints: [] },
+        { title: 'Main Section', contentPoints: [] }
+      ]
+    };
+
+    mockLLMResponse = [
+      'Point 1',
+      'Point 2',
+      'Point 3'
+    ];
+
+    // Reset all mocks
     jest.clearAllMocks();
   });
 
-  describe('Happy paths', () => {
-    it('should generate content points successfully when valid outline section and research are provided', async () => {
+  describe('Happy Paths', () => {
+    it('should generate content points for all sections', async () => {
       // Arrange
-      const mockResponse = '1. Point 1\n2. Point 2\n3. Point 3';
-      sendLLMRequest.mockResolvedValue(mockResponse);
+      sendLLMRequest.mockResolvedValue(mockLLMResponse);
 
       // Act
-      const result = await generateContentPoints(mockOutlineSection, mockResearch);
+      const result = await generateContentPoints(mockOutline);
 
       // Assert
-      expect(sendLLMRequest).toHaveBeenCalledWith(
-        'openai',
-        'gpt-4',
-        expect.stringContaining('Sample Section')
-      );
-      expect(result).toEqual([
-        { point: 'Point 1', generated: true },
-        { point: 'Point 2', generated: true },
-        { point: 'Point 3', generated: true },
-      ]);
+      expect(sendLLMRequest).toHaveBeenCalledTimes(mockOutline.sections.length);
+      expect(result.sections[0].contentPoints).toEqual(mockLLMResponse);
+      expect(result.sections[1].contentPoints).toEqual(mockLLMResponse);
     });
   });
 
-  describe('Edge cases', () => {
-    it('should handle empty research array gracefully', async () => {
+  describe('Edge Cases', () => {
+    it('should handle empty outline', async () => {
       // Arrange
-      const emptyResearch = [];
-      const mockResponse = '1. Point 1\n2. Point 2';
-      sendLLMRequest.mockResolvedValue(mockResponse);
+      const emptyOutline = { sections: [] };
 
       // Act
-      const result = await generateContentPoints(mockOutlineSection, emptyResearch);
+      const result = await generateContentPoints(emptyOutline);
 
       // Assert
-      expect(sendLLMRequest).toHaveBeenCalledWith(
-        'openai',
-        'gpt-4',
-        expect.stringContaining('Sample Section')
-      );
-      expect(result).toEqual([
-        { point: 'Point 1', generated: true },
-        { point: 'Point 2', generated: true },
-      ]);
+      expect(result.sections).toEqual([]);
     });
 
-    it('should throw an error if no content points are generated', async () => {
-      // Arrange
-      const mockResponse = '';
-      sendLLMRequest.mockResolvedValue(mockResponse);
-
-      // Act & Assert
-      await expect(generateContentPoints(mockOutlineSection, mockResearch))
-        .rejects
-        .toThrow('Failed to generate valid content points');
-    });
-
-    it('should throw an error if sendLLMRequest fails', async () => {
+    it('should handle LLM request failure', async () => {
       // Arrange
       sendLLMRequest.mockRejectedValue(new Error('LLM request failed'));
 
       // Act & Assert
-      await expect(generateContentPoints(mockOutlineSection, mockResearch))
-        .rejects
-        .toThrow('Failed to generate content points using AI');
+      await expect(generateContentPoints(mockOutline)).rejects.toThrow('Failed to generate content points');
+    });
+
+    it('should handle invalid LLM response', async () => {
+      // Arrange
+      sendLLMRequest.mockResolvedValue(null);
+
+      // Act & Assert
+      await expect(generateContentPoints(mockOutline)).rejects.toThrow('Invalid content points received from LLM');
     });
   });
 });

@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const { logger } = require('../utils/log');
 const Niche = require('../models/Niche');
 const Research = require('../models/Research');
+const log = logger('llm-service');
 
 dotenv.config();
 
@@ -117,7 +118,10 @@ async function generatePillars(nicheId) {
 
     return pillars;
   } catch (error) {
-    logger.error('Error in AI pillar generation:', error);
+    log.error('Error in AI pillar generation:', error);
+    if (error.message === 'Niche not found') {
+      throw error;
+    }
     throw new Error('Failed to generate pillars using AI');
   }
 }
@@ -170,7 +174,10 @@ etc.`;
 
     return sections;
   } catch (error) {
-    logger.error('Error in AI outline generation:', error);
+    log.error('Error in AI outline generation:', error);
+    if (error.message === 'No research found for this subpillar') {
+      throw error;
+    }
     throw new Error('Failed to generate outline using AI');
   }
 }
@@ -206,7 +213,10 @@ Format each point as a clear, detailed statement that can be expanded into full 
 
     return contentPoints;
   } catch (error) {
-    logger.error('Error in AI content point generation:', error);
+    log.error('Error in AI content point generation:', error);
+    if (error.message === 'Invalid outline format') {
+      throw error;
+    }
     throw new Error('Failed to generate content points using AI');
   }
 }
@@ -243,7 +253,10 @@ The article should:
 
     return response;
   } catch (error) {
-    logger.error('Error in AI article generation:', error);
+    log.error('Error in AI article generation:', error);
+    if (error.message === 'Invalid outline format') {
+      throw error;
+    }
     throw new Error('Failed to merge content into article using AI');
   }
 }

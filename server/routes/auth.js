@@ -39,19 +39,14 @@ router.post('/login', async (req, res) => {
     if (!email || !password) {
       log.warn('Login attempt with missing credentials');
       return res.status(400).json({
-        error: 'Validation failed',
-        details: {
-          email: !email ? 'Email is required' : null,
-          password: !password ? 'Password is required' : null
-        }
+        error: 'Email and password are required'
       });
     }
 
     if (!validateEmail(email)) {
       log.warn(`Invalid email format attempted: ${email}`);
       return res.status(400).json({
-        error: 'Validation failed',
-        details: { email: 'Invalid email format' }
+        error: 'Invalid email format'
       });
     }
 
@@ -60,9 +55,8 @@ router.post('/login', async (req, res) => {
 
     if (!user) {
       log.info(`Failed login attempt for email: ${email}`);
-      return res.status(401).json({
-        error: 'Authentication failed',
-        message: 'Invalid email or password'
+      return res.status(400).json({
+        error: 'Invalid credentials'
       });
     }
 
@@ -86,26 +80,20 @@ router.post('/register', async (req, res) => {
     // Validation
     if (!email || !password) {
       return res.status(400).json({
-        error: 'Validation failed',
-        details: {
-          email: !email ? 'Email is required' : null,
-          password: !password ? 'Password is required' : null
-        }
+        error: 'Email and password are required'
       });
     }
 
     if (!validateEmail(email)) {
       return res.status(400).json({
-        error: 'Validation failed',
-        details: { email: 'Invalid email format' }
+        error: 'Invalid email format'
       });
     }
 
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.isValid) {
       return res.status(400).json({
-        error: 'Validation failed',
-        details: { password: passwordValidation.message }
+        error: passwordValidation.message
       });
     }
 
@@ -123,8 +111,7 @@ router.post('/register', async (req, res) => {
     // Handle specific error types
     if (error.code === 'DUPLICATE_EMAIL') {
       return res.status(409).json({
-        error: 'Registration failed',
-        message: 'Email already registered'
+        error: 'Email already registered'
       });
     }
 
@@ -142,7 +129,7 @@ router.post('/logout', authenticateWithToken, async (req, res) => {
 
   if (!authHeader) {
     console.log('Logout failed: No token provided');
-    return res.status(400).json({ error: 'No token provided' });
+    return res.status(401).json({ error: 'Authentication required' });
   }
 
   const token = authHeader.split(' ')[1];
@@ -155,7 +142,7 @@ router.post('/logout', authenticateWithToken, async (req, res) => {
     console.log('Token expiration time:', expirationTime, 'seconds');
 
     console.log('Adding token to blacklist...');
-    await redisClient.set(`bl_${token}`, 'true', {
+    await redisClient.set(`blacklist:${token}`, 'true', {
       EX: expirationTime > 0 ? expirationTime : 3600
     });
     console.log('Token blacklisted successfully');
