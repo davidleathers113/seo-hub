@@ -16,17 +16,21 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "*": ["./src/*"],
-      "components/*": ["./src/components/*"],
-      "lib/*": ["./src/lib/*"],
-      "hooks/*": ["./src/hooks/*"],
-      "contexts/*": ["./src/contexts/*"],
-      "api/*": ["./src/api/*"],
-      "test/*": ["./src/test/*"],
-      "pages/*": ["./src/pages/*"]
-    }
+      "@/*": ["./src/*"],
+      "@components/*": ["./src/components/*"],
+      "@lib/*": ["./src/lib/*"],
+      "@hooks/*": ["./src/hooks/*"],
+      "@contexts/*": ["./src/contexts/*"],
+      "@api/*": ["./src/api/*"],
+      "@test/*": ["./src/test/*"],
+      "@pages/*": ["./src/pages/*"]
+    },
+    "types": ["cypress", "node"]
   },
-  "include": ["src"],
+  "include": [
+    "src",
+    "cypress/**/*.ts"
+  ],
   "references": [
     { "path": "./tsconfig.node.json" }
   ]

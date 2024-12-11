@@ -8,6 +8,22 @@ dotenv.config();
 
 function getOpenAIClient() {
   if (!process.env.OPENAI_API_KEY) {
+    if (process.env.NODE_ENV === 'test') {
+      // Return mock client for testing
+      return {
+        chat: {
+          completions: {
+            create: async () => ({
+              choices: [{
+                message: {
+                  content: '1. Content Strategy\n2. Social Media Marketing\n3. Email Marketing\n4. SEO Optimization\n5. Analytics and Metrics'
+                }
+              }]
+            })
+          }
+        }
+      };
+    }
     throw new Error('OPENAI_API_KEY is not set in the environment variables');
   }
   return new OpenAI({
@@ -77,7 +93,7 @@ async function generatePillars(nicheId) {
       throw new Error('Niche not found');
     }
 
-    const prompt = `Generate 5 main content pillars for the niche: ${niche.name}. 
+    const prompt = `Generate 5 main content pillars for the niche: ${niche.name}.
     These pillars should be comprehensive topics that can be expanded into detailed content.
     Each pillar should be unique and cover a different aspect of the niche.
     Format the response as a numbered list (1., 2., etc.).`;
@@ -201,7 +217,7 @@ async function mergeContentIntoArticle(outline) {
       const points = section.contentPoints
         .map(cp => cp.point)
         .join('\n\n');
-      
+
       return `## ${section.title}\n\n${points}`;
     }).join('\n\n');
 

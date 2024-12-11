@@ -12,9 +12,10 @@ const articlesRoutes = require('./routes/articles');
 const { authenticateWithToken } = require('./routes/middleware/auth');
 const UserService = require('./services/user');
 const { generateToken } = require('./utils/jwt');
-const logger = require('./utils/log');
+const { logger } = require('./utils/log');
 const cors = require("cors");
 const net = require('net');
+const healthRouter = require('./routes/health');
 
 const log = logger('server');
 
@@ -141,6 +142,7 @@ app.use(basicRoutes);
 app.use('/api/niches', nicheRoutes);
 app.use('/api', pillarRoutes); // Add pillar routes
 app.use('/api/articles', articlesRoutes); // Add articles routes
+app.use('/api', healthRouter);
 
 // If no routes handled the request, it's a 404
 app.use((req, res, next) => {

@@ -150,9 +150,13 @@ class NicheService {
         throw new Error('No pillars generated');
       }
 
-      const pillarTitles = llmResponse.split('\n')
+      // Split response into lines and clean up
+      const pillarTitles = llmResponse
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
         .map(line => line.replace(/^\d+\.\s*/, '').trim())
-        .filter(title => title !== '');
+        .filter(line => line.length > 0);
 
       if (pillarTitles.length === 0) {
         throw new Error('No pillars generated');

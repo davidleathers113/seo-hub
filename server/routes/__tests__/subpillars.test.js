@@ -79,11 +79,12 @@ describe('Subpillar Routes', () => {
 
       // Verify response structure
       expect(response.status).toBe(201);
-      expect(response.body).toBeInstanceOf(Array);
-      expect(response.body.length).toBe(3);
+      expect(response.body).toHaveProperty('data');
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data.length).toBe(3);
 
       // Verify generated subpillars
-      response.body.forEach(subpillar => {
+      response.body.data.forEach(subpillar => {
         expect(subpillar).toMatchObject({
           pillar: testPillar._id.toString(),
           createdBy: testUser._id.toString(),
@@ -188,11 +189,12 @@ describe('Subpillar Routes', () => {
 
       // Verify response
       expect(response.status).toBe(200);
-      expect(response.body).toBeInstanceOf(Array);
-      expect(response.body).toHaveLength(3);
+      expect(response.body).toHaveProperty('data');
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data).toHaveLength(3);
 
       // Verify subpillar data
-      response.body.forEach((subpillar, index) => {
+      response.body.data.forEach((subpillar, index) => {
         expect(subpillar).toMatchObject({
           title: `Subpillar ${index + 1}`,
           pillar: testPillar._id.toString(),
@@ -207,8 +209,9 @@ describe('Subpillar Routes', () => {
         .set('x-test-user-id', testUser._id.toString());
 
       expect(response.status).toBe(200);
-      expect(response.body).toBeInstanceOf(Array);
-      expect(response.body).toHaveLength(0);
+      expect(response.body).toHaveProperty('data');
+      expect(Array.isArray(response.body.data)).toBe(true);
+      expect(response.body.data).toHaveLength(0);
     });
 
     it('should handle invalid pillar IDs', async () => {

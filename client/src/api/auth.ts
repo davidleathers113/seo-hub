@@ -37,15 +37,6 @@ export const register = (data: { email: string; password: string }) => {
 // Logout
 // POST /auth/logout
 // Response: { success: boolean, message: string }
-/**
- * Registers a new user with the provided email and password.
- * @param data - An object containing the user's email and password.
- * @returns A promise that resolves to the registration result.
- * @throws Error if the registration fails due to invalid input or server issues.
- */
-const register = (data: { email: string; password: string }): Promise<any> => {
-    // function implementation
-};
 export const logout = () => {
   return api.post('/auth/logout');
 };
