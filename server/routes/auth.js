@@ -16,20 +16,33 @@ const log = process.env.NODE_ENV === 'test'
 let redisClient;
 
 // Function to initialize Redis client
-const initRedis = (client) => {
+const initRedis = async (client) => {
   if (client) {
     redisClient = client;
-  } else {
+    return client;
+  }
+
+  if (!redisClient) {
     redisClient = redis.createClient({
       url: process.env.REDIS_URL || 'redis://localhost:6379'
     });
-    redisClient.on('error', (err) => console.log('Redis Client Error', err));
-    redisClient.connect();
+
+    redisClient.on('error', (err) => log.error('Redis Client Error:', err));
+
+    try {
+      await redisClient.connect();
+      log.info('Redis connected successfully');
+    } catch (err) {
+      log.error('Redis connection failed:', err);
+      throw err;
+    }
   }
+
+  return redisClient;
 };
 
 // Initialize default Redis client
-initRedis();
+initRedis().catch(err => log.error('Initial Redis connection failed:', err));
 
 router.post('/login', async (req, res) => {
   try {
@@ -100,9 +113,10 @@ router.post('/register', async (req, res) => {
     const result = await UserService.createUser({ email, password, ...otherFields });
     log.info(`User registered successfully: ${email}`);
 
+    const token = generateToken(result);
     return res.status(201).json({
-      user: result.user,
-      token: result.token
+      user: result,
+      token
     });
 
   } catch (error) {
@@ -123,37 +137,39 @@ router.post('/register', async (req, res) => {
 });
 
 router.post('/logout', authenticateWithToken, async (req, res) => {
-  console.log('\n=== Logout Process Start ===');
+  log.info('=== Logout Process Start ===');
   const authHeader = req.get('Authorization');
-  console.log('Auth header:', authHeader ? 'Present' : 'Missing');
+  log.debug('Auth header:', authHeader ? 'Present' : 'Missing');
 
   if (!authHeader) {
-    console.log('Logout failed: No token provided');
+    log.warn('Logout failed: No token provided');
     return res.status(401).json({ error: 'Authentication required' });
   }
 
   const token = authHeader.split(' ')[1];
-  console.log('Token extracted:', token.substring(0, 10) + '...');
+  log.debug('Token extracted:', token.substring(0, 10) + '...');
 
   try {
-    console.log('Verifying token...');
+    log.debug('Verifying token...');
     const decoded = verifyToken(token);
     const expirationTime = decoded.exp - Math.floor(Date.now() / 1000);
-    console.log('Token expiration time:', expirationTime, 'seconds');
+    log.debug('Token expiration time:', expirationTime, 'seconds');
 
-    console.log('Adding token to blacklist...');
-    await redisClient.set(`blacklist:${token}`, 'true', {
+    log.debug('Adding token to blacklist...');
+    await redisClient.set(`bl_${token}`, 'true', {
       EX: expirationTime > 0 ? expirationTime : 3600
     });
-    console.log('Token blacklisted successfully');
+    log.info('Token blacklisted successfully');
 
-    console.log('=== Logout Process Complete ===\n');
+    log.info('=== Logout Process Complete ===');
     res.json({ success: true, message: 'Logged out successfully' });
   } catch (error) {
-    console.error('=== Logout Process Error ===');
-    console.error('Error type:', error.constructor.name);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
+    log.error('=== Logout Process Error ===');
+    log.error('Error details:', {
+      type: error.constructor.name,
+      message: error.message,
+      stack: error.stack
+    });
     res.status(500).json({ error: 'Internal server error during logout' });
   }
 });
@@ -164,20 +180,5 @@ router.get('/me', authenticateWithToken, async (req, res) => {
 
 module.exports = {
   router,
-  initRedis,
-  registerUser: async (req, res) => {
-    console.log('Registration attempt received:', req.body.email);
-    try {
-      const result = await UserService.createUser(req.body);
-      console.log('User created successfully:', result.user.email);
-      return res.status(201).json({
-        user: result.user,
-        token: result.token
-      });
-    } catch (error) {
-      console.error('Error during registration:', error.message);
-      console.error('Full error:', error);
-      return res.status(400).json({ error: error.message });
-    }
-  }
+  initRedis
 };
