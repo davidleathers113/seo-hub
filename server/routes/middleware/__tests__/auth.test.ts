@@ -21,7 +21,12 @@ describe('Auth Middleware', () => {
     // Setup request/response mocks
     req = {
       headers: {},
-      get: jest.fn(name => req.headers?.[name.toLowerCase()]),
+      get: jest.fn((name: string) => {
+        if (name.toLowerCase() === 'set-cookie') {
+          return undefined;
+        }
+        return req.headers?.[name.toLowerCase()];
+      }) as any,
     };
 
     res = {
@@ -187,7 +192,7 @@ describe('Auth Middleware', () => {
   describe('requireUser', () => {
     monitoredTest('should allow request with authenticated user', async () => {
       // Arrange
-      req.user = {
+      (req as any).user = {
         _id: '123',
         email: 'test@example.com'
       };

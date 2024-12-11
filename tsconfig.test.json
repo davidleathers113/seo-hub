@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "es2018",
+    "module": "commonjs",
+    "lib": ["es2018", "dom"],
+    "jsx": "react-jsx",
+    "declaration": true,
+    "strict": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["client/src/*"],
+      "@server/*": ["server/*"]
+    },
+    "types": ["jest", "node"]
+  },
+  "include": [
+    "server/**/*.ts",
+    "server/**/*.tsx",
+    "client/src/**/*.ts",
+    "client/src/**/*.tsx",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ]
+}

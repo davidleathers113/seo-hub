@@ -32,18 +32,25 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await mongoose.disconnect();
-  await mongoServer.stop();
+  if (mongoose.connection.readyState !== 0) {
+    const collections = await mongoose.connection.db.collections();
+    await Promise.all(collections.map(collection => collection.deleteMany({})));
+    await mongoose.disconnect();
+  }
+  if (mongoServer) {
+    await mongoServer.stop();
+  }
 });
 
 // Clear all mocks between tests
 beforeEach(() => {
   jest.clearAllMocks();
 });
+
 // Clean up database between tests
 afterEach(async () => {
-  const collections = mongoose.connection.collections;
-  for (const key in collections) {
-    await collections[key].deleteMany();
+  if (mongoose.connection.readyState !== 0) {
+    const collections = await mongoose.connection.db.collections();
+    await Promise.all(collections.map(collection => collection.deleteMany({})));
   }
 });
