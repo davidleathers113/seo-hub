@@ -1,5 +1,5 @@
 import { TestContainer } from '../infrastructure/test-container';
-import { TestContext, Request, Response } from '../infrastructure/test-types';
+import { TestContext, Request, Response, TestNextFunction } from '../infrastructure/test-types';
 import { TestMonitor } from '../infrastructure/test-monitor';
 import { generateToken } from '../../utils/jwt';
 import { authenticateWithToken } from '../../routes/middleware/auth';
@@ -12,24 +12,18 @@ describe('Session Management', () => {
   let mockUser: {
     _id: string;
     email: string;
-    metadata?: Record<string, any>;
   };
 
   beforeEach(() => {
     mockUser = {
       _id: '123',
-      email: 'test@example.com',
-      metadata: {
-        lastLogin: new Date(),
-        preferences: { theme: 'dark' }
-      }
+      email: 'test@example.com'
     };
 
-    // Create properly typed request and response objects with headers
-    const headers: Record<string, string | undefined> = {};
+    // Create properly typed request and response objects
     const req = {
-      headers,
-      get: jest.fn((name: string) => headers[name.toLowerCase()]),
+      headers: {},
+      get: jest.fn((name: string) => req.headers[name.toLowerCase()]),
     } as unknown as Partial<Request>;
 
     const res = {
@@ -41,7 +35,7 @@ describe('Session Management', () => {
     context = {
       req,
       res,
-      next: jest.fn()
+      next: jest.fn() as TestNextFunction
     };
   });
 

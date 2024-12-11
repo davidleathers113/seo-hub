@@ -40,7 +40,6 @@ afterAll(async () => {
 beforeEach(() => {
   jest.clearAllMocks();
 });
-
 // Clean up database between tests
 afterEach(async () => {
   const collections = mongoose.connection.collections;

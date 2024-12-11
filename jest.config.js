@@ -1,4 +1,5 @@
-module.exports = {
+/** @type {import('jest').Config} */
+const config = {
   // Test environment
   testEnvironment: 'node',
 
@@ -7,13 +8,14 @@ module.exports = {
 
   // Transform files
   transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
+    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { configFile: './.babelrc' }]
   },
 
   // Module name mapper for non-JS imports
   moduleNameMapper: {
     '\\.(css|less|sass|scss)$': 'identity-obj-proxy',
     '\\.(gif|ttf|eot|svg|png)$': '<rootDir>/__mocks__/fileMock.js',
+    '^@/(.*)$': '<rootDir>/server/$1'
   },
 
   // Test paths
@@ -37,4 +39,17 @@ module.exports = {
   // Global setup
   globalSetup: '<rootDir>/test/globalSetup.js',
   globalTeardown: '<rootDir>/test/globalTeardown.js',
+
+  // Verbose output
+  verbose: true,
+
+  // Support both module systems
+  transformIgnorePatterns: [
+    'node_modules/(?!(module-that-needs-to-be-transformed)/)',
+  ],
+
+  // Allow ES modules
+  extensionsToTreatAsEsm: ['.ts', '.tsx']
 };
+
+export default config;

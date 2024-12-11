@@ -1,5 +1,5 @@
-import type { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from 'express-serve-static-core';
-import type { SuperAgentTest } from 'supertest';
+import type { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from 'express';
+import type { SuperTest, Test } from 'supertest';
 
 // Extend Express types with proper typing
 export interface Request extends ExpressRequest {
@@ -21,91 +21,14 @@ export interface Response extends ExpressResponse {
   send: jest.Mock;
 }
 
-// Extend Jest's expect
-declare global {
-  namespace jest {
-    // Extend basic matchers
-    interface Matchers<R> {
-      // Comparison
-      toBe(expected: any): R;
-      toEqual(expected: any): R;
-      toStrictEqual(expected: any): R;
-      toBeInstanceOf(expected: any): R;
-
-      // Numeric
-      toBeGreaterThan(expected: number): R;
-      toBeLessThan(expected: number): R;
-      toBeGreaterThanOrEqual(expected: number): R;
-      toBeLessThanOrEqual(expected: number): R;
-
-      // Collection
-      toHaveLength(expected: number): R;
-      toContain(expected: any): R;
-      toContainEqual(expected: any): R;
-
-      // Object
-      toMatchObject(expected: any): R;
-      toHaveProperty(path: string, value?: any): R;
-
-      // String
-      toMatch(expected: string | RegExp): R;
-      toMatchInlineSnapshot(snapshot?: string): R;
-
-      // Mock
-      toHaveBeenCalled(): R;
-      toHaveBeenCalledWith(...args: any[]): R;
-      toHaveBeenCalledTimes(count: number): R;
-    }
-
-    // Extend asymmetric matchers
-    interface ExpectStatic {
-      // Type checking
-      any(constructor: any): any;
-      anything(): any;
-
-      // String matching
-      stringContaining(str: string): any;
-      stringMatching(str: string | RegExp): any;
-
-      // Array/Object matching
-      arrayContaining<T>(arr: Array<T>): any;
-      objectContaining<T extends object>(obj: Partial<T>): any;
-
-      // Number matching
-      closeTo(num: number, delta: number): any;
-    }
-
-    // Extend inverse matchers
-    interface InverseAsymmetricMatchers {
-      // Type checking
-      any(constructor: any): any;
-      anything(): any;
-
-      // String matching
-      stringContaining(str: string): any;
-      stringMatching(str: string | RegExp): any;
-
-      // Array/Object matching
-      arrayContaining<T>(arr: Array<T>): any;
-      objectContaining<T extends object>(obj: Partial<T>): any;
-
-      // Number matching
-      closeTo(num: number, delta: number): any;
-    }
-  }
-
-  // Extend global expect
-  interface Expect extends jest.ExpectStatic {
-    <T = any>(actual: T): jest.Matchers<void>;
-    not: jest.InverseAsymmetricMatchers;
-  }
-}
+// Extend NextFunction to work with jest.Mock
+export type TestNextFunction = jest.Mock<void, [(Error | undefined)?]>;
 
 // Test helper types
 export interface TestContext {
   req: Partial<Request>;
   res: Partial<Response>;
-  next: jest.Mock<void, [Error?]>;
+  next: TestNextFunction;
 }
 
 export interface TestServer {
@@ -115,4 +38,4 @@ export interface TestServer {
 }
 
 // Re-export commonly used types
-export type { ExpressRequest, ExpressResponse, NextFunction, SuperAgentTest };
+export type { ExpressRequest, ExpressResponse, NextFunction, SuperTest, Test };
