@@ -14,7 +14,8 @@
     "jsx": "react",
     "baseUrl": ".",
     "paths": {
-      "*": ["node_modules/*", "server/types/*"]
+      "@server/*": ["server/*"],
+      "@types/*": ["server/types/*"]
     },
     "types": ["jest", "node"],
     "allowJs": true,

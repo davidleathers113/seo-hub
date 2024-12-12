@@ -7,6 +7,8 @@ require('./Pillar');
 require('./Subpillar');
 require('./Research');
 require('./Outline');
+require('./Article');
+require('./TestFixture');
 
 // Export the mongoose connection
 module.exports = mongoose.connection;

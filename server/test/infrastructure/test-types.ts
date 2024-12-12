@@ -1,5 +1,6 @@
 import type { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from 'express';
 import type { SuperTest, Test } from 'supertest';
+import type { IncomingHttpHeaders } from 'http';
 
 // Extend Express types with proper typing
 export interface Request extends ExpressRequest {
@@ -9,10 +10,8 @@ export interface Request extends ExpressRequest {
     permissions?: string[];
     metadata?: Record<string, any>;
   };
-  headers: {
-    authorization?: string;
-    [key: string]: string | undefined;
-  };
+  headers: IncomingHttpHeaders;
+  get(name: string): string | undefined;
 }
 
 export interface Response extends ExpressResponse {

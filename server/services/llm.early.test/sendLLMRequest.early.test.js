@@ -1,84 +1,158 @@
-
 // Unit tests for: sendLLMRequest
+const FixtureHelper = require('../../test/helpers/fixtureHelper');
 
+jest.mock('openai');
+jest.mock('anthropic');
 
+const {
+  OpenAI,
+  mockOpenAI,
+  mockAnthropic,
+  resetMocks,
+  setOpenAIResponse,
+  setAnthropicResponse,
+  setOpenAIFailure,
+  setAnthropicFailure
+} = require('../__mocks__/llm');
 
+// Set up OpenAI mock
+require('openai').OpenAI = OpenAI;
+
+// Set up Anthropic mock
+jest.mock('anthropic', () => mockAnthropic);
 
 const { sendLLMRequest } = require('../llm');
-const OpenAI = require('openai');
-const dotenv = require('dotenv');
-const { logger } = require('../../utils/log');
-jest.mock("openai");
-jest.mock("dotenv");
 
-describe('sendLLMRequest() sendLLMRequest method', () => {
+describe('sendLLMRequest() method', () => {
+  beforeAll(async () => {
+    await FixtureHelper.initializeFixtures();
+  });
+
+  afterAll(async () => {
+    await FixtureHelper.clearFixtures();
+  });
+
   beforeEach(() => {
-    dotenv.config.mockClear();
-    OpenAI.mockClear();
+    resetMocks();
   });
 
-  describe('Happy Paths', () => {
-    it('should send a request to OpenAI and return a response', async () => {
-      // Mock the OpenAI client and its response
-      const mockResponse = { choices: [{ message: { content: 'OpenAI response' } }] };
-      OpenAI.mockImplementation(() => ({
-        chat: {
-          completions: {
-            create: jest.fn().mockResolvedValue(mockResponse),
-          },
-        },
-      }));
+  describe('OpenAI Integration', () => {
+    it('should send request to OpenAI successfully and return formatted response', async () => {
+      // Get test data from database
+      const response = await FixtureHelper.getResponse('openai', 'default');
+      const message = await FixtureHelper.getTestData('message');
 
-      const result = await sendLLMRequest('openai', 'gpt-4', 'Test message');
-      expect(result).toBe('OpenAI response');
+      setOpenAIResponse(response);
+
+      const result = await sendLLMRequest('openai', 'gpt-4', message.simple);
+
+      expect(result).toBe(response);
+      expect(mockOpenAI.chat.completions.create).toHaveBeenCalledWith({
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: message.simple }],
+        max_tokens: 1024,
+      });
+      expect(mockOpenAI.chat.completions.create).toHaveBeenCalledTimes(1);
     });
 
-    it('should send a request to Anthropic and return a response', async () => {
-      // Mock the Anthropic client and its response
-      const mockAnthropic = {
-        messages: {
-          create: jest.fn().mockResolvedValue({ content: [{ text: 'Anthropic response' }] }),
-        },
-      };
-      global.anthropic = mockAnthropic;
+    it('should handle OpenAI errors with proper error message', async () => {
+      const errorMessage = await FixtureHelper.getError('openai', 'rateLimit');
+      const message = await FixtureHelper.getTestData('message');
 
-      const result = await sendLLMRequest('anthropic', 'model', 'Test message');
-      expect(result).toBe('Anthropic response');
+      setOpenAIFailure(true, errorMessage);
+
+      await expect(sendLLMRequest('openai', 'gpt-4', message.simple))
+        .rejects
+        .toThrow(errorMessage);
+    });
+
+    it('should implement retry logic for OpenAI failures', async () => {
+      const errorMessage = await FixtureHelper.getError('openai', 'default');
+      const message = await FixtureHelper.getTestData('message');
+
+      setOpenAIFailure(true, errorMessage);
+
+      try {
+        await sendLLMRequest('openai', 'gpt-4', message.simple);
+      } catch (error) {
+        expect(mockOpenAI.chat.completions.create).toHaveBeenCalledTimes(3);
+        expect(error.message).toBe(errorMessage);
+      }
     });
   });
 
-  describe('Edge Cases', () => {
-    it('should throw an error for unsupported provider', async () => {
-      await expect(sendLLMRequest('unsupported', 'model', 'Test message')).rejects.toThrow(
-        'Unsupported LLM provider: unsupported'
+  describe('Anthropic Integration', () => {
+    it('should send request to Anthropic successfully', async () => {
+      const response = await FixtureHelper.getResponse('anthropic', 'default');
+      const message = await FixtureHelper.getTestData('message');
+
+      setAnthropicResponse(response);
+
+      const result = await sendLLMRequest('anthropic', 'claude-2', message.simple);
+
+      expect(result).toBe(response);
+      expect(mockAnthropic.messages.create).toHaveBeenCalledWith({
+        model: 'claude-2',
+        messages: [{ role: 'user', content: message.simple }],
+        max_tokens: 1024,
+      });
+    });
+
+    it('should handle Anthropic errors and implement retry logic', async () => {
+      const errorMessage = await FixtureHelper.getError('anthropic', 'default');
+      const message = await FixtureHelper.getTestData('message');
+
+      setAnthropicFailure(true, errorMessage);
+
+      try {
+        await sendLLMRequest('anthropic', 'claude-2', message.simple);
+      } catch (error) {
+        expect(mockAnthropic.messages.create).toHaveBeenCalledTimes(3);
+        expect(error.message).toBe(errorMessage);
+      }
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('should throw an error for unsupported providers', async () => {
+      const message = await FixtureHelper.getTestData('message');
+      const invalidProvider = 'invalid';
+
+      await expect(sendLLMRequest(invalidProvider, 'model', message.simple))
+        .rejects
+        .toThrow(`Unsupported LLM provider: ${invalidProvider}`);
+    });
+
+    it('should handle network timeouts', async () => {
+      const timeoutError = await FixtureHelper.getError('openai', 'timeout');
+      const message = await FixtureHelper.getTestData('message');
+
+      setOpenAIFailure(true, timeoutError);
+
+      await expect(sendLLMRequest('openai', 'gpt-4', message.simple))
+        .rejects
+        .toThrow(timeoutError);
+    });
+  });
+
+  describe('LLM Service Health Check', () => {
+    it('should verify server connection', async () => {
+      const mockResponse = { status: 'healthy' };
+      global.fetch = jest.fn(() =>
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockResponse)
+        })
       );
+
+      const result = await sendLLMRequest('test');
+      expect(result).toBeDefined();
     });
 
-    it('should retry on OpenAI request failure and eventually throw an error', async () => {
-      // Mock the OpenAI client to throw an error
-      OpenAI.mockImplementation(() => ({
-        chat: {
-          completions: {
-            create: jest.fn().mockRejectedValue(new Error('OpenAI error')),
-          },
-        },
-      }));
+    it('should handle connection errors gracefully', async () => {
+      global.fetch = jest.fn(() => Promise.reject(new Error('Connection refused')));
 
-      await expect(sendLLMRequest('openai', 'gpt-4', 'Test message')).rejects.toThrow('OpenAI error');
-      expect(OpenAI.mock.instances[0].chat.completions.create).toHaveBeenCalledTimes(3);
-    });
-
-    it('should retry on Anthropic request failure and eventually throw an error', async () => {
-      // Mock the Anthropic client to throw an error
-      const mockAnthropic = {
-        messages: {
-          create: jest.fn().mockRejectedValue(new Error('Anthropic error')),
-        },
-      };
-      global.anthropic = mockAnthropic;
-
-      await expect(sendLLMRequest('anthropic', 'model', 'Test message')).rejects.toThrow('Anthropic error');
-      expect(global.anthropic.messages.create).toHaveBeenCalledTimes(3);
+      await expect(sendLLMRequest('test')).rejects.toThrow('Failed to process LLM request');
     });
   });
 });

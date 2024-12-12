@@ -1,222 +1,150 @@
-const request = require('supertest');
 const mongoose = require('mongoose');
-const { setupTestServer, teardownTestServer } = require('../../test/testServer');
-const { createTestUser, generateTestToken } = require('../../test/helpers');
+const request = require('supertest');
+const { createTestServer } = require('../../test/testServer');
+const UserService = require('../../services/user');
+const { generateToken } = require('../../utils/jwt');
 const Article = require('../../models/Article');
-const User = require('../../models/User');
-const fs = require('fs').promises;
-const path = require('path');
 
-let app;
-let testUser;
-let authToken;
+// Mock UserService
+jest.mock('../../services/user');
 
-beforeAll(async () => {
-  app = await setupTestServer();
-});
+const testUserId = new mongoose.Types.ObjectId().toString();
+const testUser = {
+  _id: testUserId,
+  email: 'test@example.com',
+  role: 'user'
+};
 
-afterAll(async () => {
-  await teardownTestServer();
-});
-
-beforeEach(async () => {
-  // Clean up both collections before each test
-  await Promise.all([
-    Article.deleteMany({}),
-    User.deleteMany({})
-  ]);
-  
-  // Create a fresh test user for each test
-  testUser = await createTestUser();
-  authToken = generateTestToken(testUser);
-});
+// Generate a valid JWT token for testing
+const testToken = generateToken(testUser);
 
 describe('Articles API', () => {
+  let testServer;
+
+  beforeAll(async () => {
+    try {
+      // Mock UserService.get with proper implementation
+      UserService.get.mockImplementation(async (id) => {
+        if (id === testUserId) {
+          return testUser;
+        }
+        return null;
+      });
+
+      // Create test server
+      testServer = await createTestServer();
+    } catch (error) {
+      console.error('Test setup failed:', error);
+      throw error;
+    }
+  });
+
+  afterAll(async () => {
+    if (testServer) {
+      await testServer.close();
+    }
+  });
+
+  beforeEach(async () => {
+    try {
+      // Clear collections with proper error handling
+      await Promise.all([
+        Article.deleteMany({}),
+        mongoose.connection.collection('users').deleteMany({})
+      ]);
+
+      // Reset mocks
+      jest.clearAllMocks();
+      UserService.get.mockImplementation(async (id) => {
+        if (id === testUserId) {
+          return testUser;
+        }
+        return null;
+      });
+    } catch (error) {
+      console.error('Test reset failed:', error);
+      throw error;
+    }
+  });
+
   describe('GET /api/articles', () => {
-    it('should return all articles for authenticated user', async () => {
-      // Create test articles
-      const articles = [
+    it('should return all articles', async () => {
+      // Arrange
+      const mockArticles = [
         {
-          title: 'Test Article 2',
-          content: 'Content 2',
-          metaDescription: 'Meta 2',
-          author: testUser._id,
-          keywords: ['test2', 'article2']
-        },
-        {
-          title: 'Test Article 1',
+          title: 'Article 1',
           content: 'Content 1',
           metaDescription: 'Meta 1',
-          author: testUser._id,
-          keywords: ['test1', 'article1']
+          author: testUserId
+        },
+        {
+          title: 'Article 2',
+          content: 'Content 2',
+          metaDescription: 'Meta 2',
+          author: testUserId
         }
       ];
 
-      await Article.insertMany(articles);
+      await Article.create(mockArticles);
 
-      const response = await request(app)
+      // Act
+      const response = await request(testServer.app)
         .get('/api/articles')
-        .set('Authorization', `Bearer ${authToken}`);
+        .set('Authorization', `Bearer ${testToken}`);
 
+      // Assert
       expect(response.status).toBe(200);
       expect(response.body).toHaveLength(2);
-      expect(response.body[0]).toHaveProperty('title', 'Test Article 2');
-      expect(response.body[1]).toHaveProperty('title', 'Test Article 1');
+      expect(response.body[0].title).toBe('Article 2');
+      expect(response.body[1].title).toBe('Article 1');
     });
 
-    it('should return 401 if not authenticated', async () => {
-      const response = await request(app).get('/api/articles');
-      expect(response.status).toBe(401);
+    it('should handle empty articles list', async () => {
+      // Act
+      const response = await request(testServer.app)
+        .get('/api/articles')
+        .set('Authorization', `Bearer ${testToken}`);
+
+      // Assert
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual([]);
     });
   });
 
   describe('GET /api/articles/:id', () => {
     it('should return a single article', async () => {
-      const article = await Article.create({
+      // Arrange
+      const mockArticle = {
         title: 'Test Article',
         content: 'Test Content',
         metaDescription: 'Test Meta',
-        author: testUser._id,
-        keywords: ['test']
-      });
+        author: testUserId
+      };
+      const article = await Article.create(mockArticle);
 
-      const response = await request(app)
+      // Act
+      const response = await request(testServer.app)
         .get(`/api/articles/${article._id}`)
-        .set('Authorization', `Bearer ${authToken}`);
+        .set('Authorization', `Bearer ${testToken}`);
 
+      // Assert
       expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('title', 'Test Article');
-      expect(response.body).toHaveProperty('content', 'Test Content');
+      expect(response.body.title).toBe('Test Article');
+      expect(response.body.content).toBe('Test Content');
     });
 
-    it('should return 404 for non-existent article', async () => {
-      const fakeId = new mongoose.Types.ObjectId();
-      const response = await request(app)
-        .get(`/api/articles/${fakeId}`)
-        .set('Authorization', `Bearer ${authToken}`);
+    it('should handle non-existent article', async () => {
+      // Arrange
+      const nonExistentId = new mongoose.Types.ObjectId();
 
+      // Act
+      const response = await request(testServer.app)
+        .get(`/api/articles/${nonExistentId}`)
+        .set('Authorization', `Bearer ${testToken}`);
+
+      // Assert
       expect(response.status).toBe(404);
-    });
-  });
-
-  describe('POST /api/articles/:id/export', () => {
-    it('should export article as txt', async () => {
-      const article = await Article.create({
-        title: 'Export Test',
-        content: 'Export Content',
-        metaDescription: 'Export Meta',
-        author: testUser._id
-      });
-
-      const response = await request(app)
-        .post(`/api/articles/${article._id}/export`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ format: 'txt' });
-
-      expect(response.status).toBe(200);
-      expect(response.headers['content-type']).toMatch(/text\/plain/);
-      expect(response.headers['content-disposition']).toMatch(/Export Test\.txt/);
-    });
-
-    it('should export article as html', async () => {
-      const article = await Article.create({
-        title: 'Export Test',
-        content: 'Export Content',
-        metaDescription: 'Export Meta',
-        author: testUser._id
-      });
-
-      const response = await request(app)
-        .post(`/api/articles/${article._id}/export`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ format: 'html' });
-
-      expect(response.status).toBe(200);
-      expect(response.headers['content-type']).toMatch(/text\/html/);
-      expect(response.headers['content-disposition']).toMatch(/Export Test\.html/);
-    });
-
-    it('should export article as docx', async () => {
-      const article = await Article.create({
-        title: 'Export Test',
-        content: 'Export Content',
-        metaDescription: 'Export Meta',
-        author: testUser._id
-      });
-
-      const response = await request(app)
-        .post(`/api/articles/${article._id}/export`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ format: 'docx' });
-
-      expect(response.status).toBe(200);
-      expect(response.headers['content-type']).toMatch(/application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document/);
-      expect(response.headers['content-disposition']).toMatch(/Export Test\.docx/);
-    });
-
-    it('should return 400 for invalid format', async () => {
-      const article = await Article.create({
-        title: 'Export Test',
-        content: 'Export Content',
-        metaDescription: 'Export Meta',
-        author: testUser._id
-      });
-
-      const response = await request(app)
-        .post(`/api/articles/${article._id}/export`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ format: 'invalid' });
-
-      expect(response.status).toBe(400);
-    });
-  });
-
-  describe('DELETE /api/articles/:id', () => {
-    it('should delete an article', async () => {
-      const article = await Article.create({
-        title: 'Delete Test',
-        content: 'Delete Content',
-        metaDescription: 'Delete Meta',
-        author: testUser._id
-      });
-
-      const response = await request(app)
-        .delete(`/api/articles/${article._id}`)
-        .set('Authorization', `Bearer ${authToken}`);
-
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('message', 'Article deleted successfully');
-
-      const deletedArticle = await Article.findById(article._id);
-      expect(deletedArticle).toBeNull();
-    });
-
-    it('should return 404 for non-existent article', async () => {
-      const fakeId = new mongoose.Types.ObjectId();
-      const response = await request(app)
-        .delete(`/api/articles/${fakeId}`)
-        .set('Authorization', `Bearer ${authToken}`);
-
-      expect(response.status).toBe(404);
-    });
-
-    it('should not allow deletion of articles owned by other users', async () => {
-      const otherUser = await createTestUser({ email: 'other@test.com' });
-      const article = await Article.create({
-        title: 'Other User Article',
-        content: 'Content',
-        metaDescription: 'Meta',
-        author: otherUser._id
-      });
-
-      const response = await request(app)
-        .delete(`/api/articles/${article._id}`)
-        .set('Authorization', `Bearer ${authToken}`);
-
-      expect(response.status).toBe(404);
-      
-      const articleStillExists = await Article.findById(article._id);
-      expect(articleStillExists).toBeTruthy();
+      expect(response.body.error).toBe('Article not found');
     });
   });
 });

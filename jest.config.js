@@ -2,6 +2,19 @@
 const config = {
   projects: [
     {
+      displayName: 'server',
+      testEnvironment: 'node',
+      testMatch: ['<rootDir>/server/**/*.test.[jt]s?(x)'],
+      moduleNameMapper: {
+        '^@server/(.*)$': '<rootDir>/server/$1'
+      },
+      transform: {
+        '^.+\\.tsx?$': ['ts-jest', { tsconfig: 'tsconfig.test.json' }],
+        '^.+\\.jsx?$': ['babel-jest', { configFile: './.babelrc' }]
+      },
+      setupFilesAfterEnv: ['<rootDir>/jest.setup.js']
+    },
+    {
       displayName: 'client',
       testEnvironment: 'jsdom',
       testMatch: ['<rootDir>/client/**/*.test.[jt]s?(x)'],
@@ -14,25 +27,7 @@ const config = {
         '^.+\\.tsx?$': ['ts-jest', { tsconfig: 'tsconfig.test.json' }],
         '^.+\\.jsx?$': ['babel-jest', { configFile: './.babelrc' }]
       },
-      setupFilesAfterEnv: [
-        '<rootDir>/jest.setup.js',
-        '@testing-library/jest-dom'
-      ]
-    },
-    {
-      displayName: 'server',
-      testEnvironment: 'node',
-      testMatch: ['<rootDir>/server/**/*.test.[jt]s?(x)'],
-      moduleNameMapper: {
-        '^@server/(.*)$': '<rootDir>/server/$1'
-      },
-      transform: {
-        '^.+\\.tsx?$': ['ts-jest', { tsconfig: 'tsconfig.test.json' }],
-        '^.+\\.jsx?$': ['babel-jest', { configFile: './.babelrc' }]
-      },
-      setupFilesAfterEnv: [
-        '<rootDir>/jest.setup.js'
-      ]
+      setupFilesAfterEnv: ['<rootDir>/jest.setup.js']
     }
   ],
 
@@ -41,19 +36,13 @@ const config = {
 
   // Coverage settings
   collectCoverageFrom: [
-    'src/**/*.{js,jsx,ts,tsx}',
-    '!src/**/*.d.ts',
+    'server/**/*.{js,jsx,ts,tsx}',
+    'client/src/**/*.{js,jsx,ts,tsx}',
+    '!**/*.d.ts',
   ],
 
   // Test timeout
   testTimeout: 30000,
-
-  // Global setup
-  globalSetup: '<rootDir>/test/globalSetup.js',
-  globalTeardown: '<rootDir>/test/globalTeardown.js',
-
-  // Verbose output
-  verbose: true,
 
   // Support both module systems
   transformIgnorePatterns: [

@@ -19,17 +19,31 @@ export const Register: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { register: registerAuth } = useAuth();
-  const { register, handleSubmit, setError, reset, formState: { errors } } = useForm<RegistrationFormData>();
+  const { register, handleSubmit, setError, reset, formState: { errors } } = useForm<RegistrationFormData>({
+    defaultValues: {
+      email: '',
+      password: ''
+    }
+  });
   const [submitting, setSubmitting] = useState(false);
 
   const onSubmit = async (data: RegistrationFormData) => {
+    if (!data.email || !data.password) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Email and password are required"
+      });
+      return;
+    }
+
     console.log('Registration form submitted with data:', data);
     setSubmitting(true);
     try {
       console.log('Sending registration request to server...');
       await registerAuth(data.email, data.password);
       console.log('Registration successful');
-      
+
       toast({
         variant: 'default',
         title: 'Success',
@@ -79,7 +93,13 @@ export const Register: React.FC = () => {
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
-                {...register("email", { required: true })}
+                {...register("email", {
+                  required: "Email is required",
+                  pattern: {
+                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                    message: "Please enter a valid email address"
+                  }
+                })}
                 type="email"
                 placeholder="Enter your email"
                 disabled={submitting}
@@ -90,7 +110,13 @@ export const Register: React.FC = () => {
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
-                {...register("password", { required: true, minLength: 8 })}
+                {...register("password", {
+                  required: "Password is required",
+                  minLength: {
+                    value: 8,
+                    message: "Password must be at least 8 characters long"
+                  }
+                })}
                 type="password"
                 placeholder="Choose a password"
                 disabled={submitting}

@@ -1,15 +1,13 @@
-const jwt = require('jsonwebtoken');
+const generateToken = jest.fn().mockImplementation((user) => {
+  return `mock_token_${user._id}`;
+});
 
-const generateToken = (user) => {
-  return jwt.sign(
-    { id: user._id, email: user.email },
-    process.env.JWT_SECRET || 'test-secret-key',
-    { expiresIn: '1d' }
-  );
+const verifyToken = jest.fn().mockImplementation((token) => {
+  const userId = token.split('_')[2];
+  return { id: userId };
+});
+
+module.exports = {
+  generateToken,
+  verifyToken
 };
-
-const verifyToken = (token) => {
-  return jwt.verify(token, process.env.JWT_SECRET || 'test-secret-key');
-};
-
-module.exports = { generateToken, verifyToken };

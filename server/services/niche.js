@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const Niche = require('../models/Niche');
 const { sendLLMRequest } = require('./llm');
+const { OPENROUTER_MODELS } = require('../config/openRouter');
+const { isValidObjectId } = mongoose;
 
 // Helper function to validate MongoDB ObjectId
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
@@ -144,35 +146,41 @@ class NicheService {
       }
 
       const prompt = `Generate 5 content pillars for the niche "${niche.name}". Each pillar should be a short, concise phrase.`;
-      const llmResponse = await sendLLMRequest('openai', 'gpt-3.5-turbo', prompt);
 
-      if (!llmResponse || llmResponse.trim() === '') {
-        throw new Error('No pillars generated');
+      try {
+        const llmResponse = await sendLLMRequest('openrouter', OPENROUTER_MODELS.GPT4, prompt);
+
+        if (!llmResponse || llmResponse.trim() === '') {
+          throw new Error('No pillars generated');
+        }
+
+        // Split response into lines and clean up
+        const pillarTitles = llmResponse
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line.length > 0)
+          .map(line => line.replace(/^\d+\.\s*/, '').trim())
+          .filter(line => line.length > 0);
+
+        if (pillarTitles.length === 0) {
+          throw new Error('No pillars generated');
+        }
+
+        const pillars = pillarTitles.map(title => ({
+          title,
+          status: 'pending',
+          approved: false
+        }));
+
+        niche.pillars = pillars;
+        await niche.save();
+
+        console.log(`Pillars generated and saved for niche: ${nicheId}`);
+        return pillars;
+      } catch (llmError) {
+        console.error('LLM Error:', llmError);
+        throw new Error('Failed to generate pillars using AI service');
       }
-
-      // Split response into lines and clean up
-      const pillarTitles = llmResponse
-        .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0)
-        .map(line => line.replace(/^\d+\.\s*/, '').trim())
-        .filter(line => line.length > 0);
-
-      if (pillarTitles.length === 0) {
-        throw new Error('No pillars generated');
-      }
-
-      const pillars = pillarTitles.map(title => ({
-        title,
-        status: 'pending',
-        approved: false
-      }));
-
-      niche.pillars = pillars;
-      await niche.save();
-
-      console.log(`Pillars generated and saved for niche: ${nicheId}`);
-      return pillars;
     } catch (error) {
       console.error('Error in NicheService.generatePillars:', error);
       throw error;

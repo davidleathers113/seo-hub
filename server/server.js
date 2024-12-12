@@ -5,7 +5,7 @@ const express = require("express");
 const session = require("express-session");
 const MongoStore = require('connect-mongo');
 const basicRoutes = require("./routes/index");
-const authRoutes = require("./routes/auth");
+const { router: authRouter } = require("./routes/auth");  // Properly destructure the router
 const nicheRoutes = require('./routes/niches');
 const pillarRoutes = require('./routes/pillars');
 const articlesRoutes = require('./routes/articles');
@@ -99,7 +99,7 @@ app.use((req, res, next) => {
 console.log(`Attempting to start server on port ${port}...`);
 
 // Public routes (no authentication required)
-app.post('/api/register', authRoutes.registerUser);
+app.use('/api/auth', authRouter);  // Use the auth router for all auth routes except login
 app.post('/api/auth/login', async (req, res) => {
   const sendError = msg => res.status(400).json({ error: msg });
   const { email, password } = req.body;
@@ -133,9 +133,6 @@ app.post('/api/auth/login', async (req, res) => {
 
 // Protected routes (authentication required)
 app.use(authenticateWithToken);
-
-// Protected auth routes (must come after authenticateWithToken)
-app.use('/api/auth', authRoutes.router);
 
 // Other protected routes
 app.use(basicRoutes);

@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { app } = require('../../test/testServer');
+const testServer = require('../../test/testServer');
 const UserService = require('../../services/user');
 const { generateToken } = require('../../utils/jwt');
 
@@ -7,6 +7,12 @@ const { generateToken } = require('../../utils/jwt');
 jest.mock('../../services/user');
 
 describe('Auth Routes', () => {
+  let app;
+
+  beforeAll(async () => {
+    app = testServer.app();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
   });

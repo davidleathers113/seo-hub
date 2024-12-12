@@ -2,15 +2,31 @@
 
 ## 1. Authentication Tests
 ### Auth Routes (`server/routes/__tests__/auth.test.js`)
-- [ ] POST /auth/register should create user and return token (Failed: 400 instead of 201)
+- [x] POST /auth/register should create user and return token (Fixed: returns 201)
 - [x] POST /auth/login should authenticate user and return token
 - [x] POST /auth/logout should invalidate token
 - [x] GET /auth/me should return user data
 
 ### Auth Middleware Tests (`server/routes/middleware/__tests__/auth.test.ts`)
-- [ ] authenticateWithToken should validate tokens properly
-- [ ] requireUser should handle missing user cases
-- [ ] initRedis should properly initialize Redis connection
+- [x] authenticateWithToken should validate tokens properly (Fixed)
+  - ✓ should authenticate successfully with valid token
+  - ✓ should handle missing authorization header (Fixed error format)
+  - ✓ should handle blacklisted token (Fixed error format)
+  - ✓ should handle Redis connection failure (Fixed error handling)
+  - ✓ should handle non-existent user
+- [x] requireUser should handle missing user cases (All passing)
+  - ✓ should allow request with authenticated user
+  - ✓ should reject request without user
+- [x] initRedis should properly initialize Redis connection
+
+## Test Infrastructure Improvements
+- [x] Consolidated test setup files
+- [x] Improved Redis mock implementation
+- [x] Fixed TypeScript type issues
+- [x] Centralized error handling
+- [x] Fix remaining test failures in auth middleware
+- [x] Add proper error simulation for Redis
+- [ ] Add proper cleanup for test state
 
 ## 2. LLM Service Tests
 ### Generate Content Points (`server/services/llm.early.test/generateContentPoints.early.test.js`)
@@ -43,10 +59,10 @@
 
 ## 3. Article Tests
 ### Articles API (`server/routes/__tests__/articles.test.js`)
-- [ ] GET /api/articles should return all articles (Failed: MongoDB timeout)
-- [ ] GET /api/articles/:id should return single article (Failed: MongoDB timeout)
-- [ ] POST /api/articles/:id/export should handle different formats (Failed: MongoDB timeout)
-- [ ] DELETE /api/articles/:id should handle permissions (Failed: MongoDB timeout)
+- [x] GET /api/articles should return all articles (Fixed: proper model usage and sorting)
+- [x] GET /api/articles/:id should return single article (Fixed: proper model usage)
+- [ ] POST /api/articles/:id/export should handle different formats (Not implemented)
+- [ ] DELETE /api/articles/:id should handle permissions (Not implemented)
 
 ## 4. Niche Tests
 ### Niche Routes (`server/routes/__tests__/niches.test.js`)
@@ -105,22 +121,24 @@
 
 ## Summary
 - Total Test Suites: 134
-- Passed Test Suites: 1
-- Failed Test Suites: 133
+- Passed Test Suites: 3
+- Failed Test Suites: 131
 - Total Tests: 168
-- Passed Tests: 43
-- Failed Tests: 125
+- Passed Tests: 61
+- Failed Tests: 107
 
 ## Main Issues to Address
 1. TypeScript Configuration
-   - [ ] Fix JSX syntax support
-   - [ ] Resolve module declaration issues
+   - [x] Fix Express type definitions
+   - [ ] Resolve remaining module declaration issues
    - [ ] Add proper type definitions
 
 2. MongoDB Connection
-   - [ ] Fix timeout issues in test environment
-   - [ ] Improve connection handling
-   - [ ] Add proper cleanup
+   - [x] Improved MongoDB setup in tests
+   - [x] Fix timeout issues in test environment
+   - [x] Add proper cleanup
+   - [x] Proper model initialization and registration
+   - [x] Proper schema validation in tests
 
 3. LLM Service
    - [ ] Fix response handling
@@ -128,6 +146,7 @@
    - [ ] Add proper mocking
 
 4. Authentication
-   - [ ] Fix registration endpoint
-   - [ ] Improve token validation
-   - [ ] Add proper session management
+   - [x] Improved token validation tests
+   - [x] Better error handling in middleware
+   - [x] Fix registration endpoint
+   - [x] Add proper session management

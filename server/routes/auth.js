@@ -103,10 +103,9 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    const passwordValidation = validatePassword(password);
-    if (!passwordValidation.isValid) {
+    if (!validatePassword(password)) {
       return res.status(400).json({
-        error: passwordValidation.message
+        error: 'Password must be at least 8 characters with 1 uppercase, 1 lowercase, and 1 number'
       });
     }
 
@@ -175,7 +174,7 @@ router.post('/logout', authenticateWithToken, async (req, res) => {
 });
 
 router.get('/me', authenticateWithToken, async (req, res) => {
-  return res.status(200).json(req.user);
+  return res.status(200).json({ user: req.user });
 });
 
 module.exports = {

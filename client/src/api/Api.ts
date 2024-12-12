@@ -17,7 +17,7 @@ api.interceptors.request.use(request => {
   console.log('Outgoing request:', request.method, currentUrl, request.data);
 
   // Skip token check for public endpoints
-  const publicEndpoints = ['/register', '/auth/login']; // Removed /api prefix since it's in baseURL
+  const publicEndpoints = ['/auth/register', '/auth/login']; // Updated register path
   const isPublicEndpoint = publicEndpoints.some(endpoint => currentUrl.includes(endpoint));
 
   if (!isPublicEndpoint) {

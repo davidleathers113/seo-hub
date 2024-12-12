@@ -74,8 +74,15 @@ router.post('/register', async (req, res) => {
 
   try {
     const result = await UserService.createUser(req.body);
-    res.status(201).json(result);
+    const token = generateToken(result.user);
+    res.status(201).json({
+      user: result.user,
+      token
+    });
   } catch (error) {
+    if (error.message === 'User with this email already exists') {
+      return res.status(409).json({ error: error.message });
+    }
     res.status(400).json({ error: error.message });
   }
 });

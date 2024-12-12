@@ -23,15 +23,18 @@ export const login = (email: string, password: string) => {
 /**
  * Registers a new user by sending their email and password to the API.
  *
- * @param data - An object containing the user's email and password.
+ * @param email - The user's email address.
+ * @param password - The user's password.
  * @returns A promise that resolves to the API response.
  * @throws Will throw an error if the API request fails.
  */
-export const register = (data: { email: string; password: string }) => {
-  return api.post('/register', {
-    email: data.email,
-    password: data.password
-  });
+export const register = async (data: { email: string, password: string }) => {
+  try {
+    return api.post('/auth/register', data);
+  } catch (error) {
+    console.error('Registration error:', error);
+    throw error;
+  }
 };
 
 // Logout

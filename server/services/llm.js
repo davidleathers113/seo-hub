@@ -1,8 +1,11 @@
 const OpenAI = require('openai');
+const { Anthropic } = require('@anthropic-ai/sdk');
+const OpenRouterService = require('./openRouter').default;
 const dotenv = require('dotenv');
 const { logger } = require('../utils/log');
 const Niche = require('../models/Niche');
 const Research = require('../models/Research');
+const { OPENROUTER_MODELS } = require('../config/openRouter');
 const log = logger('llm-service');
 
 dotenv.config();
@@ -10,26 +13,29 @@ dotenv.config();
 function getOpenAIClient() {
   if (!process.env.OPENAI_API_KEY) {
     if (process.env.NODE_ENV === 'test') {
-      // Return mock client for testing
-      return {
-        chat: {
-          completions: {
-            create: async () => ({
-              choices: [{
-                message: {
-                  content: '1. Content Strategy\n2. Social Media Marketing\n3. Email Marketing\n4. SEO Optimization\n5. Analytics and Metrics'
-                }
-              }]
-            })
-          }
-        }
-      };
+      return new OpenAI();
     }
     throw new Error('OPENAI_API_KEY is not set in the environment variables');
   }
   return new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
   });
+}
+
+function getAnthropicClient() {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    if (process.env.NODE_ENV === 'test') {
+      return new Anthropic();
+    }
+    throw new Error('ANTHROPIC_API_KEY is not set in the environment variables');
+  }
+  return new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+  });
+}
+
+function getOpenRouterClient() {
+  return new OpenRouterService();
 }
 
 const MAX_RETRIES = 3;
@@ -40,9 +46,9 @@ async function sleep(ms) {
 }
 
 async function sendRequestToOpenAI(model, message) {
+  const openai = getOpenAIClient();
   for (let i = 0; i < MAX_RETRIES; i++) {
     try {
-      const openai = getOpenAIClient();
       const response = await openai.chat.completions.create({
         model: model,
         messages: [{ role: 'user', content: message }],
@@ -58,18 +64,43 @@ async function sendRequestToOpenAI(model, message) {
 }
 
 async function sendRequestToAnthropic(model, message) {
+  const anthropic = getAnthropicClient();
   for (let i = 0; i < MAX_RETRIES; i++) {
     try {
       console.log(`Sending request to Anthropic with model: ${model} and message: ${message}`);
       const response = await anthropic.messages.create({
         model: model,
-        messages: [{ role: 'user', content: message }],
-        max_tokens: 1024,
+        system: "You are a helpful AI assistant that writes high-quality, engaging content.",
+        messages: [{
+          role: 'user',
+          content: message
+        }],
+        max_tokens: 1024
       });
-      console.log(`Received response from Anthropic: ${JSON.stringify(response.content)}`);
-      return response.content[0].text;
+      console.log(`Received response from Anthropic: ${JSON.stringify(response)}`);
+      return response.content;
     } catch (error) {
       console.error(`Error sending request to Anthropic (attempt ${i + 1}):`, error.message, error.stack);
+      if (i === MAX_RETRIES - 1) throw error;
+      await sleep(RETRY_DELAY);
+    }
+  }
+}
+
+async function sendRequestToOpenRouter(model, message) {
+  const openRouter = getOpenRouterClient();
+  for (let i = 0; i < MAX_RETRIES; i++) {
+    try {
+      console.log(`Sending request to OpenRouter with model: ${model} and message: ${message}`);
+      const response = await openRouter.generateWithRetry(message, {
+        model: model,
+        temperature: 0.7,
+        max_tokens: 1024
+      });
+      console.log(`Received response from OpenRouter: ${response}`);
+      return response;
+    } catch (error) {
+      console.error(`Error sending request to OpenRouter (attempt ${i + 1}):`, error.message, error.stack);
       if (i === MAX_RETRIES - 1) throw error;
       await sleep(RETRY_DELAY);
     }
@@ -82,6 +113,8 @@ async function sendLLMRequest(provider, model, message) {
       return sendRequestToOpenAI(model, message);
     case 'anthropic':
       return sendRequestToAnthropic(model, message);
+    case 'openrouter':
+      return sendRequestToOpenRouter(model, message);
     default:
       throw new Error(`Unsupported LLM provider: ${provider}`);
   }
@@ -100,8 +133,8 @@ async function generatePillars(nicheId) {
     Format the response as a numbered list (1., 2., etc.).`;
 
     const response = await sendLLMRequest(
-      'openai',
-      'gpt-4',
+      'openrouter',
+      OPENROUTER_MODELS.GPT4,
       prompt
     );
 

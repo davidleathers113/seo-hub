@@ -51,98 +51,66 @@ const initRedis = async (client) => {
 
 const authenticateWithToken = async (req, res, next) => {
   try {
-    // Validate request structure
-    ProtocolGuard.validateAuthRequest(req);
-
-    const token = req.headers.authorization.split(' ')[1];
-
-    if (process.env.NODE_ENV === 'test') {
-      TestMonitor.recordEvent('auth_attempt', { token: token.substring(0, 10) + '...' });
+    const authHeader = req.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(400).json({
+        error: 'Missing required field: headers.authorization',
+        field: 'headers.authorization',
+        code: 'VALIDATION_ERROR'
+      });
     }
+
+    const token = authHeader.split(' ')[1];
 
     try {
       const decoded = verifyToken(token);
 
-      // Check if token is blacklisted
-      const client = await initRedis();
-      if (!client?.isReady) {
-        throw new RedisError('Redis client not ready', 'status_check');
-      }
+      // Check Redis connection and token blacklist
+      try {
+        const client = await initRedis();
+        if (!client?.isReady) {
+          return res.status(503).json({
+            error: 'Service temporarily unavailable',
+            code: 'REDIS_ERROR'
+          });
+        }
 
-      const isBlacklisted = await client.get(`bl_${token}`);
-      if (isBlacklisted) {
-        throw new TokenError('Token has been invalidated', { token });
-      }
+        const isBlacklisted = await client.get(`bl_${token}`);
+        if (isBlacklisted) {
+          return res.status(401).json({
+            error: 'Token has been invalidated',
+            code: 'TOKEN_ERROR'
+          });
+        }
 
-      const user = await UserService.get(decoded.id);
-      if (!user) {
-        throw new AuthError('User not found', 'USER_NOT_FOUND');
-      }
+        const user = await UserService.get(decoded.id);
+        if (!user) {
+          return res.status(401).json({
+            error: 'User not found',
+            code: 'USER_NOT_FOUND'
+          });
+        }
 
-      req.user = user;
-
-      if (process.env.NODE_ENV === 'test') {
-        TestMonitor.recordEvent('auth_success', {
-          userId: user._id,
-          email: user.email
-        });
-      }
-
-      next();
-    } catch (error) {
-      if (error instanceof TokenError) {
-        return res.status(401).json({
-          error: error.message,
-          code: error.code
-        });
-      }
-
-      if (error instanceof RedisError) {
-        log.error('Redis operation failed:', error);
+        req.user = user;
+        next();
+      } catch (redisError) {
+        log.error('Redis error:', redisError);
         return res.status(503).json({
           error: 'Service temporarily unavailable',
           code: 'REDIS_ERROR'
         });
       }
-
-      if (error instanceof AuthError) {
-        return res.status(401).json({
-          error: error.message,
-          code: error.code
-        });
-      }
-
-      if (error.name === 'JsonWebTokenError') {
-        return res.status(403).json({
-          error: 'Token verification failed',
-          code: 'INVALID_TOKEN'
-        });
-      }
-
-      throw error; // Re-throw unexpected errors
+    } catch (tokenError) {
+      return res.status(403).json({
+        error: 'Token verification failed',
+        code: 'INVALID_TOKEN'
+      });
     }
   } catch (error) {
-    log.error('Authentication failed:', error);
-
-    if (process.env.NODE_ENV === 'test') {
-      TestMonitor.recordEvent('auth_error', {
-        type: error.constructor.name,
-        message: error.message
-      });
-    }
-
-    // Handle validation errors
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({
-        error: error.message,
-        field: error.field,
-        code: 'VALIDATION_ERROR'
-      });
-    }
-
-    res.status(401).json({
-      error: 'Authentication failed',
-      code: 'AUTH_FAILED'
+    log.error('Authentication error:', error);
+    return res.status(401).json({
+      error: error.message || 'Authentication failed',
+      code: error.code || 'AUTH_FAILED'
     });
   }
 };

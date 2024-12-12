@@ -4,8 +4,8 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
+    "start": "ts-node server.js",
+    "dev": "ts-node server.js",
     "test": "jest --detectOpenHandles",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run",
@@ -47,6 +47,7 @@
     "mongodb-memory-server": "^10.1.2",
     "redis": "^4.7.0",
     "supertest": "^7.0.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   },
   "jest": {
