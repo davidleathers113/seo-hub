@@ -1,6 +1,6 @@
 import express from 'express';
 import { createUserService } from '../services/UserService';
-import { generateToken } from '../utils/jwt';
+import { createSessionService } from '../services/SessionService';
 import { authenticateWithToken } from './middleware/auth';
 import { validateEmail, validatePassword } from '../utils/validation';
 import { ValidationError } from '../database/mongodb/client';
@@ -8,6 +8,7 @@ import { logger } from '../utils/log';
 
 const router = express.Router();
 const userService = createUserService();
+const sessionService = createSessionService();
 
 // Initialize logger based on environment
 const log = process.env.NODE_ENV === 'test'
@@ -43,9 +44,17 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    const token = generateToken(user);
+    // Create session
+    const session = await sessionService.createSession(user.id, {
+      userAgent: req.get('User-Agent'),
+      ipAddress: req.ip
+    });
+
     log.info(`Successful login for user: ${email}`);
-    return res.json({ user, token });
+    return res.json({
+      user,
+      token: session.token
+    });
 
   } catch (error) {
     log.error('Login error:', { error: (error as Error).message, stack: (error as Error).stack });
@@ -81,10 +90,16 @@ router.post('/register', async (req, res) => {
 
     const result = await userService.createUser({ email, password, name });
 
+    // Create session for new user
+    const session = await sessionService.createSession(result.user.id, {
+      userAgent: req.get('User-Agent'),
+      ipAddress: req.ip
+    });
+
     log.info(`User registered successfully: ${email}`);
     return res.status(201).json({
       user: result.user,
-      token: result.token
+      token: session.token
     });
 
   } catch (error) {
@@ -103,13 +118,47 @@ router.post('/register', async (req, res) => {
   }
 });
 
-router.post('/logout', authenticateWithToken, (req, res) => {
-  // In the future, we might want to invalidate the token in Redis or similar
-  res.json({ success: true });
+router.post('/logout', authenticateWithToken, async (req, res) => {
+  try {
+    await sessionService.invalidateSession(req.session.token);
+    res.json({ success: true });
+  } catch (error) {
+    log.error('Logout error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'An unexpected error occurred during logout'
+    });
+  }
 });
 
 router.get('/me', authenticateWithToken, (req, res) => {
   res.json(req.user);
+});
+
+router.get('/sessions', authenticateWithToken, async (req, res) => {
+  try {
+    const sessions = await sessionService.getUserSessions(req.user.id);
+    res.json(sessions);
+  } catch (error) {
+    log.error('Get sessions error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'An unexpected error occurred while fetching sessions'
+    });
+  }
+});
+
+router.post('/logout/all', authenticateWithToken, async (req, res) => {
+  try {
+    await sessionService.invalidateUserSessions(req.user.id);
+    res.json({ success: true });
+  } catch (error) {
+    log.error('Logout all error:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'An unexpected error occurred during logout'
+    });
+  }
 });
 
 export default router;

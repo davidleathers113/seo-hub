@@ -3,11 +3,13 @@ import { createClient, RedisClientType } from 'redis';
 import { verifyToken } from '../../utils/jwt';
 import { logger } from '../../utils/log';
 import { createUserService } from '../../services/UserService';
+import { createSessionService } from '../../services/SessionService';
 import { TokenError, RedisError, AuthError } from '../../test/infrastructure/errors';
 import { TestMonitor } from '../../test/infrastructure/test-monitor';
 
 const log = logger('auth-middleware');
 const userService = createUserService();
+const sessionService = createSessionService();
 
 let redisClient: RedisClientType | null = null;
 
@@ -62,14 +64,22 @@ const authenticateWithToken = async (req: Request, res: Response, next: NextFunc
 
   try {
     const token = authHeader.split(' ')[1];
-    const decoded = verifyToken(token);
 
-    const user = await userService.get(decoded.id);
+    // Validate session
+    const session = await sessionService.validateSession(token);
+    if (!session) {
+      throw new AuthError('Invalid or expired session', 'SESSION_INVALID');
+    }
+
+    // Get user
+    const user = await userService.get(session.userId);
     if (!user) {
       throw new AuthError('User not found', 'USER_NOT_FOUND');
     }
 
+    // Attach user and session to request
     req.user = user;
+    req.session = session;
     next();
   } catch (error) {
     log.error('Auth middleware error:', error);
@@ -115,8 +125,20 @@ const requireUser = (req: Request, res: Response, next: NextFunction): void | Re
   }
 };
 
+// Add session cleanup middleware
+const cleanupSessions = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    await sessionService.cleanup();
+    next();
+  } catch (error) {
+    log.error('Session cleanup error:', error);
+    next(); // Continue even if cleanup fails
+  }
+};
+
 export {
   authenticateWithToken,
   requireUser,
-  initRedis
+  initRedis,
+  cleanupSessions
 };

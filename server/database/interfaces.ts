@@ -32,13 +32,14 @@ export interface Pillar extends BaseEntity {
   createdById: string;
 }
 
-export interface Subpillar extends BaseEntity {
+export interface Subpillar {
+  id: string;
   title: string;
   pillarId: string;
-  status: 'draft' | 'research' | 'outline' | 'writing' | 'review' | 'complete';
   createdById: string;
-  content?: string;
-  progress: number;
+  status: 'draft' | 'active' | 'archived';
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Article extends BaseEntity {
@@ -73,6 +74,27 @@ export interface Outline extends BaseEntity {
   }>;
   status: 'draft' | 'approved' | 'in_progress';
   createdById: string;
+}
+
+export interface OutlineSection {
+  title: string;
+  contentPoints: Array<{
+    point: string;
+    generated: boolean;
+  }>;
+  order: number;
+}
+
+export interface OutlineCreateInput {
+  subpillarId: string;
+  sections: OutlineSection[];
+  status?: 'draft' | 'approved' | 'in_progress';
+  createdById: string;
+}
+
+export interface OutlineUpdateInput {
+  sections?: OutlineSection[];
+  status?: 'draft' | 'approved' | 'in_progress';
 }
 
 // Query types for filtering and pagination
@@ -111,6 +133,33 @@ export interface ArticleFilters {
   status?: string;
 }
 
+export interface Session {
+  id: string;
+  userId: string;
+  token: string;
+  expiresAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  lastActivityAt: Date;
+  isActive: boolean;
+  userAgent?: string;
+  ipAddress?: string;
+}
+
+export interface SessionCreateInput {
+  userId: string;
+  token: string;
+  expiresAt: Date;
+  userAgent?: string;
+  ipAddress?: string;
+}
+
+export interface SessionUpdateInput {
+  lastActivityAt?: Date;
+  expiresAt?: Date;
+  isActive?: boolean;
+}
+
 export interface DatabaseClient {
   // Connection management
   connect(): Promise<void>;
@@ -143,10 +192,10 @@ export interface DatabaseClient {
   findPillars(filters: PillarFilters, options?: PaginationOptions): Promise<Pillar[]>;
 
   // Subpillar operations
-  createSubpillar(data: Omit<Subpillar, keyof BaseEntity>): Promise<Subpillar>;
+  createSubpillar(data: SubpillarCreateInput): Promise<Subpillar>;
   findSubpillarById(id: string): Promise<Subpillar | null>;
   findSubpillarsByPillarId(pillarId: string): Promise<Subpillar[]>;
-  updateSubpillar(id: string, data: Partial<Subpillar>): Promise<Subpillar | null>;
+  updateSubpillar(id: string, data: SubpillarUpdateInput): Promise<Subpillar | null>;
   deleteSubpillar(id: string): Promise<boolean>;
   findSubpillars(filters: SubpillarFilters, options?: PaginationOptions): Promise<Subpillar[]>;
 
@@ -173,7 +222,110 @@ export interface DatabaseClient {
   deleteOutline(id: string): Promise<boolean>;
 
   // Session operations
-  createSession(userId: string, data: any): Promise<string>;
-  getSession(sessionId: string): Promise<any>;
-  deleteSession(sessionId: string): Promise<boolean>;
+  createSession(data: SessionCreateInput): Promise<Session>;
+  findSessionById(id: string): Promise<Session | null>;
+  findSessionByToken(token: string): Promise<Session | null>;
+  findSessionsByUserId(userId: string): Promise<Session[]>;
+  updateSession(id: string, data: SessionUpdateInput): Promise<Session | null>;
+  deleteSession(id: string): Promise<boolean>;
+  deleteExpiredSessions(): Promise<number>;
+  deleteUserSessions(userId: string): Promise<number>;
+  cleanupSessions(): Promise<void>;
+}
+
+export interface NicheCreateInput {
+  name: string;
+  userId: string;
+  pillars?: Array<{
+    title: string;
+    status: string;
+    approved: boolean;
+  }>;
+  progress?: number;
+  status?: string;
+}
+
+export interface NicheUpdateInput {
+  name?: string;
+  pillars?: Array<{
+    title: string;
+    status: string;
+    approved: boolean;
+  }>;
+  progress?: number;
+  status?: string;
+}
+
+export interface PillarCreateInput {
+  title: string;
+  status?: 'pending' | 'approved' | 'rejected' | 'in_progress';
+  nicheId: string;
+  createdById: string;
+}
+
+export interface PillarUpdateInput {
+  title?: string;
+  status?: 'pending' | 'approved' | 'rejected' | 'in_progress';
+}
+
+export interface ResearchCreateInput {
+  subpillarId: string;
+  content: string;
+  source: string;
+  notes?: string;
+  createdById: string;
+  relevance?: number;
+}
+
+export interface ResearchUpdateInput {
+  content?: string;
+  source?: string;
+  notes?: string;
+  relevance?: number;
+}
+
+export interface ArticleCreateInput {
+  title: string;
+  content: string;
+  subpillarId: string;
+  authorId: string;
+  status?: 'draft' | 'review' | 'published';
+  seoScore?: number;
+  keywords?: string[];
+  metaDescription?: string;
+}
+
+export interface ArticleUpdateInput {
+  title?: string;
+  content?: string;
+  status?: 'draft' | 'review' | 'published';
+  seoScore?: number;
+  keywords?: string[];
+  metaDescription?: string;
+}
+
+export interface SubpillarCreateInput {
+  title: string;
+  pillarId: string;
+  createdById: string;
+  status?: 'draft' | 'active' | 'archived';
+}
+
+export interface SubpillarUpdateInput {
+  title?: string;
+  status?: 'draft' | 'active' | 'archived';
+}
+
+export interface UserCreateInput {
+  email: string;
+  password: string;
+  name?: string;
+}
+
+export interface UserUpdateInput {
+  email?: string;
+  password?: string;
+  name?: string;
+  lastLoginAt?: Date;
+  isActive?: boolean;
 }

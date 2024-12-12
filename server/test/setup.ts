@@ -1,9 +1,9 @@
-import { MongoMemoryServer } from 'mongodb-memory-server'
-import mongoose, { ConnectOptions } from 'mongoose'
 import path from 'path'
 import { TestContainer } from './infrastructure/test-container'
 import { TestMonitor } from './infrastructure/test-monitor'
 import { EnhancedRedisMock } from './infrastructure/enhanced-redis-mock'
+import { TestDatabaseClient } from './infrastructure/TestDatabaseClient'
+import { DatabaseClient } from '../database/interfaces'
 
 // Set test environment variables
 process.env.NODE_ENV = 'test'
@@ -41,20 +41,13 @@ beforeAll(async () => {
   jest.mock('../services/user')
   jest.mock('../services/llm')
 
-  // Configure MongoDB Memory Server
-  const mongoServer = await MongoMemoryServer.create()
-  const mongoUri = mongoServer.getUri()
-
-  // Connect to test database
-  await mongoose.connect(mongoUri, {
-    autoIndex: true,
-    autoCreate: true
-  } as ConnectOptions)
+  // Initialize test database
+  const testDb = await TestDatabaseClient.getInstance()
+  container.registerDatabaseClient(testDb)
 
   // Register cleanup
   container.registerCleanup(async () => {
-    await mongoose.disconnect()
-    await mongoServer.stop()
+    await testDb.cleanup()
   })
 
   // Initialize test monitoring
@@ -64,10 +57,8 @@ beforeAll(async () => {
 // Reset state before each test
 beforeEach(async () => {
   // Clear all collections
-  const collections = mongoose.connection.collections
-  for (const key in collections) {
-    await collections[key].deleteMany()
-  }
+  const testDb = container.getDatabaseClient() as TestDatabaseClient
+  await testDb.clearCollections()
 
   // Reset test container state
   await container.reset()
@@ -87,3 +78,8 @@ afterEach(() => {
 // Export test utilities
 export { container, TestMonitor }
 export const monitoredTest = TestMonitor.createTestWrapper()
+
+// Helper function to get database client for tests
+export function getTestDatabase(): DatabaseClient {
+  return container.getDatabaseClient()
+}

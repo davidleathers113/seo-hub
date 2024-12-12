@@ -1,5 +1,5 @@
-import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
+import { DatabaseClient } from '../../database/interfaces';
+import { getDatabase } from '../../database';
 import { TestMonitor } from './test-monitor';
 
 interface ValidationResult {
@@ -10,9 +10,11 @@ interface ValidationResult {
 
 export class TestValidator {
   private static instance: TestValidator;
-  private mongoServer?: MongoMemoryServer;
+  private db: DatabaseClient;
 
-  private constructor() {}
+  private constructor() {
+    this.db = getDatabase();
+  }
 
   static getInstance(): TestValidator {
     if (!TestValidator.instance) {
@@ -22,23 +24,18 @@ export class TestValidator {
   }
 
   /**
-   * Register the global MongoDB Memory Server instance
-   */
-  setGlobalMongoServer(server: MongoMemoryServer) {
-    this.mongoServer = server;
-  }
-
-  /**
-   * Wait for mongoose connection to be ready
+   * Wait for database connection to be ready
    */
   private async waitForConnection(timeoutMs: number = 5000): Promise<boolean> {
     const startTime = Date.now();
     
     while (Date.now() - startTime < timeoutMs) {
-      if (mongoose.connection.readyState === 1) {
+      try {
+        await this.db.ping();
         return true;
+      } catch {
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
-      await new Promise(resolve => setTimeout(resolve, 100));
     }
     
     return false;
@@ -51,16 +48,13 @@ export class TestValidator {
     const issues: string[] = [];
     const warnings: string[] = [];
 
-    // Check MongoDB server
-    if (!this.mongoServer) {
-      issues.push('No MongoDB Memory Server registered with TestValidator');
-    }
-
-    // Check mongoose connection state and wait if needed
-    if (mongoose.connection.readyState !== 1) {
+    // Check database connection
+    try {
+      await this.db.ping();
+    } catch {
       const isConnected = await this.waitForConnection();
       if (!isConnected) {
-        issues.push('Mongoose connection is not established');
+        issues.push('Database connection is not established');
       }
     }
 
@@ -68,15 +62,6 @@ export class TestValidator {
     const heapUsed = process.memoryUsage().heapUsed / 1024 / 1024;
     if (heapUsed > 500) {
       warnings.push(`High memory usage detected: ${Math.round(heapUsed)}MB`);
-    }
-
-    // Check MongoDB URI
-    if (this.mongoServer && mongoose.connection.readyState === 1) {
-      const currentUri = (mongoose.connection as any).getClient().s.url;
-      const expectedUri = await this.mongoServer.getUri();
-      if (currentUri !== expectedUri) {
-        warnings.push('MongoDB URI mismatch - possible multiple server instances');
-      }
     }
 
     return {
@@ -99,8 +84,8 @@ export class TestValidator {
     }
 
     // Check for proper cleanup in afterAll
-    if (context.afterAll && !context.afterAll.toString().includes('mongoose.disconnect')) {
-      warnings.push('No mongoose disconnect found in afterAll');
+    if (context.afterAll && !context.afterAll.toString().includes('cleanup')) {
+      warnings.push('No database cleanup found in afterAll');
     }
 
     // Check for proper mock cleanup
@@ -130,7 +115,7 @@ export class TestValidator {
 
     // Check user ID format
     const userId = authHeader?.split('_')[2];
-    if (userId && !mongoose.Types.ObjectId.isValid(userId)) {
+    if (userId && !this.isValidId(userId)) {
       issues.push('Invalid user ID format');
     }
 
@@ -152,6 +137,13 @@ export class TestValidator {
       warnings: result.warnings,
       timestamp: new Date()
     });
+  }
+
+  /**
+   * Helper method to validate ID format
+   */
+  private isValidId(id: string): boolean {
+    return /^[0-9a-fA-F]{24}$/.test(id);
   }
 }
 

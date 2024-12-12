@@ -7,6 +7,8 @@ import SubpillarModel from './models/Subpillar';
 import ResearchModel from './models/Research';
 import OutlineModel from './models/Outline';
 import ArticleModel from './models/Article';
+import SessionModel, { SessionDocument } from './models/Session';
+import { Session, SessionCreateInput, SessionUpdateInput } from '../interfaces';
 
 // Custom error classes for better error handling
 export class DatabaseConnectionError extends Error {
@@ -264,193 +266,381 @@ export class MongoDBClient implements DatabaseClient {
   }
 
   // Subpillar operations with error handling
-  async createSubpillar(data: Omit<Subpillar, keyof BaseEntity>): Promise<Subpillar> {
-    if (data.pillar) this.validateObjectId(data.pillar, 'createSubpillar.pillar');
-    if (data.createdBy) this.validateObjectId(data.createdBy, 'createSubpillar.createdBy');
-    return this.handleDatabaseOperation(async () => {
-      const subpillar = new SubpillarModel(data);
-      await subpillar.save();
+  async createSubpillar(data: SubpillarCreateInput): Promise<Subpillar> {
+    try {
+      const subpillar = await SubpillarModel.create({
+        ...data,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
       return this.mapSubpillar(subpillar);
-    }, 'createSubpillar');
+    } catch (error) {
+      if (error.code === 11000) {
+        throw new ValidationError('Subpillar with this title already exists');
+      }
+      throw error;
+    }
   }
 
   async findSubpillarById(id: string): Promise<Subpillar | null> {
-    this.validateObjectId(id, 'findSubpillarById');
-    return this.handleDatabaseOperation(async () => {
-      const subpillar = await SubpillarModel.findById(id);
-      return subpillar ? this.mapSubpillar(subpillar) : null;
-    }, 'findSubpillarById');
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new ValidationError('Invalid subpillar ID format');
+    }
+    const subpillar = await SubpillarModel.findById(id);
+    return subpillar ? this.mapSubpillar(subpillar) : null;
   }
 
   async findSubpillarsByPillarId(pillarId: string): Promise<Subpillar[]> {
-    this.validateObjectId(pillarId, 'findSubpillarsByPillarId');
-    return this.handleDatabaseOperation(async () => {
-      const subpillars = await SubpillarModel.find({ pillar: pillarId });
-      return subpillars.map(subpillar => this.mapSubpillar(subpillar));
-    }, 'findSubpillarsByPillarId');
+    if (!mongoose.Types.ObjectId.isValid(pillarId)) {
+      throw new ValidationError('Invalid pillar ID format');
+    }
+    const subpillars = await SubpillarModel.find({ pillarId }).sort({ createdAt: 1 });
+    return subpillars.map(this.mapSubpillar);
   }
 
-  async updateSubpillar(id: string, data: Partial<Subpillar>): Promise<Subpillar | null> {
-    this.validateObjectId(id, 'updateSubpillar');
-    if (data.pillar) this.validateObjectId(data.pillar, 'updateSubpillar.pillar');
-    return this.handleDatabaseOperation(async () => {
-      const subpillar = await SubpillarModel.findByIdAndUpdate(id, data, { new: true });
-      return subpillar ? this.mapSubpillar(subpillar) : null;
-    }, 'updateSubpillar');
+  async updateSubpillar(id: string, data: SubpillarUpdateInput): Promise<Subpillar | null> {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new ValidationError('Invalid subpillar ID format');
+    }
+    const subpillar = await SubpillarModel.findByIdAndUpdate(
+      id,
+      {
+        ...data,
+        updatedAt: new Date()
+      },
+      { new: true, runValidators: true }
+    );
+    return subpillar ? this.mapSubpillar(subpillar) : null;
   }
 
   async deleteSubpillar(id: string): Promise<boolean> {
-    this.validateObjectId(id, 'deleteSubpillar');
-    return this.handleDatabaseOperation(async () => {
-      const result = await SubpillarModel.findByIdAndDelete(id);
-      return !!result;
-    }, 'deleteSubpillar');
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      throw new ValidationError('Invalid subpillar ID format');
+    }
+    const result = await SubpillarModel.deleteOne({ _id: id });
+    return result.deletedCount === 1;
+  }
+
+  private mapSubpillar(doc: any): Subpillar {
+    const subpillar = doc.toJSON();
+    return {
+      id: subpillar._id.toString(),
+      title: subpillar.title,
+      pillarId: subpillar.pillarId.toString(),
+      createdById: subpillar.createdById.toString(),
+      status: subpillar.status,
+      createdAt: subpillar.createdAt,
+      updatedAt: subpillar.updatedAt
+    };
   }
 
   // Research operations with error handling
-  async createResearch(data: Omit<Research, keyof BaseEntity>): Promise<Research> {
-    if (data.subpillar) this.validateObjectId(data.subpillar, 'createResearch.subpillar');
-    return this.handleDatabaseOperation(async () => {
-      const research = new ResearchModel(data);
+  async createResearch(data: ResearchCreateInput): Promise<Research> {
+    try {
+      const research = new ResearchModel({
+        ...data,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
       await research.save();
-      return this.mapResearch(research);
-    }, 'createResearch');
+      return this.mapResearchDocument(research);
+    } catch (error) {
+      this.handleError('createResearch', error);
+      throw error;
+    }
   }
 
-  async findResearchById(id: string): Promise<Research | null> {
-    this.validateObjectId(id, 'findResearchById');
-    return this.handleDatabaseOperation(async () => {
-      const research = await ResearchModel.findById(id);
-      return research ? this.mapResearch(research) : null;
-    }, 'findResearchById');
+  async findResearchById(researchId: string): Promise<Research | null> {
+    try {
+      const research = await ResearchModel.findById(researchId);
+      return research ? this.mapResearchDocument(research) : null;
+    } catch (error) {
+      this.handleError('findResearchById', error);
+      throw error;
+    }
   }
 
   async findResearchBySubpillarId(subpillarId: string): Promise<Research[]> {
-    this.validateObjectId(subpillarId, 'findResearchBySubpillarId');
-    return this.handleDatabaseOperation(async () => {
-      const researches = await ResearchModel.find({ subpillar: subpillarId });
-      return researches.map(research => this.mapResearch(research));
-    }, 'findResearchBySubpillarId');
+    try {
+      const researchItems = await ResearchModel.find({ subpillarId }).sort({ createdAt: -1 });
+      return researchItems.map(research => this.mapResearchDocument(research));
+    } catch (error) {
+      this.handleError('findResearchBySubpillarId', error);
+      throw error;
+    }
   }
 
-  async updateResearch(id: string, data: Partial<Research>): Promise<Research | null> {
-    this.validateObjectId(id, 'updateResearch');
-    if (data.subpillar) this.validateObjectId(data.subpillar, 'updateResearch.subpillar');
-    return this.handleDatabaseOperation(async () => {
-      const research = await ResearchModel.findByIdAndUpdate(id, data, { new: true });
-      return research ? this.mapResearch(research) : null;
-    }, 'updateResearch');
+  async updateResearch(researchId: string, data: ResearchUpdateInput): Promise<Research | null> {
+    try {
+      const research = await ResearchModel.findByIdAndUpdate(
+        researchId,
+        {
+          $set: {
+            ...data,
+            updatedAt: new Date()
+          }
+        },
+        { new: true, runValidators: true }
+      );
+      return research ? this.mapResearchDocument(research) : null;
+    } catch (error) {
+      this.handleError('updateResearch', error);
+      throw error;
+    }
   }
 
-  async deleteResearch(id: string): Promise<boolean> {
-    this.validateObjectId(id, 'deleteResearch');
-    return this.handleDatabaseOperation(async () => {
-      const result = await ResearchModel.findByIdAndDelete(id);
-      return !!result;
-    }, 'deleteResearch');
+  async deleteResearch(researchId: string): Promise<boolean> {
+    try {
+      const result = await ResearchModel.findByIdAndDelete(researchId);
+      return result !== null;
+    } catch (error) {
+      this.handleError('deleteResearch', error);
+      throw error;
+    }
   }
 
   // Outline operations with error handling
-  async createOutline(data: Omit<Outline, keyof BaseEntity>): Promise<Outline> {
-    if (data.subpillar) this.validateObjectId(data.subpillar, 'createOutline.subpillar');
-    if (data.createdBy) this.validateObjectId(data.createdBy, 'createOutline.createdBy');
-    return this.handleDatabaseOperation(async () => {
-      const outline = new OutlineModel(data);
+  async createOutline(data: OutlineCreateInput): Promise<Outline> {
+    try {
+      const outline = new OutlineModel({
+        ...data,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
       await outline.save();
-      return this.mapOutline(outline);
-    }, 'createOutline');
+      return this.mapOutlineDocument(outline);
+    } catch (error) {
+      this.handleError('createOutline', error);
+      throw error;
+    }
   }
 
-  async findOutlineById(id: string): Promise<Outline | null> {
-    this.validateObjectId(id, 'findOutlineById');
-    return this.handleDatabaseOperation(async () => {
-      const outline = await OutlineModel.findById(id);
-      return outline ? this.mapOutline(outline) : null;
-    }, 'findOutlineById');
+  async findOutlineById(outlineId: string): Promise<Outline | null> {
+    try {
+      const outline = await OutlineModel.findById(outlineId);
+      return outline ? this.mapOutlineDocument(outline) : null;
+    } catch (error) {
+      this.handleError('findOutlineById', error);
+      throw error;
+    }
   }
 
   async findOutlineBySubpillarId(subpillarId: string): Promise<Outline | null> {
-    this.validateObjectId(subpillarId, 'findOutlineBySubpillarId');
-    return this.handleDatabaseOperation(async () => {
-      const outline = await OutlineModel.findOne({ subpillar: subpillarId });
-      return outline ? this.mapOutline(outline) : null;
-    }, 'findOutlineBySubpillarId');
+    try {
+      const outline = await OutlineModel.findOne({ subpillarId });
+      return outline ? this.mapOutlineDocument(outline) : null;
+    } catch (error) {
+      this.handleError('findOutlineBySubpillarId', error);
+      throw error;
+    }
   }
 
-  async updateOutline(id: string, data: Partial<Outline>): Promise<Outline | null> {
-    this.validateObjectId(id, 'updateOutline');
-    if (data.subpillar) this.validateObjectId(data.subpillar, 'updateOutline.subpillar');
-    return this.handleDatabaseOperation(async () => {
-      const outline = await OutlineModel.findByIdAndUpdate(id, data, { new: true });
-      return outline ? this.mapOutline(outline) : null;
-    }, 'updateOutline');
+  async updateOutline(outlineId: string, data: OutlineUpdateInput): Promise<Outline | null> {
+    try {
+      const outline = await OutlineModel.findByIdAndUpdate(
+        outlineId,
+        {
+          $set: {
+            ...data,
+            updatedAt: new Date()
+          }
+        },
+        { new: true, runValidators: true }
+      );
+      return outline ? this.mapOutlineDocument(outline) : null;
+    } catch (error) {
+      this.handleError('updateOutline', error);
+      throw error;
+    }
   }
 
-  async deleteOutline(id: string): Promise<boolean> {
-    this.validateObjectId(id, 'deleteOutline');
-    return this.handleDatabaseOperation(async () => {
-      const result = await OutlineModel.findByIdAndDelete(id);
-      return !!result;
-    }, 'deleteOutline');
+  async deleteOutline(outlineId: string): Promise<boolean> {
+    try {
+      const result = await OutlineModel.findByIdAndDelete(outlineId);
+      return result !== null;
+    } catch (error) {
+      this.handleError('deleteOutline', error);
+      throw error;
+    }
   }
 
   // Article operations with error handling
-  async createArticle(data: Omit<Article, keyof BaseEntity>): Promise<Article> {
-    if (data.author) this.validateObjectId(data.author, 'createArticle.author');
-    return this.handleDatabaseOperation(async () => {
-      const article = new ArticleModel(data);
+  async createArticle(data: ArticleCreateInput): Promise<Article> {
+    try {
+      const article = new ArticleModel({
+        ...data,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
       await article.save();
-      return this.mapArticle(article);
-    }, 'createArticle');
+      return this.mapArticleDocument(article);
+    } catch (error) {
+      this.handleError('createArticle', error);
+      throw error;
+    }
   }
 
-  async findArticleById(id: string): Promise<Article | null> {
-    this.validateObjectId(id, 'findArticleById');
-    return this.handleDatabaseOperation(async () => {
-      const article = await ArticleModel.findById(id);
-      return article ? this.mapArticle(article) : null;
-    }, 'findArticleById');
+  async findArticleById(articleId: string): Promise<Article | null> {
+    try {
+      const article = await ArticleModel.findById(articleId);
+      return article ? this.mapArticleDocument(article) : null;
+    } catch (error) {
+      this.handleError('findArticleById', error);
+      throw error;
+    }
   }
 
-  async findArticlesByAuthor(authorId: string): Promise<Article[]> {
-    this.validateObjectId(authorId, 'findArticlesByAuthor');
-    return this.handleDatabaseOperation(async () => {
-      const articles = await ArticleModel.find({ author: authorId });
-      return articles.map(article => this.mapArticle(article));
-    }, 'findArticlesByAuthor');
+  async findArticlesBySubpillarId(subpillarId: string): Promise<Article[]> {
+    try {
+      const articles = await ArticleModel.find({ subpillarId }).sort({ createdAt: -1 });
+      return articles.map(article => this.mapArticleDocument(article));
+    } catch (error) {
+      this.handleError('findArticlesBySubpillarId', error);
+      throw error;
+    }
   }
 
-  async updateArticle(id: string, data: Partial<Article>): Promise<Article | null> {
-    this.validateObjectId(id, 'updateArticle');
-    if (data.author) this.validateObjectId(data.author, 'updateArticle.author');
-    return this.handleDatabaseOperation(async () => {
-      const article = await ArticleModel.findByIdAndUpdate(id, data, { new: true });
-      return article ? this.mapArticle(article) : null;
-    }, 'updateArticle');
+  async findArticlesByAuthorId(authorId: string): Promise<Article[]> {
+    try {
+      const articles = await ArticleModel.find({ authorId }).sort({ createdAt: -1 });
+      return articles.map(article => this.mapArticleDocument(article));
+    } catch (error) {
+      this.handleError('findArticlesByAuthorId', error);
+      throw error;
+    }
   }
 
-  async deleteArticle(id: string): Promise<boolean> {
-    this.validateObjectId(id, 'deleteArticle');
-    return this.handleDatabaseOperation(async () => {
-      const result = await ArticleModel.findByIdAndDelete(id);
+  async updateArticle(articleId: string, data: ArticleUpdateInput): Promise<Article | null> {
+    try {
+      const article = await ArticleModel.findByIdAndUpdate(
+        articleId,
+        {
+          $set: {
+            ...data,
+            updatedAt: new Date()
+          }
+        },
+        { new: true, runValidators: true }
+      );
+      return article ? this.mapArticleDocument(article) : null;
+    } catch (error) {
+      this.handleError('updateArticle', error);
+      throw error;
+    }
+  }
+
+  async deleteArticle(articleId: string): Promise<boolean> {
+    try {
+      const result = await ArticleModel.findByIdAndDelete(articleId);
+      return result !== null;
+    } catch (error) {
+      this.handleError('deleteArticle', error);
+      throw error;
+    }
+  }
+
+  private mapArticleDocument(doc: any): Article {
+    return {
+      id: doc._id.toString(),
+      title: doc.title,
+      content: doc.content,
+      subpillarId: doc.subpillarId.toString(),
+      authorId: doc.authorId.toString(),
+      status: doc.status || 'draft',
+      seoScore: doc.seoScore,
+      keywords: doc.keywords || [],
+      metaDescription: doc.metaDescription,
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt
+    };
+  }
+
+  // Session Management Methods
+  async createSession(data: SessionCreateInput): Promise<Session> {
+    try {
+      const session = new SessionModel({
+        ...data,
+        lastActivityAt: new Date()
+      });
+      await session.save();
+      return session.toJSON();
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async findSessionById(id: string): Promise<Session | null> {
+    try {
+      const session = await SessionModel.findById(id).exec();
+      return session ? session.toJSON() : null;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async findSessionByToken(token: string): Promise<Session | null> {
+    try {
+      const session = await SessionModel.findByToken(token);
+      return session ? session.toJSON() : null;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async findSessionsByUserId(userId: string): Promise<Session[]> {
+    try {
+      const sessions = await SessionModel.find({ userId, isActive: true }).exec();
+      return sessions.map(session => session.toJSON());
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async updateSession(id: string, data: SessionUpdateInput): Promise<Session | null> {
+    try {
+      const session = await SessionModel.findByIdAndUpdate(
+        id,
+        { ...data, updatedAt: new Date() },
+        { new: true }
+      ).exec();
+      return session ? session.toJSON() : null;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async deleteSession(id: string): Promise<boolean> {
+    try {
+      const result = await SessionModel.findByIdAndDelete(id).exec();
       return !!result;
-    }, 'deleteArticle');
+    } catch (error) {
+      throw this.handleError(error);
+    }
   }
 
-  // Session operations
-  async createSession(userId: string, data: any): Promise<string> {
-    // Implementation depends on your session management strategy
-    throw new Error('Session management not implemented');
+  async deleteExpiredSessions(): Promise<number> {
+    try {
+      return await SessionModel.cleanupExpired();
+    } catch (error) {
+      throw this.handleError(error);
+    }
   }
 
-  async getSession(sessionId: string): Promise<any> {
-    // Implementation depends on your session management strategy
-    throw new Error('Session management not implemented');
+  async deleteUserSessions(userId: string): Promise<number> {
+    try {
+      const result = await SessionModel.deleteMany({ userId }).exec();
+      return result.deletedCount;
+    } catch (error) {
+      throw this.handleError(error);
+    }
   }
 
-  async deleteSession(sessionId: string): Promise<boolean> {
-    // Implementation depends on your session management strategy
-    throw new Error('Session management not implemented');
+  async cleanupSessions(): Promise<void> {
+    try {
+      await this.deleteExpiredSessions();
+    } catch (error) {
+      throw this.handleError(error);
+    }
   }
 
   // Private helper methods to map database models to interface types
@@ -490,18 +680,6 @@ export class MongoDBClient implements DatabaseClient {
     };
   }
 
-  private mapSubpillar(subpillar: any): Subpillar {
-    return {
-      id: subpillar._id.toString(),
-      title: subpillar.title,
-      pillar: subpillar.pillar.toString(),
-      status: subpillar.status,
-      createdBy: subpillar.createdBy.toString(),
-      createdAt: subpillar.createdAt,
-      updatedAt: subpillar.updatedAt
-    };
-  }
-
   private mapResearch(research: any): Research {
     return {
       id: research._id.toString(),
@@ -538,6 +716,192 @@ export class MongoDBClient implements DatabaseClient {
       lastSeoUpdate: article.lastSeoUpdate,
       createdAt: article.createdAt,
       updatedAt: article.updatedAt
+    };
+  }
+
+  async listNiches(userId: string): Promise<Niche[]> {
+    try {
+      const niches = await NicheModel.find({ userId }).sort({ createdAt: -1 });
+      return niches.map(niche => this.mapNicheDocument(niche));
+    } catch (error) {
+      this.handleError('listNiches', error);
+      throw error;
+    }
+  }
+
+  async createNiche(data: NicheCreateInput): Promise<Niche> {
+    try {
+      const niche = new NicheModel({
+        ...data,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      await niche.save();
+      return this.mapNicheDocument(niche);
+    } catch (error) {
+      this.handleError('createNiche', error);
+      throw error;
+    }
+  }
+
+  async getNicheById(nicheId: string, userId: string): Promise<Niche | null> {
+    try {
+      const niche = await NicheModel.findOne({ _id: nicheId, userId });
+      return niche ? this.mapNicheDocument(niche) : null;
+    } catch (error) {
+      this.handleError('getNicheById', error);
+      throw error;
+    }
+  }
+
+  async updateNiche(nicheId: string, userId: string, data: NicheUpdateInput): Promise<Niche | null> {
+    try {
+      const niche = await NicheModel.findOneAndUpdate(
+        { _id: nicheId, userId },
+        {
+          $set: {
+            ...data,
+            updatedAt: new Date()
+          }
+        },
+        { new: true, runValidators: true }
+      );
+      return niche ? this.mapNicheDocument(niche) : null;
+    } catch (error) {
+      this.handleError('updateNiche', error);
+      throw error;
+    }
+  }
+
+  async deleteNiche(nicheId: string, userId: string): Promise<boolean> {
+    try {
+      const result = await NicheModel.findOneAndDelete({ _id: nicheId, userId });
+      return result !== null;
+    } catch (error) {
+      this.handleError('deleteNiche', error);
+      throw error;
+    }
+  }
+
+  private mapNicheDocument(doc: any): Niche {
+    return {
+      id: doc._id.toString(),
+      name: doc.name,
+      userId: doc.userId.toString(),
+      pillars: doc.pillars || [],
+      progress: doc.progress || 0,
+      status: doc.status || 'new',
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt
+    };
+  }
+
+  async createPillar(data: PillarCreateInput): Promise<Pillar> {
+    try {
+      const pillar = new PillarModel({
+        ...data,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      await pillar.save();
+      return this.mapPillarDocument(pillar);
+    } catch (error) {
+      this.handleError('createPillar', error);
+      throw error;
+    }
+  }
+
+  async findPillarById(pillarId: string): Promise<Pillar | null> {
+    try {
+      const pillar = await PillarModel.findById(pillarId);
+      return pillar ? this.mapPillarDocument(pillar) : null;
+    } catch (error) {
+      this.handleError('findPillarById', error);
+      throw error;
+    }
+  }
+
+  async findPillarsByNicheId(nicheId: string): Promise<Pillar[]> {
+    try {
+      const pillars = await PillarModel.find({ nicheId }).sort({ createdAt: -1 });
+      return pillars.map(pillar => this.mapPillarDocument(pillar));
+    } catch (error) {
+      this.handleError('findPillarsByNicheId', error);
+      throw error;
+    }
+  }
+
+  async updatePillar(pillarId: string, data: PillarUpdateInput): Promise<Pillar | null> {
+    try {
+      const pillar = await PillarModel.findByIdAndUpdate(
+        pillarId,
+        {
+          $set: {
+            ...data,
+            updatedAt: new Date()
+          }
+        },
+        { new: true, runValidators: true }
+      );
+      return pillar ? this.mapPillarDocument(pillar) : null;
+    } catch (error) {
+      this.handleError('updatePillar', error);
+      throw error;
+    }
+  }
+
+  async deletePillar(pillarId: string): Promise<boolean> {
+    try {
+      const result = await PillarModel.findByIdAndDelete(pillarId);
+      return result !== null;
+    } catch (error) {
+      this.handleError('deletePillar', error);
+      throw error;
+    }
+  }
+
+  private mapPillarDocument(doc: any): Pillar {
+    return {
+      id: doc._id.toString(),
+      title: doc.title,
+      nicheId: doc.nicheId.toString(),
+      status: doc.status,
+      createdById: doc.createdById.toString(),
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt
+    };
+  }
+
+  private mapResearchDocument(doc: any): Research {
+    return {
+      id: doc._id.toString(),
+      subpillarId: doc.subpillarId.toString(),
+      content: doc.content,
+      source: doc.source,
+      notes: doc.notes,
+      relevance: doc.relevance || 0,
+      createdById: doc.createdById.toString(),
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt
+    };
+  }
+
+  private mapOutlineDocument(doc: any): Outline {
+    return {
+      id: doc._id.toString(),
+      subpillarId: doc.subpillarId.toString(),
+      sections: doc.sections.map((section: any) => ({
+        title: section.title,
+        contentPoints: section.contentPoints.map((point: any) => ({
+          point: point.point,
+          generated: point.generated
+        })),
+        order: section.order
+      })),
+      status: doc.status || 'draft',
+      createdById: doc.createdById.toString(),
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt
     };
   }
 }

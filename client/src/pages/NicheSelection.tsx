@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../api/api';
+import { AxiosError } from 'axios';
+import api, { onRetryStatusUpdate, retryRequest } from '../api/api';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -8,56 +9,153 @@ import { Label } from '../components/ui/label';
 import { useToast } from '../hooks/useToast';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 
+interface Pillar {
+  id: string;
+  name: string;
+  status: string;
+  progress: number;
+  subpillars: Array<{
+    id: string;
+    name: string;
+    status: string;
+  }>;
+}
+
 interface Niche {
   id: string;
   name: string;
-  pillars: Array<any>;
+  pillars: Array<Pillar>;
   pillarsCount: number;
   progress: number;
   status: string;
   lastUpdated: string;
 }
 
-interface ApiResponse {
-  data: Niche[];
+interface ApiErrorResponse {
+  message?: string;
+  error?: string;
+}
+
+interface RetryState {
+  isRetrying: boolean;
+  attempt: number;
+  maxRetries: number;
+  nextRetryMs: number;
+  requestId?: string;
 }
 
 export function NicheSelection() {
   const [niches, setNiches] = useState<Niche[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>('');
-  const [nicheName, setNicheName] = useState<string>('');
-  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [nicheName, setNicheName] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [retryState, setRetryState] = useState<RetryState>({
+    isRetrying: false,
+    attempt: 0,
+    maxRetries: 0,
+    nextRetryMs: 0,
+  });
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchNiches = async () => {
-      try {
-        console.log('Fetching niches from API');
-        const response = await api.get<{ data: Niche[] }>('/niches');
-        console.log('API response:', response.data);
-        if (Array.isArray(response.data.data)) {
-          console.log('Setting niches:', response.data.data);
-          setNiches(response.data.data);
-        } else {
-          throw new Error('Invalid data format received for niches');
-        }
-      } catch (err: any) {
-        console.error('Error loading niches:', err);
-        setError('Error loading niches');
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: err.message || 'Failed to load niches',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+    // Set up retry status listener
+    const unsubscribe = onRetryStatusUpdate((status) => {
+      setRetryState({
+        isRetrying: true,
+        attempt: status.attempt,
+        maxRetries: status.maxRetries,
+        nextRetryMs: status.nextRetryMs,
+        requestId: status.requestId,
+      });
 
-    fetchNiches();
+      // Show retry toast
+      toast({
+        variant: 'default',
+        title: 'Retrying Connection',
+        description: `Attempt ${status.attempt} of ${status.maxRetries}. Next retry in ${Math.ceil(status.nextRetryMs / 1000)}s`,
+      });
+    });
+
+    return () => unsubscribe();
   }, [toast]);
+
+  const fetchNiches = async () => {
+    try {
+      const response = await api.get<{ data: Niche[] }>('/niches');
+      if (Array.isArray(response.data.data)) {
+        setNiches(response.data.data);
+        setError('');
+        setRetryState({
+          isRetrying: false,
+          attempt: 0,
+          maxRetries: 0,
+          nextRetryMs: 0,
+        });
+      } else {
+        throw new Error('Invalid data format received for niches');
+      }
+    } catch (err) {
+      const error = err as AxiosError<ApiErrorResponse>;
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to load niches';
+      setError(errorMessage);
+      // Store the request ID for retry
+      const requestId = error.config?.headers?.['X-Request-ID'] as string;
+      if (requestId) {
+        setRetryState(prev => ({
+          ...prev,
+          requestId,
+          isRetrying: false,
+          attempt: 0,
+        }));
+      }
+      toast({
+        variant: 'destructive',
+        title: 'Error Loading Niches',
+        description: errorMessage,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNiches();
+  }, []);
+
+  const handleRetry = async () => {
+    if (!retryState.requestId) return;
+
+    setLoading(true);
+    try {
+      const response = await retryRequest(retryState.requestId);
+      if (Array.isArray(response.data.data)) {
+        setNiches(response.data.data);
+        setError('');
+        setRetryState({
+          isRetrying: false,
+          attempt: 0,
+          maxRetries: 0,
+          nextRetryMs: 0,
+        });
+        toast({
+          variant: 'default',
+          title: 'Success',
+          description: 'Successfully loaded niches',
+        });
+      }
+    } catch (err) {
+      const error = err as Error;
+      toast({
+        variant: 'destructive',
+        title: 'Retry Failed',
+        description: error.message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const validateForm = (): boolean => {
     if (!nicheName.trim()) {
@@ -81,37 +179,31 @@ export function NicheSelection() {
 
   const handleCreateNiche = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    console.log('Create niche button clicked');
 
     if (!validateForm()) {
-      console.log('Form validation failed');
       return;
     }
 
     setSubmitting(true);
     try {
-      console.log('Making API request to create niche:', nicheName);
-      const response = await api.post('/niches', { name: nicheName });
-      console.log('Niche creation response:', response);
+      const response = await api.post<{ data: Niche }>('/niches', { name: nicheName });
+      const newNiche = response.data.data;
 
       toast({
         variant: 'default',
         title: 'Success',
         description: 'Niche created successfully',
       });
-      setNicheName('');
 
-      // Refresh the list of niches
-      console.log('Refreshing niches list...');
-      const nichesResponse = await api.get<{ data: Niche[] }>('/niches');
-      console.log('Updated niches:', nichesResponse.data);
-      setNiches(nichesResponse.data.data);
-    } catch (error: any) {
-      console.error('Error creating niche:', error);
+      setNiches(prevNiches => [...prevNiches, newNiche]);
+      setNicheName('');
+    } catch (err) {
+      const error = err as AxiosError<ApiErrorResponse>;
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to create niche';
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: error.message || 'Failed to create niche. Please try again.',
+        title: 'Error Creating Niche',
+        description: errorMessage,
       });
     } finally {
       setSubmitting(false);
@@ -121,34 +213,61 @@ export function NicheSelection() {
   const handleNicheClick = (nicheId: string) => {
     try {
       navigate(`/niches/${nicheId}`);
-    } catch (err: any) {
-      console.error('Error navigating to niche:', err);
+    } catch (err) {
+      const error = err as Error;
       toast({
         variant: 'destructive',
-        title: 'Error',
-        description: 'Error navigating to niche',
+        title: 'Navigation Error',
+        description: error.message || 'Unable to view niche details. Please try again.',
       });
     }
   };
 
-  const renderNiche = (niche: Niche) => {
-    console.log('Rendering niche:', JSON.stringify(niche, null, 2));
-    return (
-      <Card
-        key={niche.id}
-        className="cursor-pointer niche-card"
-        onClick={() => handleNicheClick(niche.id)}
-        data-testid={`niche-card-${niche.id}`}
-      >
-        <div className="p-4">
-          <h3 className="text-lg font-medium">{niche.name}</h3>
-          <p>{`${niche.pillarsCount} Pillars`}</p>
-          <p>Progress: {niche.progress}%</p>
-          <p>Status: {niche.status}</p>
+  const renderNiche = (niche: Niche) => (
+    <Card
+      key={niche.id}
+      className="cursor-pointer niche-card hover:shadow-md transition-shadow"
+      onClick={() => handleNicheClick(niche.id)}
+      data-testid={`niche-card-${niche.id}`}
+    >
+      <div className="p-4">
+        <h3 className="text-lg font-medium">{niche.name}</h3>
+        <p>{`${niche.pillarsCount} Pillars`}</p>
+        <p>Progress: {niche.progress}%</p>
+        <p>Status: {niche.status}</p>
+      </div>
+    </Card>
+  );
+
+  const renderError = () => (
+    <div className="text-center p-4">
+      <p className="text-destructive">{error}</p>
+      {retryState.requestId && (
+        <div className="mt-4">
+          <Button
+            onClick={handleRetry}
+            variant="outline"
+            disabled={loading || retryState.isRetrying}
+            className="w-full sm:w-auto"
+          >
+            {retryState.isRetrying ? (
+              <>
+                <LoadingSpinner className="mr-2 h-4 w-4" />
+                Retrying... ({retryState.attempt}/{retryState.maxRetries})
+              </>
+            ) : (
+              'Retry Loading Niches'
+            )}
+          </Button>
+          {retryState.isRetrying && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Next retry in {Math.ceil(retryState.nextRetryMs / 1000)} seconds
+            </p>
+          )}
         </div>
-      </Card>
-    );
-  };
+      )}
+    </div>
+  );
 
   return (
     <div className="space-y-6" data-testid="niche-selection">
@@ -170,10 +289,7 @@ export function NicheSelection() {
                 name="nicheName"
                 placeholder="e.g., Digital Marketing"
                 value={nicheName}
-                onChange={(e) => {
-                  console.log('Input value changed:', e.target.value);
-                  setNicheName(e.target.value);
-                }}
+                onChange={(e) => setNicheName(e.target.value)}
                 required
               />
             </div>
@@ -200,12 +316,10 @@ export function NicheSelection() {
         <div className="p-6 pt-0">
           {loading ? (
             <div className="flex h-[calc(100vh-12rem)] items-center justify-center">
-              <div role="progressbar" aria-label="Loading niches">
-                <LoadingSpinner />
-              </div>
+              <LoadingSpinner />
             </div>
           ) : error ? (
-            <p>{error}</p>
+            renderError()
           ) : niches.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {niches.map(renderNiche)}

@@ -1,0 +1,604 @@
+.
+├── .babelrc
+├── .early.coverage
+│   ├── clover.xml
+│   ├── coverage-final.json
+│   ├── lcov-report
+│   │   ├── base.css
+│   │   ├── block-navigation.js
+│   │   ├── favicon.png
+│   │   ├── index.html
+│   │   ├── models
+│   │   │   ├── Article.js.html
+│   │   │   ├── Niche.js.html
+│   │   │   ├── Outline.js.html
+│   │   │   ├── Pillar.js.html
+│   │   │   ├── Research.js.html
+│   │   │   ├── Subpillar.js.html
+│   │   │   ├── User.js.html
+│   │   │   └── index.html
+│   │   ├── prettify.css
+│   │   ├── prettify.js
+│   │   ├── routes
+│   │   │   ├── auth.js.html
+│   │   │   ├── index.html
+│   │   │   └── middleware
+│   │   │       ├── auth.js.html
+│   │   │       └── index.html
+│   │   ├── services
+│   │   │   ├── index.html
+│   │   │   ├── llm.js.html
+│   │   │   ├── niche.js.html
+│   │   │   └── user.js.html
+│   │   ├── sort-arrow-sprite.png
+│   │   ├── sorter.js
+│   │   ├── test
+│   │   │   ├── helpers.js.html
+│   │   │   ├── index.html
+│   │   │   ├── mocks
+│   │   │   │   ├── index.html
+│   │   │   │   └── redisMock.js.html
+│   │   │   └── testServer.js.html
+│   │   └── utils
+│   │       ├── index.html
+│   │       ├── jwt.js.html
+│   │       ├── log.js.html
+│   │       ├── password.js.html
+│   │       ├── routeConfig.js.html
+│   │       └── routeUpdater.js.html
+│   └── lcov.info
+├── .gitignore
+├── README.md
+├── __mocks__
+│   ├── fileMock.js
+│   └── redis.js
+├── analysis-report.json
+├── client
+│   ├── components.json
+│   ├── cypress
+│   │   ├── e2e
+│   │   │   ├── auth.cy.ts
+│   │   │   ├── content-generation.cy.ts
+│   │   │   ├── niche-workflow.cy.ts
+│   │   │   ├── seo-optimization.cy.ts
+│   │   │   ├── server-check.cy.ts
+│   │   │   └── url-check.cy.ts
+│   │   ├── screenshots
+│   │   │   ├── niche-workflow.cy.ts
+│   │   │   │   └── Niche Creation and Management -- should complete full niche creation workflow (failed).png
+│   │   │   └── seo-optimization.cy.ts
+│   │   │       └── SEO Optimization Flow -- should complete full SEO optimization workflow (failed).png
+│   │   └── support
+│   │       ├── api-types.ts
+│   │       ├── commands.ts
+│   │       ├── e2e.ts
+│   │       ├── index.d.ts
+│   │       └── test-utils.ts
+│   ├── cypress.config.ts
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── postcss.config.js
+│   ├── server
+│   │   ├── analysis
+│   │   │   └── scripts
+│   │   └── database
+│   │       └── mongodb
+│   │           └── models
+│   ├── src
+│   │   ├── App.css
+│   │   ├── App.early.test
+│   │   │   └── App.early.test.tsx
+│   │   ├── App.tsx
+│   │   ├── api
+│   │   │   ├── __tests__
+│   │   │   │   └── niche.test.ts
+│   │   │   ├── api.ts
+│   │   │   ├── auth.early.test
+│   │   │   │   ├── login.1.early.test.ts
+│   │   │   │   ├── login.early.test.ts
+│   │   │   │   ├── logout.early.test.ts
+│   │   │   │   └── register.early.test.ts
+│   │   │   ├── auth.ts
+│   │   │   ├── content.early.test
+│   │   │   │   ├── generatePillars.early.test.ts
+│   │   │   │   ├── generateSubpillars.early.test.ts
+│   │   │   │   ├── getArticle.early.test.ts
+│   │   │   │   └── updatePillar.early.test.ts
+│   │   │   ├── content.ts
+│   │   │   ├── dashboard.early.test
+│   │   │   │   └── getDashboardStats.early.test.ts
+│   │   │   ├── dashboard.ts
+│   │   │   ├── settings.early.test
+│   │   │   │   ├── changePassword.early.test.ts
+│   │   │   │   ├── deleteAccount.early.test.ts
+│   │   │   │   ├── exportUserData.early.test.ts
+│   │   │   │   ├── updateProfile.early.test.ts
+│   │   │   │   └── updateSettings.early.test.ts
+│   │   │   └── settings.ts
+│   │   ├── components
+│   │   │   ├── ContentReview.early.test
+│   │   │   │   └── ContentReview.early.test.tsx
+│   │   │   ├── ContentReview.tsx
+│   │   │   ├── ErrorBoundary.early.test
+│   │   │   │   ├── getDerivedStateFromError.early.test.tsx
+│   │   │   │   └── render.early.test.tsx
+│   │   │   ├── ErrorBoundary.tsx
+│   │   │   ├── ErrorMessage.early.test
+│   │   │   │   └── ErrorMessage.early.test.tsx
+│   │   │   ├── ErrorMessage.tsx
+│   │   │   ├── Footer.early.test
+│   │   │   │   └── Footer.early.test.tsx
+│   │   │   ├── Footer.tsx
+│   │   │   ├── Header.early.test
+│   │   │   │   └── Header.early.test.tsx
+│   │   │   ├── Header.tsx
+│   │   │   ├── Layout.early.test
+│   │   │   │   └── Layout.early.test.tsx
+│   │   │   ├── Layout.tsx
+│   │   │   ├── LoadingSpinner.early.test
+│   │   │   │   └── LoadingSpinner.early.test.tsx
+│   │   │   ├── LoadingSpinner.tsx
+│   │   │   ├── OutlineEditor.early.test
+│   │   │   │   └── OutlineEditor.early.test.tsx
+│   │   │   ├── OutlineEditor.tsx
+│   │   │   ├── PillarModifyDialog.early.test
+│   │   │   │   └── PillarModifyDialog.early.test.tsx
+│   │   │   ├── PillarModifyDialog.tsx
+│   │   │   ├── PillarNode.early.test
+│   │   │   │   └── getStatusColor.early.test.tsx
+│   │   │   ├── PillarNode.tsx
+│   │   │   ├── PillarTreeView.early.test
+│   │   │   │   └── PillarTreeView.early.test.tsx
+│   │   │   ├── PillarTreeView.tsx
+│   │   │   ├── PillarWhiteboardView.early.test
+│   │   │   │   └── PillarWhiteboardView.early.test.tsx
+│   │   │   ├── PillarWhiteboardView.tsx
+│   │   │   ├── ProtectedRoute.early.test
+│   │   │   │   └── ProtectedRoute.early.test.tsx
+│   │   │   ├── ProtectedRoute.tsx
+│   │   │   ├── Sidebar.early.test
+│   │   │   │   └── Sidebar.early.test.tsx
+│   │   │   ├── Sidebar.tsx
+│   │   │   ├── ViewToggle.early.test
+│   │   │   │   └── ViewToggle.early.test.tsx
+│   │   │   ├── ViewToggle.tsx
+│   │   │   ├── WhiteboardToolbar.early.test
+│   │   │   │   └── WhiteboardToolbar.early.test.tsx
+│   │   │   ├── WhiteboardToolbar.tsx
+│   │   │   └── ui
+│   │   │       ├── accordion.tsx
+│   │   │       ├── alert-dialog.early.test
+│   │   │       │   ├── AlertDialogFooter.early.test.tsx
+│   │   │       │   └── AlertDialogHeader.early.test.tsx
+│   │   │       ├── alert-dialog.tsx
+│   │   │       ├── alert.tsx
+│   │   │       ├── aspect-ratio.tsx
+│   │   │       ├── avatar.tsx
+│   │   │       ├── badge.early.test
+│   │   │       │   └── Badge.early.test.tsx
+│   │   │       ├── badge.tsx
+│   │   │       ├── breadcrumb.early.test
+│   │   │       │   ├── BreadcrumbEllipsis.early.test.tsx
+│   │   │       │   └── BreadcrumbSeparator.early.test.tsx
+│   │   │       ├── breadcrumb.tsx
+│   │   │       ├── button.tsx
+│   │   │       ├── calendar.early.test
+│   │   │       │   └── Calendar.early.test.tsx
+│   │   │       ├── calendar.tsx
+│   │   │       ├── card.tsx
+│   │   │       ├── carousel.tsx
+│   │   │       ├── chart.early.test
+│   │   │       │   └── ChartStyle.early.test.tsx
+│   │   │       ├── chart.tsx
+│   │   │       ├── checkbox.tsx
+│   │   │       ├── collapsible.tsx
+│   │   │       ├── command.early.test
+│   │   │       │   ├── CommandDialog.early.test.tsx
+│   │   │       │   └── CommandShortcut.early.test.tsx
+│   │   │       ├── command.tsx
+│   │   │       ├── context-menu.early.test
+│   │   │       │   └── ContextMenuShortcut.early.test.tsx
+│   │   │       ├── context-menu.tsx
+│   │   │       ├── dialog.early.test
+│   │   │       │   ├── DialogFooter.early.test.tsx
+│   │   │       │   └── DialogHeader.early.test.tsx
+│   │   │       ├── dialog.tsx
+│   │   │       ├── drawer.early.test
+│   │   │       │   ├── Drawer.early.test.tsx
+│   │   │       │   ├── DrawerFooter.early.test.tsx
+│   │   │       │   └── DrawerHeader.early.test.tsx
+│   │   │       ├── drawer.tsx
+│   │   │       ├── dropdown-menu.early.test
+│   │   │       │   └── DropdownMenuShortcut.early.test.tsx
+│   │   │       ├── dropdown-menu.tsx
+│   │   │       ├── form.early.test
+│   │   │       │   ├── FormField.early.test.tsx
+│   │   │       │   └── useFormField.early.test.tsx
+│   │   │       ├── form.tsx
+│   │   │       ├── hover-card.tsx
+│   │   │       ├── input-otp.tsx
+│   │   │       ├── input.tsx
+│   │   │       ├── label.tsx
+│   │   │       ├── menubar.early.test
+│   │   │       │   └── MenubarShortcut.early.test.tsx
+│   │   │       ├── menubar.tsx
+│   │   │       ├── navigation-menu.tsx
+│   │   │       ├── pagination.early.test
+│   │   │       │   ├── Pagination.early.test.tsx
+│   │   │       │   ├── PaginationEllipsis.early.test.tsx
+│   │   │       │   ├── PaginationLink.early.test.tsx
+│   │   │       │   ├── PaginationNext.early.test.tsx
+│   │   │       │   └── PaginationPrevious.early.test.tsx
+│   │   │       ├── pagination.tsx
+│   │   │       ├── popover.tsx
+│   │   │       ├── progress.tsx
+│   │   │       ├── radio-group.tsx
+│   │   │       ├── resizable.early.test
+│   │   │       │   ├── ResizableHandle.early.test.tsx
+│   │   │       │   └── ResizablePanelGroup.early.test.tsx
+│   │   │       ├── resizable.tsx
+│   │   │       ├── scroll-area.tsx
+│   │   │       ├── select.tsx
+│   │   │       ├── separator.tsx
+│   │   │       ├── sheet.early.test
+│   │   │       │   ├── SheetFooter.early.test.tsx
+│   │   │       │   └── SheetHeader.early.test.tsx
+│   │   │       ├── sheet.tsx
+│   │   │       ├── skeleton.early.test
+│   │   │       │   └── Skeleton.early.test.tsx
+│   │   │       ├── skeleton.tsx
+│   │   │       ├── slider.tsx
+│   │   │       ├── sonner.early.test
+│   │   │       │   └── Toaster.early.test.tsx
+│   │   │       ├── sonner.tsx
+│   │   │       ├── switch.tsx
+│   │   │       ├── table.tsx
+│   │   │       ├── tabs.tsx
+│   │   │       ├── textarea.tsx
+│   │   │       ├── theme-provider.early.test
+│   │   │       │   ├── ThemeProvider.early.test.tsx
+│   │   │       │   └── useTheme.early.test.tsx
+│   │   │       ├── theme-provider.tsx
+│   │   │       ├── theme-toggle.early.test
+│   │   │       │   └── ThemeToggle.early.test.tsx
+│   │   │       ├── theme-toggle.tsx
+│   │   │       ├── toast.tsx
+│   │   │       ├── toaster.early.test
+│   │   │       │   └── Toaster.early.test.tsx
+│   │   │       ├── toaster.tsx
+│   │   │       ├── toggle-group.tsx
+│   │   │       ├── toggle.tsx
+│   │   │       ├── tooltip.tsx
+│   │   │       └── use-toast.tsx
+│   │   ├── config
+│   │   │   └── menu.tsx
+│   │   ├── contexts
+│   │   │   ├── AuthContext.early.test
+│   │   │   │   ├── AuthProvider.early.test.tsx
+│   │   │   │   └── useAuth.early.test.tsx
+│   │   │   ├── AuthContext.tsx
+│   │   │   └── __tests__
+│   │   │       └── AuthContext.test.tsx
+│   │   ├── hooks
+│   │   │   ├── useMobile.early.test
+│   │   │   │   └── useIsMobile.early.test.tsx
+│   │   │   ├── useMobile.tsx
+│   │   │   ├── useToast.early.test
+│   │   │   │   ├── reducer.early.test.ts
+│   │   │   │   ├── toast.early.test.ts
+│   │   │   │   └── useToast.early.test.ts
+│   │   │   └── useToast.ts
+│   │   ├── index.css
+│   │   ├── lib
+│   │   │   ├── utils.early.test
+│   │   │   │   └── cn.early.test.ts
+│   │   │   └── utils.ts
+│   │   ├── main.tsx
+│   │   ├── pages
+│   │   │   ├── Content.early.test
+│   │   │   │   └── Content.early.test.tsx
+│   │   │   ├── Content.tsx
+│   │   │   ├── ContentMerge.early.test
+│   │   │   │   └── ContentMerge.early.test.tsx
+│   │   │   ├── ContentMerge.tsx
+│   │   │   ├── Dashboard.early.test
+│   │   │   │   └── Dashboard.early.test.tsx
+│   │   │   ├── Dashboard.tsx
+│   │   │   ├── FinalArticle.early.test
+│   │   │   │   └── FinalArticle.early.test.tsx
+│   │   │   ├── FinalArticle.tsx
+│   │   │   ├── Login.early.test
+│   │   │   │   └── Login.early.test.tsx
+│   │   │   ├── Login.tsx
+│   │   │   ├── NicheDetail.early.test
+│   │   │   │   └── NicheDetail.early.test.tsx
+│   │   │   ├── NicheDetail.tsx
+│   │   │   ├── NicheSelection.early.test
+│   │   │   │   └── NicheSelection.early.test.tsx
+│   │   │   ├── NicheSelection.tsx
+│   │   │   ├── NotFound.early.test
+│   │   │   │   └── NotFound.early.test.tsx
+│   │   │   ├── NotFound.tsx
+│   │   │   ├── PillarsList.early.test
+│   │   │   │   └── PillarsList.early.test.tsx
+│   │   │   ├── PillarsList.tsx
+│   │   │   ├── Register.early.test
+│   │   │   │   ├── Register.early.test.tsx
+│   │   │   │   └── RegisterPage.early.test.tsx
+│   │   │   ├── Register.tsx
+│   │   │   ├── ResearchManager.early.test
+│   │   │   │   └── ResearchManager.early.test.tsx
+│   │   │   ├── ResearchManager.tsx
+│   │   │   ├── SEOGrade.early.test
+│   │   │   │   └── SEOGrade.early.test.tsx
+│   │   │   ├── SEOGrade.tsx
+│   │   │   ├── Settings.early.test
+│   │   │   │   └── Settings.early.test.tsx
+│   │   │   ├── Settings.tsx
+│   │   │   ├── SubpillarDetail.early.test
+│   │   │   │   └── SubpillarDetail.early.test.tsx
+│   │   │   ├── SubpillarDetail.tsx
+│   │   │   ├── Subpillars.early.test
+│   │   │   │   └── Subpillars.early.test.tsx
+│   │   │   ├── Subpillars.tsx
+│   │   │   └── __tests__
+│   │   │       ├── NicheSelection
+│   │   │       │   ├── api.test.tsx
+│   │   │       │   ├── context.test.tsx
+│   │   │       │   ├── display.test.tsx
+│   │   │       │   ├── form.test.tsx
+│   │   │       │   └── navigation.test.tsx
+│   │   │       ├── NicheSelection.test.tsx
+│   │   │       ├── Register.test.tsx
+│   │   │       └── Settings.test.tsx
+│   │   ├── test
+│   │   │   ├── setup.ts
+│   │   │   ├── test-config.ts
+│   │   │   ├── test-utils.early.test
+│   │   │   │   └── renderWithProviders.early.test.tsx
+│   │   │   └── test-utils.tsx
+│   │   ├── types
+│   │   │   └── pillar.ts
+│   │   ├── utils
+│   │   │   ├── nodeCalculations.early.test
+│   │   │   │   └── calculateNodesAndEdges.early.test.ts
+│   │   │   └── nodeCalculations.ts
+│   │   └── vite-env.d.ts
+│   ├── tailwind.config.ts
+│   ├── tsconfig.app.json
+│   ├── tsconfig.json
+│   ├── tsconfig.node.json
+│   ├── vite.config.ts
+│   └── vitest.config.ts
+├── cypress
+│   ├── e2e
+│   └── support
+│       ├── commands.ts
+│       └── e2e.ts
+├── cypress.config.ts
+├── docs
+│   ├── SETUP.md
+│   ├── project-structure.md
+│   ├── test-execution-checklist.md
+│   └── test-implementation-checklist.md
+├── ecosystem.config.mjs
+├── jest.config.js
+├── jest.setup.js
+├── niche-selection-errors.md
+├── output.txt
+├── package-lock.json
+├── package.json
+├── server
+│   ├── .env
+│   ├── analysis
+│   │   ├── README.md
+│   │   ├── analyzers
+│   │   │   ├── APIAnalyzer.js
+│   │   │   ├── APIAnalyzer.ts
+│   │   │   ├── ComplexityAnalyzer.js
+│   │   │   ├── ComplexityAnalyzer.ts
+│   │   │   ├── DependencyAnalyzer.js
+│   │   │   ├── DependencyAnalyzer.ts
+│   │   │   ├── PatternAnalyzer.js
+│   │   │   ├── PatternAnalyzer.ts
+│   │   │   ├── SecurityAnalyzer.js
+│   │   │   └── SecurityAnalyzer.ts
+│   │   ├── codeAnalyzer.js
+│   │   ├── core
+│   │   │   └── BaseAnalyzer.js
+│   │   ├── package-lock.json
+│   │   ├── package.json
+│   │   ├── scripts
+│   │   │   ├── analyze-niches.js
+│   │   │   └── analyze.js
+│   │   └── utils
+│   ├── config
+│   │   └── openRouter.ts
+│   ├── cypress.config.js
+│   ├── database
+│   │   ├── MIGRATION.md
+│   │   ├── README.md
+│   │   ├── index.ts
+│   │   ├── interfaces.ts
+│   │   └── mongodb
+│   │       ├── client.ts
+│   │       └── models
+│   │           ├── Article.ts
+│   │           ├── Niche.ts
+│   │           ├── Outline.ts
+│   │           ├── Pillar.ts
+│   │           ├── Research.ts
+│   │           ├── Session.ts
+│   │           ├── Subpillar.ts
+│   │           └── User.ts
+│   ├── exports
+│   ├── models
+│   │   ├── TestFixture.js
+│   │   └── init.js
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── routes
+│   │   ├── __mocks__
+│   │   │   └── auth.js
+│   │   ├── __tests__
+│   │   │   ├── articles.test.js
+│   │   │   ├── auth.test.js
+│   │   │   ├── niches.test.js
+│   │   │   ├── outlines.test.js
+│   │   │   ├── pillars.test.js
+│   │   │   ├── seo.test.js
+│   │   │   └── subpillars.test.js
+│   │   ├── articles.js
+│   │   ├── articles.ts
+│   │   ├── auth.early.test
+│   │   │   └── initRedis.early.test.js
+│   │   ├── auth.js
+│   │   ├── auth.ts
+│   │   ├── health.js
+│   │   ├── index.js
+│   │   ├── middleware
+│   │   │   ├── __tests__
+│   │   │   │   └── auth.test.ts
+│   │   │   ├── auth.d.ts
+│   │   │   ├── auth.early.test
+│   │   │   │   ├── authenticateWithToken.early.test.js
+│   │   │   │   ├── initRedis.early.test.js
+│   │   │   │   └── requireUser.early.test.js
+│   │   │   ├── auth.js
+│   │   │   └── auth.ts
+│   │   ├── niche.ts
+│   │   ├── niches.js
+│   │   ├── niches.ts
+│   │   ├── outlines.js
+│   │   ├── outlines.ts
+│   │   ├── pillars.js
+│   │   ├── pillars.ts
+│   │   ├── research.js
+│   │   ├── research.ts
+│   │   ├── seo.js
+│   │   ├── subpillars.js
+│   │   └── subpillars.ts
+│   ├── server.js
+│   ├── server.ts
+│   ├── services
+│   │   ├── ArticleService.ts
+│   │   ├── LLMService.ts
+│   │   ├── NicheService.ts
+│   │   ├── OutlineService.ts
+│   │   ├── PillarService.ts
+│   │   ├── ResearchService.ts
+│   │   ├── SessionService.ts
+│   │   ├── SubpillarService.ts
+│   │   ├── UserService.ts
+│   │   ├── __mocks__
+│   │   │   ├── anthropic.js
+│   │   │   ├── llm.js
+│   │   │   ├── openai.js
+│   │   │   ├── user.js
+│   │   │   └── utils
+│   │   │       └── mockHelpers.js
+│   │   ├── __tests__
+│   │   │   └── openRouter.test.ts
+│   │   ├── llm.early.test
+│   │   │   ├── generateContentPoints.early.test.js
+│   │   │   ├── generateOutline.early.test.js
+│   │   │   ├── generatePillars.early.test.js
+│   │   │   ├── mergeContentIntoArticle.early.test.js
+│   │   │   └── sendLLMRequest.early.test.js
+│   │   ├── niche.js
+│   │   ├── openRouter.ts
+│   │   ├── user.d.ts
+│   │   └── user.js
+│   ├── test
+│   │   ├── analysis
+│   │   │   ├── articles-test-analysis.md
+│   │   │   ├── connection-debug.js
+│   │   │   ├── mongoose-connection-check.js
+│   │   │   ├── test-best-practices.md
+│   │   │   ├── test-checklist.md
+│   │   │   └── test-status.md
+│   │   ├── database-abstraction.test.ts
+│   │   ├── fixtures
+│   │   │   └── llm-responses.js
+│   │   ├── helpers
+│   │   │   ├── databaseHelper.ts
+│   │   │   ├── fixtureHelper.js
+│   │   │   └── fixtureHelper.ts
+│   │   ├── helpers.early.test
+│   │   │   ├── createTestNiche.early.test.js
+│   │   │   ├── createTestPillar.early.test.js
+│   │   │   ├── createTestUser.early.test.js
+│   │   │   └── generateTestToken.early.test.js
+│   │   ├── helpers.js
+│   │   ├── infrastructure
+│   │   │   ├── TestDatabaseClient.ts
+│   │   │   ├── enhanced-redis-mock.ts
+│   │   │   ├── errors.ts
+│   │   │   ├── jest.d.ts
+│   │   │   ├── protocol-guard.ts
+│   │   │   ├── server-lifecycle.ts
+│   │   │   ├── test-container.ts
+│   │   │   ├── test-monitor.ts
+│   │   │   ├── test-server-factory.ts
+│   │   │   ├── test-types.ts
+│   │   │   ├── test-validator.ts
+│   │   │   └── types.ts
+│   │   ├── mocks
+│   │   │   ├── auth.js
+│   │   │   ├── jwt.js
+│   │   │   ├── log.js
+│   │   │   ├── redis.d.ts
+│   │   │   └── redis.js
+│   │   ├── setup.ts
+│   │   ├── suites
+│   │   │   ├── error-handling.test.ts
+│   │   │   ├── integration.test.ts
+│   │   │   ├── session-management.test.ts
+│   │   │   └── token-lifecycle.test.ts
+│   │   ├── testServer.early.test
+│   │   │   └── createTestServer.early.test.js
+│   │   ├── testServer.js
+│   │   └── testServer.ts
+│   ├── test.html
+│   ├── tools
+│   │   └── analysis
+│   │       ├── apiAnalyzer.ts
+│   │       ├── complexityAnalyzer.ts
+│   │       ├── dependencyAnalyzer.ts
+│   │       └── securityAnalyzer.ts
+│   ├── types
+│   │   ├── env.d.ts
+│   │   ├── express.d.ts
+│   │   └── express.ts
+│   ├── updateRoutes.js
+│   └── utils
+│       ├── errors.js
+│       ├── jwt.d.ts
+│       ├── jwt.early.test
+│       │   ├── generateToken.early.test.js
+│       │   └── verifyToken.early.test.js
+│       ├── jwt.js
+│       ├── log.early.test
+│       │   └── logger.early.test.js
+│       ├── log.js
+│       ├── password.early.test
+│       │   ├── generatePasswordHash.early.test.js
+│       │   ├── isPasswordHash.early.test.js
+│       │   └── validatePassword.early.test.js
+│       ├── password.js
+│       ├── routeConfig.js
+│       ├── routeUpdater.early.test
+│       │   └── updateRouteFiles.early.test.js
+│       ├── routeUpdater.js
+│       ├── validation.js
+│       └── validation.ts
+├── test
+│   ├── globalSetup.js
+│   ├── globalTeardown.js
+│   └── redisServer.js
+├── tsconfig.json
+└── tsconfig.test.json
+
+148 directories, 454 files
