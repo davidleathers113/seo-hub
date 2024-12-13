@@ -16,20 +16,20 @@ const subpillarSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  pillar: {
+  pillarId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Pillar',
+    required: true
+  },
+  createdById: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
     required: true
   },
   status: {
     type: String,
     enum: ['draft', 'active', 'archived'],
     default: 'draft'
-  },
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
   },
   createdAt: {
     type: Date,
@@ -50,10 +50,16 @@ subpillarSchema.pre('save', function(next) {
 
 // Transform the document when converting to JSON
 subpillarSchema.set('toJSON', {
-  transform: (doc: SubpillarDocument, ret: any) => {
-    ret.id = ret._id.toString();
-    delete ret._id;
-    return ret;
+  transform: function(doc: any, ret: any) {
+    return {
+      id: ret._id.toString(),
+      title: ret.title,
+      pillarId: ret.pillarId.toString(),
+      createdById: ret.createdById.toString(),
+      status: ret.status,
+      createdAt: ret.createdAt,
+      updatedAt: ret.updatedAt
+    };
   }
 });
 

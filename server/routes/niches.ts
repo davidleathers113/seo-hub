@@ -1,138 +1,121 @@
-import express from 'express';
-import { Router } from 'express';
+import express, { Request, Response } from 'express';
+import { ParamsDictionary } from 'express-serve-static-core';
+import { ParsedQs } from 'qs';
 import { authenticateWithToken as auth } from './middleware/auth';
-import { createNicheService } from '../services/NicheService';
-import { logger } from '../utils/log';
-import { isValidId } from '../utils/validation';
-import { AuthenticatedRequest } from '../types/express';
+import { NicheService } from '../services/NicheService';
+import { User } from '../database/interfaces';
 
-const router: Router = express.Router();
-const log = logger('routes/niches');
-const nicheService = createNicheService();
+// Extend Request type to include authenticated user
+interface AuthenticatedRequest extends Request<ParamsDictionary, any, any, ParsedQs> {
+  user: User;
+  body: any;
+  params: ParamsDictionary;
+}
 
-// Get all niches for the authenticated user
-router.get('/', auth, async (req: AuthenticatedRequest, res) => {
-  try {
-    const niches = await nicheService.list(req.user.id);
-    res.status(200).json({ data: niches });
-  } catch (error) {
-    log.error('Error fetching niches:', error);
-    res.status(500).json({ error: 'Failed to fetch niches' });
-  }
-});
+// Type guard to ensure request is authenticated
+function isAuthenticated(req: Request): req is AuthenticatedRequest {
+  return req.user !== undefined;
+}
 
-// Create a new niche
-router.post('/', auth, async (req: AuthenticatedRequest, res) => {
-  try {
-    const { name } = req.body;
-    log.info('Creating niche with name:', name, 'for user:', req.user.id);
+export function createNicheRouter(nicheService: NicheService) {
+  const router = express.Router();
 
-    if (!name) {
-      log.warn('Niche name is required but was not provided');
-      return res.status(400).json({ error: 'Niche name is required' });
+  router.get('/', auth, async (req: Request, res: Response) => {
+    if (!isAuthenticated(req)) {
+      return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const niche = await nicheService.create(req.user.id, name);
-    log.info('Niche created successfully:', niche);
-    res.status(201).json(niche);
-  } catch (error) {
-    log.error('Error creating niche:', error);
-    res.status(500).json({ error: 'Failed to create niche' });
-  }
-});
+    try {
+      const niches = await nicheService.list(req.user.id);
+      res.json(niches);
+    } catch (error) {
+      console.error('Error fetching niches:', error);
+      res.status(500).json({ error: 'Failed to fetch niches' });
+    }
+  });
 
-// Get a specific niche
-router.get('/:id', auth, async (req: AuthenticatedRequest, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidId(id)) {
-      return res.status(400).json({ error: 'Invalid niche ID format' });
+  router.post('/', auth, async (req: Request, res: Response) => {
+    if (!isAuthenticated(req)) {
+      return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const niche = await nicheService.getById(id, req.user.id);
-    if (!niche) {
-      return res.status(404).json({ error: 'Niche not found or not owned by the user' });
+    try {
+      const { name } = req.body;
+      const niche = await nicheService.create(req.user.id, name);
+      res.status(201).json(niche);
+    } catch (error) {
+      console.error('Error creating niche:', error);
+      res.status(500).json({ error: 'Failed to create niche' });
+    }
+  });
+
+  router.get('/:id', auth, async (req: Request, res: Response) => {
+    if (!isAuthenticated(req)) {
+      return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    res.status(200).json({ data: niche });
-  } catch (error) {
-    log.error('Error fetching niche:', error);
-    res.status(500).json({ error: 'Failed to fetch niche' });
-  }
-});
-
-// Update a niche
-router.put('/:id', auth, async (req: AuthenticatedRequest, res) => {
-  try {
-    const { id } = req.params;
-    const { name } = req.body;
-
-    if (!name) {
-      return res.status(400).json({ error: 'Niche name is required' });
-    }
-
-    if (!isValidId(id)) {
-      return res.status(400).json({ error: 'Invalid niche ID format' });
-    }
-
-    const niche = await nicheService.update(id, req.user.id, { name });
-    if (!niche) {
-      return res.status(404).json({ error: 'Niche not found or not owned by the user' });
-    }
-
-    res.status(200).json(niche);
-  } catch (error) {
-    log.error('Error updating niche:', error);
-    res.status(500).json({ error: 'Failed to update niche' });
-  }
-});
-
-// Delete a niche
-router.delete('/:id', auth, async (req: AuthenticatedRequest, res) => {
-  try {
-    const { id } = req.params;
-    if (!isValidId(id)) {
-      return res.status(400).json({ error: 'Invalid niche ID format' });
-    }
-
-    const result = await nicheService.delete(id, req.user.id);
-    if (!result) {
-      return res.status(404).json({ error: 'Niche not found or not owned by the user' });
-    }
-
-    res.status(200).json({ message: 'Niche deleted successfully' });
-  } catch (error) {
-    log.error('Error deleting niche:', error);
-    res.status(500).json({ error: 'Failed to delete niche' });
-  }
-});
-
-// Generate pillars using AI
-router.post('/:nicheId/pillars/generate', auth, async (req: AuthenticatedRequest, res) => {
-  log.info('Received POST request to generate pillars for a niche');
-  try {
-    const { nicheId } = req.params;
-
-    if (!isValidId(nicheId)) {
-      return res.status(400).json({ error: 'Invalid niche ID format' });
-    }
-
-    log.info(`Generating pillars for niche: ${nicheId} and user: ${req.user.id}`);
-    const pillars = await nicheService.generatePillars(nicheId, req.user.id);
-    log.info('Pillars generated successfully:', pillars);
-    res.status(201).json({ data: pillars });
-  } catch (error) {
-    log.error('Error generating pillars:', error);
-    if (error instanceof Error) {
-      if (error.message === 'Invalid niche ID format' || error.message === 'No pillars generated') {
-        return res.status(400).json({ error: error.message });
+    try {
+      const niche = await nicheService.getById(req.params.id, req.user.id);
+      if (!niche) {
+        return res.status(404).json({ error: 'Niche not found' });
       }
-      if (error.message === 'Niche not found or not owned by the user') {
-        return res.status(404).json({ error: error.message });
-      }
+      res.json(niche);
+    } catch (error) {
+      console.error('Error fetching niche:', error);
+      res.status(500).json({ error: 'Failed to fetch niche' });
     }
-    res.status(500).json({ error: 'Failed to generate pillars' });
-  }
-});
+  });
 
-export default router;
+  router.put('/:id', auth, async (req: Request, res: Response) => {
+    if (!isAuthenticated(req)) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    try {
+      const updatedNiche = await nicheService.update(req.params.id, req.user.id, req.body);
+      if (!updatedNiche) {
+        return res.status(404).json({ error: 'Niche not found' });
+      }
+      res.json(updatedNiche);
+    } catch (error) {
+      console.error('Error updating niche:', error);
+      res.status(500).json({ error: 'Failed to update niche' });
+    }
+  });
+
+  router.delete('/:id', auth, async (req: Request, res: Response) => {
+    if (!isAuthenticated(req)) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    try {
+      const deleted = await nicheService.delete(req.params.id, req.user.id);
+      if (!deleted) {
+        return res.status(404).json({ error: 'Niche not found' });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting niche:', error);
+      res.status(500).json({ error: 'Failed to delete niche' });
+    }
+  });
+
+  router.post('/:nicheId/pillars/generate', auth, async (req: Request, res: Response) => {
+    if (!isAuthenticated(req)) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    try {
+      const pillars = await nicheService.generatePillars(req.params.nicheId, req.user.id);
+      res.json(pillars);
+    } catch (error) {
+      console.error('Error generating pillars:', error);
+      res.status(500).json({ error: 'Failed to generate pillars' });
+    }
+  });
+
+  return router;
+}
+
+// Export the default router for backward compatibility
+export default createNicheRouter;

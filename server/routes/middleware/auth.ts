@@ -6,12 +6,27 @@ import { createUserService } from '../../services/UserService';
 import { createSessionService } from '../../services/SessionService';
 import { TokenError, RedisError, AuthError } from '../../test/infrastructure/errors';
 import { TestMonitor } from '../../test/infrastructure/test-monitor';
+import { DatabaseClient } from '../../database/interfaces';
 
 const log = logger('auth-middleware');
-const userService = createUserService();
-const sessionService = createSessionService();
+
+// Service types
+type Services = {
+  userService: ReturnType<typeof createUserService>;
+  sessionService: ReturnType<typeof createSessionService>;
+};
 
 let redisClient: RedisClientType | null = null;
+let services: Services;
+
+// Initialize services with database client
+export function initializeServices(dbClient: DatabaseClient): Services {
+  services = {
+    userService: createUserService(dbClient),
+    sessionService: createSessionService(dbClient)
+  };
+  return services;
+}
 
 const initRedis = async (client?: RedisClientType): Promise<RedisClientType> => {
   if (client) {
@@ -66,20 +81,21 @@ const authenticateWithToken = async (req: Request, res: Response, next: NextFunc
     const token = authHeader.split(' ')[1];
 
     // Validate session
-    const session = await sessionService.validateSession(token);
+    const session = await services.sessionService.getSessionByToken(token);
     if (!session) {
       throw new AuthError('Invalid or expired session', 'SESSION_INVALID');
     }
 
     // Get user
-    const user = await userService.get(session.userId);
+    const user = await services.userService.get(session.userId);
     if (!user) {
       throw new AuthError('User not found', 'USER_NOT_FOUND');
     }
 
     // Attach user and session to request
     req.user = user;
-    req.session = session;
+    req.session.userId = session.userId;
+    req.session.lastActivityAt = session.lastActivityAt;
     next();
   } catch (error) {
     log.error('Auth middleware error:', error);
@@ -128,7 +144,7 @@ const requireUser = (req: Request, res: Response, next: NextFunction): void | Re
 // Add session cleanup middleware
 const cleanupSessions = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    await sessionService.cleanup();
+    await services.sessionService.cleanupExpiredSessions();
     next();
   } catch (error) {
     log.error('Session cleanup error:', error);

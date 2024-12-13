@@ -1,113 +1,56 @@
-# Code Analyzer
+# Content Creation App
 
-A sophisticated static code analysis tool designed to help developers and teams improve code quality, security, and maintainability. This tool provides comprehensive analysis capabilities including architectural pattern detection, security vulnerability scanning, dependency tracking, and code quality metrics.
+A full-stack application designed to streamline the process of creating high-quality, SEO-optimized content using AI assistance. The app provides a structured workflow from niche selection through to final article publication.
 
 ## Features
 
-### Static Analysis Capabilities
+### Content Creation Workflow
+- **Niche Selection:** Define your target audience and content focus
+- **Content Research:** Tools to gather and organize research materials
+- **Outline Creation:** AI-assisted outline generation and structuring
+- **Content Generation:** AI-powered content drafting with human oversight
+- **SEO Optimization:** Real-time SEO analysis and improvement suggestions
+- **Content Review:** Collaborative review and approval workflow
 
-- **Architectural Pattern Detection**
-  - Identifies common design patterns and anti-patterns
-  - Analyzes code structure and organization
-  - Provides recommendations for architectural improvements
+### AI Integration
+- OpenAI GPT-4 integration for content generation
+- Anthropic API support for additional LLM features
+- Smart content structuring and optimization
+- SEO-focused content improvements
 
-- **Security Analysis**
-  - Detects potential security vulnerabilities
-  - Identifies unsafe API usage
-  - Checks for common security anti-patterns
-  - Provides security best practice recommendations
-
-- **Dependency Analysis**
-  - Generates comprehensive dependency graphs
-  - Tracks internal module dependencies
-  - Analyzes external package usage
-  - Identifies circular dependencies
-
-- **API Usage Tracking**
-  - Monitors OpenAI API endpoint usage
-  - Tracks API call patterns and frequency
-  - Provides usage statistics and optimization suggestions
-
-- **Code Complexity Metrics**
-  - Calculates cyclomatic complexity
-  - Measures code maintainability
-  - Analyzes function and class complexity
-  - Provides detailed metric reports
-
-- **Refactoring Suggestions**
-  - Identifies code duplication
-  - Suggests potential refactoring opportunities
-  - Provides automated improvement recommendations
+### SEO Tools
+- Real-time SEO scoring
+- Keyword optimization suggestions
+- Meta description optimization
+- Content structure analysis
+- Readability scoring
 
 ## Tech Stack
 
-- **Core Technologies**
-  - Node.js
-  - TypeScript
-  - @babel/parser for AST parsing
-  - estraverse for AST traversal
-  - Jest for testing
+### Frontend
+- React with TypeScript
+- Tailwind CSS
+- Radix UI components
+- Vite build system
 
-## Installation
-
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-## Usage
-
-Run the analyzer:
-```bash
-npm run analyze
-```
-
-Run tests:
-```bash
-npm test
-```
-
-Generate coverage report:
-```bash
-npm run test:coverage
-```
-
-## Project Structure
-
-- `/server/analysis` - Core analysis logic and tools
-- `/test` - Test suites and fixtures
-- `/docs` - Documentation and guides
-- `/cypress` - End-to-end tests
-- `/__mocks__` - Test mocks and fixtures
-
-## Testing
-
-The project includes:
-- Unit tests
-- Integration tests
-- End-to-end tests using Cypress
-- Test coverage reporting
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a new Pull Request
+### Backend
+- Node.js
+- Express
+- MongoDB
+- Redis for caching
+- JWT authentication
 
 ## Prerequisites
 
 - Node.js (v16 or higher)
 - MongoDB instance
 - Redis server (for caching)
-- OpenAI API key (for API usage analysis)
-- Anthropic API key (optional, for additional LLM features)
+- OpenAI API key
+- Anthropic API key (optional)
 
 ## Configuration
 
-1. Create a `.env` file in the server directory with the following variables:
+1. Create a `.env` file in the server directory:
 ```env
 PORT=3001
 DATABASE_URL=mongodb://localhost/your_database
@@ -126,75 +69,192 @@ ANTHROPIC_API_KEY=your_anthropic_api_key
    - Install Redis locally or use a cloud instance
    - Update the `REDIS_URL` in your `.env` file
 
-## Usage
+## Installation
 
-### Example Analysis
-
-Run analysis on a specific directory:
+### Backend Setup
 ```bash
-npm run analyze -- --dir=/path/to/project
-```
-
-Generate a focused report:
-```bash
-npm run analyze -- --type=security,patterns
-```
-
-Available analysis types:
-- `security` - Security vulnerability scanning
-- `patterns` - Architectural pattern detection
-- `dependencies` - Dependency graph generation
-- `api` - API usage analysis
-- `complexity` - Code complexity metrics
-- `all` - Run all analyzers (default)
-
-### Output
-
-The analyzer generates several types of reports:
-1. JSON report (`analysis-report.json`)
-2. HTML visualization (in `reports/html`)
-3. Dependency graphs (in `reports/graphs`)
-4. Console summary
-
-## Deployment
-
-The project includes PM2 ecosystem configuration for deployment:
-
-1. For development:
-```bash
+cd server
+npm install
 npm run dev
 ```
 
-2. For production:
+### Frontend Setup
 ```bash
-npm run build
-npm run start:prod
+cd client
+npm install
+npm run dev
 ```
 
-## Troubleshooting
+## Testing
 
-Common issues and solutions:
+The project includes comprehensive testing:
+- Unit tests
+- Integration tests
+- End-to-end tests using Cypress
+- Test coverage reporting
 
-1. **MongoDB Connection Issues**
-   - Verify MongoDB is running
-   - Check DATABASE_URL in .env
-   - Ensure network connectivity
+Run tests:
+```bash
+npm test
+```
 
-2. **Redis Connection Issues**
-   - Verify Redis server is running
-   - Check REDIS_URL in .env
+Generate coverage report:
+```bash
+npm run test:coverage
+```
 
-3. **Analysis Timeout**
-   - Increase the timeout in config
-   - Split analysis into smaller chunks
+## Project Structure
 
-## API Documentation
+```
+├── client/                 # Frontend React application
+│   ├── src/
+│   │   ├── components/    # Reusable UI components
+│   │   ├── pages/        # Page components
+│   │   ├── api/          # API client
+│   │   └── hooks/        # Custom React hooks
+├── server/                # Backend Node.js application
+│   ├── routes/           # API routes
+│   ├── services/         # Business logic
+│   ├── models/           # Database models
+│   └── database/         # Database configuration
+├── docs/                 # Documentation
+└── cypress/              # End-to-end tests
+```
 
-Detailed API documentation is available in the `/docs` directory:
-- Analysis API endpoints
-- Report generation
-- Configuration options
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a new Pull Request
 
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Code Quality & Analysis
+
+### Static Analysis Tools
+- ESLint for JavaScript/TypeScript linting
+- SonarQube for continuous code quality inspection
+- Security vulnerability scanning with Snyk
+- Dependency analysis with npm audit
+
+### Code Metrics
+- Cyclomatic complexity monitoring
+- Code coverage tracking
+- Technical debt assessment
+- API usage patterns analysis
+
+### Architecture Analysis
+- Dependency graphs generation using Madge
+- Architectural pattern validation
+- Code smell detection
+- Package coupling analysis
+
+## Deployment
+
+### Production Setup
+```bash
+# Build frontend
+cd client
+npm run build
+
+# Build backend
+cd ../server
+npm run build
+```
+
+### Docker Deployment
+```bash
+# Build containers
+docker-compose build
+
+# Run services
+docker-compose up -d
+```
+
+### CI/CD Pipeline
+The project uses GitHub Actions for continuous integration and deployment:
+- Automated testing
+- Code quality checks
+- Security scanning
+- Automated deployments to staging/production
+
+## Monitoring & Logging
+
+### Application Monitoring
+- Performance metrics tracking with New Relic
+- Error tracking with Sentry
+- API endpoint monitoring
+- Resource usage tracking
+
+### Logging
+- Structured logging with Winston
+- Log aggregation with ELK stack
+- Request/response logging
+- Error and debug logging
+
+## API Documentation
+
+The API documentation is available through Swagger UI at `/api-docs` when running the server. It includes:
+- Endpoint descriptions
+- Request/response schemas
+- Authentication requirements
+- Rate limiting information
+
+## Security
+
+### Security Measures
+- Regular dependency updates
+- OWASP security best practices
+- Rate limiting
+- Input validation
+- XSS protection
+- CSRF protection
+- Security headers
+
+### API Security
+- JWT token validation
+- API key rotation
+- Request signing
+- IP whitelisting (optional)
+
+## Troubleshooting
+
+### Common Issues
+
+1. **MongoDB Connection Issues**
+   ```bash
+   # Check MongoDB status
+   mongosh --eval "db.serverStatus()"
+   ```
+
+2. **Redis Connection Issues**
+   ```bash
+   # Check Redis status
+   redis-cli ping
+   ```
+
+3. **API Rate Limiting**
+   - Check your API key usage
+   - Verify rate limit headers
+   - Implement exponential backoff
+
+### Debug Mode
+```bash
+# Start server in debug mode
+DEBUG=app:* npm run dev
+```
+
+## Support
+
+For support and questions:
+- Create an issue in the GitHub repository
+- Contact the development team
+- Check the documentation in the `/docs` directory
+
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md) for a detailed list of changes between versions.

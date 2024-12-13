@@ -85,11 +85,8 @@ export interface OutlineSection {
   order: number;
 }
 
-export interface OutlineCreateInput {
-  subpillarId: string;
-  sections: OutlineSection[];
+export interface OutlineCreateInput extends Omit<Outline, keyof BaseEntity | 'status'> {
   status?: 'draft' | 'approved' | 'in_progress';
-  createdById: string;
 }
 
 export interface OutlineUpdateInput {
@@ -233,9 +230,7 @@ export interface DatabaseClient {
   cleanupSessions(): Promise<void>;
 }
 
-export interface NicheCreateInput {
-  name: string;
-  userId: string;
+export interface NicheCreateInput extends Omit<Niche, keyof BaseEntity | 'pillars' | 'progress' | 'status'> {
   pillars?: Array<{
     title: string;
     status: string;
@@ -256,11 +251,8 @@ export interface NicheUpdateInput {
   status?: string;
 }
 
-export interface PillarCreateInput {
-  title: string;
+export interface PillarCreateInput extends Omit<Pillar, keyof BaseEntity | 'status'> {
   status?: 'pending' | 'approved' | 'rejected' | 'in_progress';
-  nicheId: string;
-  createdById: string;
 }
 
 export interface PillarUpdateInput {
@@ -268,13 +260,9 @@ export interface PillarUpdateInput {
   status?: 'pending' | 'approved' | 'rejected' | 'in_progress';
 }
 
-export interface ResearchCreateInput {
-  subpillarId: string;
-  content: string;
-  source: string;
-  notes?: string;
-  createdById: string;
+export interface ResearchCreateInput extends Omit<Research, keyof BaseEntity | 'relevance' | 'notes'> {
   relevance?: number;
+  notes?: string;
 }
 
 export interface ResearchUpdateInput {
@@ -284,11 +272,7 @@ export interface ResearchUpdateInput {
   relevance?: number;
 }
 
-export interface ArticleCreateInput {
-  title: string;
-  content: string;
-  subpillarId: string;
-  authorId: string;
+export interface ArticleCreateInput extends Omit<Article, keyof BaseEntity | 'status' | 'seoScore' | 'keywords' | 'metaDescription'> {
   status?: 'draft' | 'review' | 'published';
   seoScore?: number;
   keywords?: string[];
@@ -304,10 +288,7 @@ export interface ArticleUpdateInput {
   metaDescription?: string;
 }
 
-export interface SubpillarCreateInput {
-  title: string;
-  pillarId: string;
-  createdById: string;
+export interface SubpillarCreateInput extends Omit<Subpillar, keyof BaseEntity | 'status'> {
   status?: 'draft' | 'active' | 'archived';
 }
 
@@ -329,3 +310,56 @@ export interface UserUpdateInput {
   lastLoginAt?: Date;
   isActive?: boolean;
 }
+
+// Input interfaces
+export interface UserCreateInput extends Omit<User, keyof BaseEntity> {}
+export interface UserUpdateInput extends Partial<Omit<User, keyof BaseEntity>> {}
+
+export interface NicheCreateInput extends Omit<Niche, keyof BaseEntity | 'pillars' | 'progress' | 'status'> {
+  pillars?: Array<{
+    title: string;
+    status: string;
+    approved: boolean;
+  }>;
+  progress?: number;
+  status?: string;
+}
+
+export interface NicheUpdateInput extends Partial<Omit<Niche, keyof BaseEntity>> {}
+
+export interface PillarCreateInput extends Omit<Pillar, keyof BaseEntity | 'status'> {
+  status?: 'pending' | 'approved' | 'rejected' | 'in_progress';
+}
+
+export interface PillarUpdateInput extends Partial<Omit<Pillar, keyof BaseEntity>> {}
+
+export interface SubpillarCreateInput extends Omit<Subpillar, keyof BaseEntity | 'status'> {
+  status?: 'draft' | 'active' | 'archived';
+}
+
+export interface SubpillarUpdateInput extends Partial<Omit<Subpillar, keyof BaseEntity>> {}
+
+export interface ResearchCreateInput extends Omit<Research, keyof BaseEntity | 'relevance' | 'notes'> {
+  relevance?: number;
+  notes?: string;
+}
+
+export interface ResearchUpdateInput extends Partial<Omit<Research, keyof BaseEntity>> {}
+
+export interface OutlineCreateInput extends Omit<Outline, keyof BaseEntity | 'status'> {
+  status?: 'draft' | 'approved' | 'in_progress';
+}
+
+export interface OutlineUpdateInput extends Partial<Omit<Outline, keyof BaseEntity>> {}
+
+export interface ArticleCreateInput extends Omit<Article, keyof BaseEntity | 'status' | 'seoScore' | 'keywords' | 'metaDescription'> {
+  status?: 'draft' | 'review' | 'published';
+  seoScore?: number;
+  keywords?: string[];
+  metaDescription?: string;
+}
+
+export interface ArticleUpdateInput extends Partial<Omit<Article, keyof BaseEntity>> {}
+
+export interface SessionCreateInput extends Omit<Session, keyof BaseEntity> {}
+export interface SessionUpdateInput extends Partial<Omit<Session, keyof BaseEntity>> {}

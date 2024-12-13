@@ -11,7 +11,7 @@ export interface ResearchModel extends mongoose.Model<ResearchDocument> {}
 
 // Define the main schema
 const researchSchema = new mongoose.Schema({
-  subpillar: {
+  subpillarId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Subpillar',
     required: true
@@ -22,11 +22,22 @@ const researchSchema = new mongoose.Schema({
   },
   source: {
     type: String,
-    required: false
+    required: true
+  },
+  relevance: {
+    type: Number,
+    required: true,
+    min: 0,
+    max: 100
   },
   notes: {
     type: String,
     required: false
+  },
+  createdById: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
   createdAt: {
     type: Date,
@@ -47,10 +58,18 @@ researchSchema.pre('save', function(next) {
 
 // Transform the document when converting to JSON
 researchSchema.set('toJSON', {
-  transform: (doc: ResearchDocument, ret: any) => {
-    ret.id = ret._id.toString();
-    delete ret._id;
-    return ret;
+  transform: function(doc: any, ret: any) {
+    return {
+      id: ret._id.toString(),
+      subpillarId: ret.subpillarId.toString(),
+      content: ret.content,
+      source: ret.source,
+      relevance: ret.relevance,
+      notes: ret.notes,
+      createdById: ret.createdById.toString(),
+      createdAt: ret.createdAt,
+      updatedAt: ret.updatedAt
+    };
   }
 });
 

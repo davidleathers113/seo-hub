@@ -75,7 +75,7 @@ outlineSchema.pre('save', function(next) {
 
 // Transform the document when converting to JSON
 outlineSchema.set('toJSON', {
-  transform: (doc: OutlineDocument, ret: any) => {
+  transform: function(doc: any, ret: any) {
     ret.id = ret._id.toString();
     delete ret._id;
     return ret;

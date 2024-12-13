@@ -177,7 +177,7 @@ const createApiWithRetry = (config: AxiosRequestConfig): AxiosInstance => {
 
 // Create and export the API instance
 const api = createApiWithRetry({
-  baseURL: 'http://localhost:3001/api',
+  baseURL: 'http://localhost:3001',
   headers: {
     'Content-Type': 'application/json',
   },

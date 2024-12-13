@@ -72,10 +72,17 @@ nicheSchema.pre('save', function(next) {
 
 // Transform the document when converting to JSON
 nicheSchema.set('toJSON', {
-  transform: (doc: NicheDocument, ret: any) => {
-    ret.id = ret._id.toString();
-    delete ret._id;
-    return ret;
+  transform: function(doc: any, ret: any) {
+    return {
+      id: ret._id.toString(),
+      name: ret.name,
+      userId: ret.userId.toString(),
+      pillars: ret.pillars,
+      progress: ret.progress,
+      status: ret.status,
+      createdAt: ret.createdAt,
+      updatedAt: ret.updatedAt
+    };
   }
 });
 

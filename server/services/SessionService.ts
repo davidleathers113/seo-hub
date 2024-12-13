@@ -1,134 +1,111 @@
-import { DatabaseClient, Session, SessionCreateInput, SessionUpdateInput } from '../database/interfaces';
+import { v4 as uuidv4 } from 'uuid';
+import { DatabaseClient, Session, SessionCreateInput } from '../database/interfaces';
+import { logger } from '../utils/log';
 import { getDatabase } from '../database';
-import { logger } from '../utils/logger';
-import { ValidationError } from '../database/mongodb/client';
-import { randomUUID } from 'crypto';
 
 const log = logger('services/SessionService');
 
-// Default session expiration time (24 hours)
-const DEFAULT_SESSION_EXPIRY = 24 * 60 * 60 * 1000;
-
 export class SessionService {
-  private db: DatabaseClient;
+  constructor(private db: DatabaseClient) {}
 
-  constructor(dbClient?: DatabaseClient) {
-    this.db = dbClient || getDatabase();
-  }
-
-  async createSession(userId: string, options: {
-    userAgent?: string;
-    ipAddress?: string;
-    expiresIn?: number;
-  } = {}): Promise<Session> {
+  async createSession(
+    userId: string,
+    userAgent?: string,
+    ipAddress?: string
+  ): Promise<Session> {
     try {
-      const { userAgent, ipAddress, expiresIn = DEFAULT_SESSION_EXPIRY } = options;
-
+      const now = new Date();
       const sessionData: SessionCreateInput = {
         userId,
-        token: randomUUID(),
-        expiresAt: new Date(Date.now() + expiresIn),
+        token: uuidv4(),
+        expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000), // 24 hours
+        lastActivityAt: now,
         userAgent,
-        ipAddress
+        ipAddress,
+        isActive: true
       };
 
-      log.info(`Creating session for user ${userId}`);
       const session = await this.db.createSession(sessionData);
-      log.info(`Created session ${session.id} for user ${userId}`);
-
+      log.info(`Created session for user ${userId}`);
       return session;
     } catch (error) {
-      log.error('Error in SessionService.createSession:', error);
+      log.error('Error creating session:', error);
       throw error;
     }
   }
 
-  async validateSession(token: string): Promise<Session | null> {
+  async getSessionByToken(token: string): Promise<Session | null> {
     try {
-      log.info('Validating session token');
       const session = await this.db.findSessionByToken(token);
-
       if (!session) {
-        log.info('Session not found');
+        log.warn(`Session not found for token ${token}`);
         return null;
       }
+      return session;
+    } catch (error) {
+      log.error('Error getting session by token:', error);
+      throw error;
+    }
+  }
 
-      if (!session.isActive) {
-        log.info(`Session ${session.id} is inactive`);
-        return null;
-      }
-
-      if (session.expiresAt < new Date()) {
-        log.info(`Session ${session.id} has expired`);
-        await this.db.deleteSession(session.id);
-        return null;
-      }
-
-      // Update last activity
-      await this.db.updateSession(session.id, {
+  async updateSessionActivity(id: string): Promise<Session | null> {
+    try {
+      const session = await this.db.updateSession(id, {
         lastActivityAt: new Date()
       });
-
+      if (!session) {
+        log.warn(`Session not found for id ${id}`);
+        return null;
+      }
       return session;
     } catch (error) {
-      log.error('Error in SessionService.validateSession:', error);
-      throw error;
-    }
-  }
-
-  async getUserSessions(userId: string): Promise<Session[]> {
-    try {
-      log.info(`Fetching sessions for user ${userId}`);
-      const sessions = await this.db.findSessionsByUserId(userId);
-      log.info(`Found ${sessions.length} active sessions for user ${userId}`);
-      return sessions;
-    } catch (error) {
-      log.error('Error in SessionService.getUserSessions:', error);
+      log.error('Error updating session activity:', error);
       throw error;
     }
   }
 
   async invalidateSession(token: string): Promise<boolean> {
     try {
-      log.info('Invalidating session');
       const session = await this.db.findSessionByToken(token);
-
       if (!session) {
-        log.info('Session not found');
+        log.warn(`Session not found for token ${token}`);
         return false;
       }
-
-      await this.db.updateSession(session.id, {
-        isActive: false
-      });
-
+      await this.db.updateSession(session.id, { isActive: false });
       log.info(`Invalidated session ${session.id}`);
       return true;
     } catch (error) {
-      log.error('Error in SessionService.invalidateSession:', error);
+      log.error('Error invalidating session:', error);
       throw error;
     }
   }
 
-  async invalidateUserSessions(userId: string): Promise<number> {
+  async getUserSessions(userId: string): Promise<Session[]> {
     try {
-      log.info(`Invalidating all sessions for user ${userId}`);
-      const count = await this.db.deleteUserSessions(userId);
-      log.info(`Invalidated ${count} sessions for user ${userId}`);
-      return count;
+      const sessions = await this.db.findSessionsByUserId(userId);
+      return sessions;
     } catch (error) {
-      log.error('Error in SessionService.invalidateUserSessions:', error);
+      log.error('Error getting user sessions:', error);
       throw error;
     }
   }
 
-  async cleanup(): Promise<void> {
+  async invalidateUserSessions(userId: string): Promise<void> {
     try {
-      log.info('Running session cleanup');
+      await this.db.deleteUserSessions(userId);
+      log.info(`Invalidated all sessions for user ${userId}`);
+    } catch (error) {
+      log.error('Error invalidating user sessions:', error);
+      throw error;
+    }
+  }
+
+  async cleanupExpiredSessions(): Promise<void> {
+    try {
       await this.db.cleanupSessions();
-      log.info('Session cleanup completed');
+      log.info('Cleaned up expired sessions');
     } catch (error) {
-      log.error('Error in SessionService.cleanup:', error);
+      log.error('Error cleaning up expired sessions:', error);
       throw error;
     }
   }
@@ -136,5 +113,5 @@ export class SessionService {
 
 // Factory function to create SessionService instance
 export function createSessionService(dbClient?: DatabaseClient): SessionService {
-  return new SessionService(dbClient);
+  return new SessionService(dbClient || getDatabase());
 }

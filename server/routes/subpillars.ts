@@ -1,32 +1,44 @@
 import express, { Request as ExpressRequest, Response, NextFunction } from 'express';
 import { ParamsDictionary } from 'express-serve-static-core';
-import { User } from '../database/mongodb/models/User';
+import { UserDocument } from '../database/mongodb/models/User';
 import { ValidationError } from '../utils/errors';
 import { authenticateWithToken, requireUser } from './middleware/auth';
 import { logger } from '../utils/logger';
-import { sendLLMRequest } from '../services/llm';
+import { sendLLMRequest, LLMProvider, LLMModel } from '../services/llm';
 import { createSubpillarService } from '../services/SubpillarService';
 import { createPillarService } from '../services/PillarService';
+import { PillarDocument } from '../database/mongodb/models/Pillar';
+import { SubpillarDocument } from '../database/mongodb/models/Subpillar';
 
 const router = express.Router({ mergeParams: true });
 const log = logger('api/routes/subpillarsRoutes');
 const subpillarService = createSubpillarService();
 const pillarService = createPillarService();
 
+type PillarStatus = 'pending' | 'approved' | 'rejected' | 'in_progress';
+type SubpillarStatus = 'draft' | 'active' | 'archived';
+
 // Extend Express Request to include user and pillar
 interface AuthenticatedRequest extends ExpressRequest {
-  user?: User;
+  user?: UserDocument;
   params: ParamsDictionary & {
     pillarId?: string;
     id?: string;
   };
   body: any;
-  pillar?: any; // Will be set by middleware
+  pillar?: PillarDocument;
 }
 
 interface UpdateSubpillarRequest {
   title?: string;
-  status?: 'draft' | 'active' | 'archived';
+  status?: SubpillarStatus;
+}
+
+interface CreateSubpillarRequest {
+  title: string;
+  pillarId: string;
+  createdById: string;
+  status: SubpillarStatus;
 }
 
 // Middleware to load and validate pillar
@@ -44,13 +56,13 @@ const loadPillar = async (req: AuthenticatedRequest, res: Response, next: NextFu
       return res.status(404).json({ error: 'Pillar not found' });
     }
 
-    if (pillar.createdById !== req.user!.id) {
+    if (pillar.createdById.toString() !== req.user!.id) {
       return res.status(403).json({ error: 'Not authorized to access this pillar' });
     }
 
     req.pillar = pillar;
     next();
-  } catch (error) {
+  } catch (error: unknown) {
     log.error('Error loading pillar:', error);
     if (error instanceof ValidationError) {
       res.status(400).json({ error: error.message });
@@ -67,9 +79,9 @@ router.get('/pillars/:pillarId/subpillars',
   loadPillar,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const subpillars = await subpillarService.getByPillarId(req.pillar.id);
+      const subpillars = await subpillarService.getByPillarId(req.pillar!.id);
       res.json(subpillars);
-    } catch (error) {
+    } catch (error: unknown) {
       log.error('Error listing subpillars:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
@@ -82,7 +94,7 @@ router.post('/pillars/:pillarId/subpillars/generate',
   loadPillar,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const pillar = req.pillar;
+      const pillar = req.pillar!;
 
       if (pillar.status !== 'approved') {
         throw new ValidationError('Can only generate subpillars for approved pillars');
@@ -93,34 +105,37 @@ router.post('/pillars/:pillarId/subpillars/generate',
         The subpillars should be comprehensive enough to form the basis of detailed content pieces.
         Format the response as a numbered list (1., 2., etc.).`;
 
-      const response = await sendLLMRequest('openai', 'gpt-4', prompt);
-      const subpillarTitles = response
+      const provider: LLMProvider = 'openai';
+      const model: LLMModel = 'gpt-4';
+      const response = await sendLLMRequest(provider, model, prompt);
+      const subpillarTitles: string[] = response
         .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.match(/^\d+\./))
-        .map(line => line.replace(/^\d+\.\s*/, ''));
+        .map((line: string) => line.trim())
+        .filter((line: string) => line.match(/^\d+\./))
+        .map((line: string) => line.replace(/^\d+\.\s*/, ''));
 
       if (subpillarTitles.length === 0) {
         throw new ValidationError('Failed to generate valid subpillars from AI response');
       }
 
       const createdSubpillars = await Promise.all(
-        subpillarTitles.map((title, index) =>
-          subpillarService.create({
+        subpillarTitles.map(async (title: string) => {
+          const createRequest: CreateSubpillarRequest = {
             title,
             pillarId: pillar.id,
             createdById: req.user!.id,
             status: 'draft'
-          })
-        )
+          };
+          return await subpillarService.create(createRequest);
+        })
       );
 
       res.status(201).json(createdSubpillars);
-    } catch (error) {
+    } catch (error: unknown) {
       log.error('Error generating subpillars:', error);
       if (error instanceof ValidationError) {
         res.status(400).json({ error: error.message });
-      } else if (error.message === 'AI Service Error') {
+      } else if (error instanceof Error && error.message === 'AI Service Error') {
         res.status(500).json({
           error: 'Failed to generate subpillars',
           details: 'AI service encountered an error'
@@ -154,7 +169,7 @@ router.put('/subpillars/:id',
       }
 
       res.json(subpillar);
-    } catch (error) {
+    } catch (error: unknown) {
       log.error('Error updating subpillar:', error);
       if (error instanceof ValidationError) {
         res.status(400).json({ error: error.message });
@@ -182,7 +197,7 @@ router.delete('/subpillars/:id',
       }
 
       res.status(204).send();
-    } catch (error) {
+    } catch (error: unknown) {
       log.error('Error deleting subpillar:', error);
       if (error instanceof ValidationError) {
         res.status(400).json({ error: error.message });

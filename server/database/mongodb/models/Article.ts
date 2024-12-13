@@ -61,7 +61,7 @@ articleSchema.pre('save', function(next) {
 
 // Transform the document when converting to JSON
 articleSchema.set('toJSON', {
-  transform: (doc: ArticleDocument, ret: any) => {
+  transform: function(doc: any, ret: any) {
     ret.id = ret._id.toString();
     delete ret._id;
     return ret;

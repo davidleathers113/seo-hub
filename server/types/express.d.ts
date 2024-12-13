@@ -1,15 +1,21 @@
 import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
 import { ParamsDictionary } from 'express-serve-static-core';
 import { ParsedQs } from 'qs';
+import { Session } from 'express-session';
+import { UserDocument } from '../database/mongodb/models/User';
+
+// Define session data structure
+interface SessionData extends Session {
+  userId?: string;
+  isAuthenticated?: boolean;
+  lastAccess?: Date;
+}
 
 declare global {
   namespace Express {
-    interface Request extends ExpressRequest {
-      user?: {
-        _id: string;
-        email: string;
-        [key: string]: any;
-      };
+    interface Request {
+      user?: UserDocument;
+      session: SessionData;
     }
   }
 }
@@ -21,15 +27,14 @@ export interface Request<
   ReqQuery = ParsedQs,
   Locals extends Record<string, any> = Record<string, any>
 > extends ExpressRequest<P, ResBody, ReqBody, ReqQuery, Locals> {
-  user?: {
-    _id: string;
-    email: string;
-    [key: string]: any;
-  };
+  user?: UserDocument;
+  session: SessionData;
   method: string;
   url: string;
   originalUrl: string;
-  headers: any;
+  headers: {
+    [key: string]: string | string[] | undefined;
+  };
 }
 
 export interface Response<
@@ -38,6 +43,13 @@ export interface Response<
 > extends ExpressResponse<ResBody, Locals> {
   json: (body: ResBody) => Response<ResBody, Locals>;
   status: (code: number) => Response<ResBody, Locals>;
+  sendError?: (error: Error & { statusCode?: number }) => void;
 }
 
-export type NextFunction = (error?: any) => void;
+export interface ApiError extends Error {
+  statusCode: number;
+  code?: string;
+  details?: any;
+}
+
+export type NextFunction = (error?: ApiError | Error | any) => void;

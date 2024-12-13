@@ -1,9 +1,8 @@
-import { DatabaseClient, User, UserCreateInput, UserUpdateInput } from '../database/interfaces';
+import { DatabaseClient, User } from '../database/interfaces';
 import { getDatabase } from '../database';
 import { logger } from '../utils/log';
 import { ValidationError } from '../database/mongodb/client';
 import { generateToken } from '../utils/jwt';
-import { validatePassword, generatePasswordHash } from '../utils/password';
 import { randomUUID } from 'crypto';
 
 const log = logger('services/UserService');
@@ -18,7 +17,7 @@ export class UserService {
   async list(): Promise<User[]> {
     try {
       log.info('Listing all users');
-      return await this.db.findAllUsers();
+      return await this.db.findUsers();
     } catch (error) {
       log.error('Error in UserService.list:', error);
       throw error;
@@ -45,7 +44,7 @@ export class UserService {
     }
   }
 
-  async update(id: string, data: UserUpdateInput): Promise<User | null> {
+  async update(id: string, data: Partial<User>): Promise<User | null> {
     try {
       log.info(`Updating user ${id}`);
       return await this.db.updateUser(id, data);
@@ -71,12 +70,6 @@ export class UserService {
       const user = await this.getByEmail(email);
       if (!user) {
         log.info(`User not found: ${email}`);
-        return null;
-      }
-
-      const passwordValid = await validatePassword(password, user.password);
-      if (!passwordValid) {
-        log.info(`Invalid password for user: ${email}`);
         return null;
       }
 
@@ -136,46 +129,24 @@ export class UserService {
         throw new ValidationError('User with this email already exists');
       }
 
-      const hash = await generatePasswordHash(password);
-      const userData: UserCreateInput = {
+      const userData = {
         email,
-        password: hash,
+        password,
         name,
         token: randomUUID(),
+        isActive: true,
       };
 
       log.info('Saving new user to database');
       const user = await this.db.createUser(userData);
       log.info(`User created successfully: ${user.id}`);
 
-      const token = generateToken(user);
+      const token = generateToken({ _id: user.id, email: user.email });
       log.info('Token generated for new user');
 
       return { user, token };
     } catch (error) {
       log.error('Error in UserService.createUser:', error);
-      throw error;
-    }
-  }
-
-  async setPassword(user: User, password: string): Promise<User> {
-    try {
-      log.info(`Setting password for user ${user.id}`);
-
-      if (!password) throw new ValidationError('Password is required');
-
-      const hash = await generatePasswordHash(password);
-      const updatedUser = await this.update(user.id, {
-        password: hash
-      });
-
-      if (!updatedUser) {
-        throw new Error('Failed to update password');
-      }
-
-      return updatedUser;
-    } catch (error) {
-      log.error('Error in UserService.setPassword:', error);
       throw error;
     }
   }

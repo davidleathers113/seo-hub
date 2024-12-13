@@ -16,7 +16,7 @@ const pillarSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  niche: {
+  nicheId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Niche',
     required: true
@@ -26,7 +26,7 @@ const pillarSchema = new mongoose.Schema({
     enum: ['pending', 'approved', 'rejected', 'in_progress'],
     default: 'pending'
   },
-  createdBy: {
+  createdById: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
@@ -50,10 +50,16 @@ pillarSchema.pre('save', function(next) {
 
 // Transform the document when converting to JSON
 pillarSchema.set('toJSON', {
-  transform: (doc: PillarDocument, ret: any) => {
-    ret.id = ret._id.toString();
-    delete ret._id;
-    return ret;
+  transform: function(doc: any, ret: any) {
+    return {
+      id: ret._id.toString(),
+      title: ret.title,
+      nicheId: ret.nicheId.toString(),
+      status: ret.status,
+      createdById: ret.createdById.toString(),
+      createdAt: ret.createdAt,
+      updatedAt: ret.updatedAt
+    };
   }
 });
 
