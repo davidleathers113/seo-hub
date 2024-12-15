@@ -1,16 +1,11 @@
 import { DatabaseClient, Article, ArticleCreateInput, ArticleUpdateInput } from '../database/interfaces';
-import { getDatabase } from '../database';
 import { logger } from '../utils/log';
 import { ValidationError } from '../database/mongodb/client';
 
 const log = logger('services/ArticleService');
 
 export class ArticleService {
-  private db: DatabaseClient;
-
-  constructor(dbClient?: DatabaseClient) {
-    this.db = dbClient || getDatabase();
-  }
+  constructor(private readonly db: DatabaseClient) {}
 
   async create(subpillarId: string, userId: string, data: Omit<ArticleCreateInput, 'subpillarId' | 'authorId'>): Promise<Article> {
     try {
@@ -44,7 +39,7 @@ export class ArticleService {
   async getByAuthorId(authorId: string): Promise<Article[]> {
     try {
       log.info(`Fetching articles by author ${authorId}`);
-      const articles = await this.db.findArticlesByAuthorId(authorId);
+      const articles = await this.db.findArticles({ authorId });
       log.info(`Found ${articles.length} articles by author ${authorId}`);
       return articles;
     } catch (error) {
@@ -179,6 +174,9 @@ export class ArticleService {
 }
 
 // Factory function to create ArticleService instance
-export function createArticleService(dbClient?: DatabaseClient): ArticleService {
-  return new ArticleService(dbClient);
+export function createArticleService(db: DatabaseClient): ArticleService {
+  if (!db) {
+    throw new Error('Database client is required for ArticleService');
+  }
+  return new ArticleService(db);
 }

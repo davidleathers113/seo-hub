@@ -36,14 +36,14 @@ A full-stack application designed to streamline the process of creating high-qua
 ### Backend
 - Node.js
 - Express
-- MongoDB
+- Supabase (PostgreSQL database)
 - Redis for caching
 - JWT authentication
 
 ## Prerequisites
 
 - Node.js (v16 or higher)
-- MongoDB instance
+- Supabase project (see [SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md))
 - Redis server (for caching)
 - OpenAI API key
 - Anthropic API key (optional)
@@ -53,7 +53,8 @@ A full-stack application designed to streamline the process of creating high-qua
 1. Create a `.env` file in the server directory:
 ```env
 PORT=3001
-DATABASE_URL=mongodb://localhost/your_database
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
 JWT_SECRET=your_jwt_secret
 SESSION_SECRET=your_session_secret
 REDIS_URL=redis://localhost:6379
@@ -61,9 +62,10 @@ OPENAI_API_KEY=your_openai_api_key
 ANTHROPIC_API_KEY=your_anthropic_api_key
 ```
 
-2. Configure MongoDB:
-   - Install MongoDB locally or use a cloud instance
-   - Update the `DATABASE_URL` in your `.env` file
+2. Configure Supabase:
+   - Create a Supabase project at https://supabase.com
+   - Follow setup instructions in [SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md)
+   - Update the Supabase configuration in your `.env` file
 
 3. Configure Redis:
    - Install Redis locally or use a cloud instance
@@ -115,8 +117,10 @@ npm run test:coverage
 ├── server/                # Backend Node.js application
 │   ├── routes/           # API routes
 │   ├── services/         # Business logic
-│   ├── models/           # Database models
-│   └── database/         # Database configuration
+│   ├── database/         # Database configuration and migrations
+│   │   ├── migrations/   # SQL migrations for Supabase
+│   │   └── supabase/    # Supabase client implementation
+│   └── config/          # Configuration files
 ├── docs/                 # Documentation
 └── cypress/              # End-to-end tests
 ```
@@ -214,6 +218,7 @@ The API documentation is available through Swagger UI at `/api-docs` when runnin
 - XSS protection
 - CSRF protection
 - Security headers
+- Row Level Security (RLS) with Supabase
 
 ### API Security
 - JWT token validation
@@ -225,10 +230,11 @@ The API documentation is available through Swagger UI at `/api-docs` when runnin
 
 ### Common Issues
 
-1. **MongoDB Connection Issues**
+1. **Supabase Connection Issues**
    ```bash
-   # Check MongoDB status
-   mongosh --eval "db.serverStatus()"
+   # Check Supabase environment variables
+   echo $SUPABASE_URL
+   echo $SUPABASE_ANON_KEY
    ```
 
 2. **Redis Connection Issues**

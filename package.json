@@ -8,16 +8,28 @@
     "test": "jest --runInBand",
     "test:watch": "jest --watch --runInBand",
     "test:coverage": "jest --coverage --runInBand",
-    "install-quiet": "npm install --quiet"
+    "install-quiet": "npm install --quiet",
+    "dev": "concurrently \"tsc --watch\" \"nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/server.ts\"",
+    "migrate": "ts-node server/database/migrations/run.ts",
+    "migrate:create": "ts-node server/database/migrations/create.ts"
   },
   "dependencies": {
     "@babel/core": "^7.23.6",
     "@babel/parser": "^7.23.6",
     "@babel/traverse": "^7.23.6",
     "@babel/types": "^7.23.6",
+    "@supabase/supabase-js": "^2.47.7",
+    "@types/express-session": "^1.18.1",
+    "connect-mongo": "^5.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
     "estraverse": "^5.3.0",
-    "glob": "^10.3.10",
-    "mongoose": "^7.6.3"
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "glob": "^10.4.5",
+    "mongoose": "^7.6.3",
+    "pg": "^8.11.3",
+    "ts-node-dev": "^2.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.23.5",
@@ -31,7 +43,9 @@
     "@types/express": "^5.0.0",
     "@types/express-serve-static-core": "^5.0.2",
     "@types/jest": "^29.5.14",
+    "@types/mongoose": "^5.11.96",
     "@types/node": "^22.10.1",
+    "@types/pg": "^8.11.0",
     "@types/supertest": "^6.0.2",
     "babel-jest": "^29.7.0",
     "identity-obj-proxy": "^3.0.0",
@@ -42,6 +56,5 @@
     "redis-mock": "^0.56.3",
     "supertest": "^6.3.3",
     "ts-jest": "^29.1.1"
-  },
-  "type": "module"
+  }
 }

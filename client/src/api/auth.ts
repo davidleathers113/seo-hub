@@ -12,12 +12,21 @@ import api from './api';
  * @returns A promise that resolves to the API response.
  * @throws Will throw an error if the API request fails.
  */
-export const login = (email: string, password: string) => {
-  return api.post('/auth/login', { email, password });
+export const login = async (email: string, password: string) => {
+  try {
+    const response = await api.post('/auth/login', { email, password });
+    if (response.data.token) {
+      localStorage.setItem('token', response.data.token);
+    }
+    return response.data;
+  } catch (error) {
+    console.error('Login error:', error);
+    throw error;
+  }
 };
 
 // Register
-// POST /register (mounted directly in server.js)
+// POST /register
 // Request: { email: string, password: string }
 // Response: { token: string, user: { id: string, email: string } }
 /**
@@ -30,7 +39,11 @@ export const login = (email: string, password: string) => {
  */
 export const register = async (data: { email: string, password: string }) => {
   try {
-    return api.post('/auth/register', data);
+    const response = await api.post('/auth/register', data);
+    if (response.data.token) {
+      localStorage.setItem('token', response.data.token);
+    }
+    return response.data;
   } catch (error) {
     console.error('Registration error:', error);
     throw error;
@@ -40,6 +53,14 @@ export const register = async (data: { email: string, password: string }) => {
 // Logout
 // POST /auth/logout
 // Response: { success: boolean, message: string }
-export const logout = () => {
-  return api.post('/auth/logout');
+export const logout = async () => {
+  try {
+    await api.post('/auth/logout');
+    localStorage.removeItem('token');
+  } catch (error) {
+    console.error('Logout error:', error);
+    // Still remove token even if the server request fails
+    localStorage.removeItem('token');
+    throw error;
+  }
 };

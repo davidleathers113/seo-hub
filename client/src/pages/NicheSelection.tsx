@@ -1,35 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AxiosError } from 'axios';
-import api, { onRetryStatusUpdate, retryRequest } from '../api/api';
+import { getNiches, createNiche } from '../api/niches';
+import { onRetryStatusUpdate, retryRequest } from '../api/api';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { useToast } from '../hooks/useToast';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-
-interface Pillar {
-  id: string;
-  name: string;
-  status: string;
-  progress: number;
-  subpillars: Array<{
-    id: string;
-    name: string;
-    status: string;
-  }>;
-}
-
-interface Niche {
-  id: string;
-  name: string;
-  pillars: Array<Pillar>;
-  pillarsCount: number;
-  progress: number;
-  status: string;
-  lastUpdated: string;
-}
+import { Niche } from '../types/niche';
 
 interface ApiErrorResponse {
   message?: string;
@@ -83,9 +63,9 @@ export function NicheSelection() {
 
   const fetchNiches = async () => {
     try {
-      const response = await api.get<{ data: Niche[] }>('/niches');
-      if (Array.isArray(response.data.data)) {
-        setNiches(response.data.data);
+      const response = await getNiches();
+      if (Array.isArray(response.data)) {
+        setNiches(response.data);
         setError('');
         setRetryState({
           isRetrying: false,
@@ -130,8 +110,8 @@ export function NicheSelection() {
     setLoading(true);
     try {
       const response = await retryRequest(retryState.requestId);
-      if (Array.isArray(response.data.data)) {
-        setNiches(response.data.data);
+      if (Array.isArray(response.data)) {
+        setNiches(response.data);
         setError('');
         setRetryState({
           isRetrying: false,
@@ -186,8 +166,8 @@ export function NicheSelection() {
 
     setSubmitting(true);
     try {
-      const response = await api.post<{ data: Niche }>('/niches', { name: nicheName });
-      const newNiche = response.data.data;
+      const response = await createNiche(nicheName);
+      const newNiche = response.data;
 
       toast({
         variant: 'default',
@@ -232,7 +212,7 @@ export function NicheSelection() {
     >
       <div className="p-4">
         <h3 className="text-lg font-medium">{niche.name}</h3>
-        <p>{`${niche.pillarsCount} Pillars`}</p>
+        <p>{`${niche.pillars.length} Pillars`}</p>
         <p>Progress: {niche.progress}%</p>
         <p>Status: {niche.status}</p>
       </div>

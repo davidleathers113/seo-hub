@@ -1,12 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
 import { DatabaseClient, Session, SessionCreateInput } from '../database/interfaces';
 import { logger } from '../utils/log';
-import { getDatabase } from '../database';
 
 const log = logger('services/SessionService');
 
 export class SessionService {
-  constructor(private db: DatabaseClient) {}
+  constructor(private readonly db: DatabaseClient) {}
 
   async createSession(
     userId: string,
@@ -112,6 +111,9 @@ export class SessionService {
 }
 
 // Factory function to create SessionService instance
-export function createSessionService(dbClient?: DatabaseClient): SessionService {
-  return new SessionService(dbClient || getDatabase());
+export function createSessionService(db: DatabaseClient): SessionService {
+  if (!db) {
+    throw new Error('Database client is required for SessionService');
+  }
+  return new SessionService(db);
 }

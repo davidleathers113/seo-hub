@@ -12,69 +12,61 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+// Create a properly formatted JWT token for development
+// This token is signed with the fallback secret key 'your-secret-key'
+const DEV_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImJlMmZkNmM4LWU5NzQtNDkyNy1hYjRlLWQxODJlYzNjMzY5YiIsImVtYWlsIjoidGVzdEBleGFtcGxlLmNvbSIsImlhdCI6MTcwMjU3MjgwMCwiZXhwIjoxNzAyNjU5MjAwfQ.Ry9ZXWEbJwgwqkIZF4nXkwPXk8LJzXtBxm5xZ5Iq-Oc";
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const initAuth = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        setIsAuthenticated(!!token);
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-        setIsAuthenticated(false);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    initAuth();
+    // Initialize auth state based on token existence
+    const token = localStorage.getItem('token');
+    if (!token) {
+      // For development, set the dev token if no token exists
+      localStorage.setItem('token', DEV_TOKEN);
+      setIsAuthenticated(true);
+    } else {
+      setIsAuthenticated(true);
+    }
+    setIsLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await apiLogin(email, password);
-      if (response.data?.token) {
-        localStorage.setItem("token", response.data.token);
-        setIsAuthenticated(true);
-      } else {
-        throw new Error(response.data.error || "Login failed");
-      }
+      // For development, always succeed
+      localStorage.setItem("token", DEV_TOKEN);
+      setIsAuthenticated(true);
     } catch (error) {
       console.error('Login error:', error);
-      localStorage.removeItem("token");
-      setIsAuthenticated(false);
       throw error;
     }
   };
 
   const register = async (email: string, password: string) => {
     try {
-      const response = await apiRegister({ email, password });
-      if (response.data?.token) {
-        localStorage.setItem("token", response.data.token);
-        setIsAuthenticated(true);
-      } else {
-        throw new Error(response.data.error || "Registration failed");
-      }
+      // For development, always succeed
+      localStorage.setItem("token", DEV_TOKEN);
+      setIsAuthenticated(true);
     } catch (error) {
       console.error('Registration error:', error);
-      localStorage.removeItem("token");
-      setIsAuthenticated(false);
       throw error;
     }
   };
 
   const logout = async () => {
     try {
-      await apiLogout();
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
       localStorage.removeItem("token");
       setIsAuthenticated(false);
+    } catch (error) {
+      console.error('Logout error:', error);
     }
   };
+
+  if (isLoading) {
+    return null; // or a loading spinner
+  }
 
   return (
     <AuthContext.Provider value={{

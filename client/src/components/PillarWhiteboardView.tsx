@@ -12,13 +12,36 @@ import ReactFlow, {
   ReactFlowProvider,
   Connection,
   addEdge,
+  Panel,
+  NodeMouseHandler
 } from 'reactflow'
-import { Plus, MinusCircle, Link } from 'lucide-react'
-import { Button } from "@/components/ui/button"
+import { Plus, MinusCircle, Maximize2, Minimize2, ChevronDown } from 'lucide-react'
+import { Button } from "./ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu"
 import { PillarNode } from './PillarNode'
-import { calculateNodesAndEdges } from '@/utils/nodeCalculations'
-import { PillarWhiteboardViewProps } from '@/types/pillar'
+import { calculateNodesAndEdges } from '../utils/nodeCalculations'
+import { Pillar, PillarUpdateData } from '../types/pillar'
 import 'reactflow/dist/style.css'
+
+interface NicheOption {
+  id: string
+  name: string
+}
+
+interface PillarWhiteboardViewProps {
+  pillars: Pillar[]
+  niches: NicheOption[]
+  currentNicheId: string
+  onNicheChange: (nicheId: string) => void
+  onNodeClick: (nodeId: string) => void
+  onPillarUpdate: (nodeId: string, newData: PillarUpdateData) => void
+  onPillarsChange: (updatedPillars: Pillar[]) => void
+}
 
 const nodeTypes = {
   custom: PillarNode,
@@ -26,89 +49,127 @@ const nodeTypes = {
 
 function PillarWhiteboardViewContent({
   pillars,
+  niches,
+  currentNicheId,
+  onNicheChange,
   onNodeClick,
   onPillarUpdate,
   onPillarsChange
 }: PillarWhiteboardViewProps) {
-  // All state hooks first
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
   const [selectedNodes, setSelectedNodes] = useState<Node[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isFullScreen, setIsFullScreen] = useState(false)
+  const [history, setHistory] = useState<Pillar[][]>([])
+  const [historyIndex, setHistoryIndex] = useState(-1)
 
   const reactFlowInstance = useReactFlow()
 
-  // All callbacks next
-  const handleNodeClick = useCallback((_, node: Node) => {
+  const toggleFullScreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen()
+      setIsFullScreen(true)
+    } else {
+      document.exitFullscreen()
+      setIsFullScreen(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    const handleFullScreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement)
+    }
+    document.addEventListener('fullscreenchange', handleFullScreenChange)
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullScreenChange)
+    }
+  }, [])
+
+  const addToHistory = useCallback((newPillars: Pillar[]) => {
+    setHistory(prev => [...prev.slice(0, historyIndex + 1), newPillars])
+    setHistoryIndex(prev => prev + 1)
+  }, [historyIndex])
+
+  const handleNodeClick: NodeMouseHandler = useCallback((event, node) => {
     const nodeId = node.id.split('-')[1]
     onNodeClick(nodeId)
   }, [onNodeClick])
 
-  const handleNodeUpdate = useCallback((nodeId: string, newData: any) => {
-    setNodes((nds) =>
-      nds.map((node) => (node.id === nodeId ? { ...node, data: { ...node.data, ...newData } } : node))
-    )
-    onPillarUpdate?.(nodeId, newData)
-  }, [setNodes, onPillarUpdate])
+  const handleNodeUpdate = useCallback((nodeId: string, newData: PillarUpdateData) => {
+    if (!newData.title) return
 
-  const deleteNodeById = useCallback((nodeId: string) => {
-    setNodes((nds) => nds.filter(n => n.id !== nodeId))
-    setEdges((eds) => eds.filter(e => e.source !== nodeId && e.target !== nodeId))
-  }, [setNodes, setEdges])
-
-  const onConnect = useCallback((params: Connection) => {
-    setEdges((eds) => addEdge({ ...params, animated: true }, eds))
-  }, [setEdges])
-
-  const onNodeDragStop = useCallback(() => {
-    const positions = nodes.reduce((acc, node) => ({
-      ...acc,
-      [node.id]: node.position
-    }), {})
-    localStorage.setItem('nodePositions', JSON.stringify(positions))
-  }, [nodes])
-
-  const addNewPillar = useCallback(() => {
-    const newPillar = {
-      id: `new-${Date.now()}`,
-      title: 'New Pillar',
-      status: 'pending',
-      subpillars: []
-    }
-    onPillarsChange([...pillars, newPillar])
-  }, [pillars, onPillarsChange])
-
-  const addNewSubpillar = useCallback(() => {
-    if (selectedNodes.length !== 1) return
-    const selectedNode = selectedNodes[0]
-    if (!selectedNode.id.startsWith('pillar-')) return
-
-    const pillarId = selectedNode.id.split('-')[1]
-    const newSubpillar = {
-      id: `new-${Date.now()}`,
-      title: 'New Subpillar',
-      status: 'research',
-      progress: 0
-    }
-
-    const updatedPillars = pillars.map(pillar => {
-      if (pillar.id === pillarId) {
+    const [type, id] = nodeId.split('-')
+    const updatedPillars: Pillar[] = pillars.map(pillar => {
+      if (type === 'pillar' && pillar.id === id) {
+        return { ...pillar, title: newData.title! }
+      }
+      if (type === 'subpillar') {
         return {
           ...pillar,
-          subpillars: [...(pillar.subpillars || []), newSubpillar]
+          subpillars: pillar.subpillars.map(sub =>
+            sub.id === id ? { ...sub, title: newData.title! } : sub
+          )
         }
       }
       return pillar
     })
-
     onPillarsChange(updatedPillars)
-  }, [selectedNodes, pillars, onPillarsChange])
+    addToHistory(updatedPillars)
+  }, [pillars, onPillarsChange, addToHistory])
+
+  const deleteNodeById = useCallback((nodeId: string) => {
+    const [type, id] = nodeId.split('-')
+    const updatedPillars: Pillar[] = pillars.filter(pillar => {
+      if (type === 'pillar') {
+        return pillar.id !== id
+      }
+      return {
+        ...pillar,
+        subpillars: pillar.subpillars.filter(sub => sub.id !== id)
+      }
+    })
+    onPillarsChange(updatedPillars)
+    addToHistory(updatedPillars)
+  }, [pillars, onPillarsChange, addToHistory])
+
+  const onConnect = useCallback((params: Connection) => {
+    setEdges(eds => addEdge({ ...params, type: 'smoothstep', animated: true }, eds))
+  }, [setEdges])
+
+  const addNewPillar = useCallback(() => {
+    const newPillar: Pillar = {
+      id: `new-${Date.now()}`,
+      title: 'New Pillar',
+      status: 'pending',
+      updatedAt: new Date().toISOString(),
+      subpillars: []
+    }
+    const updatedPillars = [...pillars, newPillar]
+    onPillarsChange(updatedPillars)
+    addToHistory(updatedPillars)
+  }, [pillars, onPillarsChange, addToHistory])
 
   const deleteSelectedNodes = useCallback(() => {
-    selectedNodes.forEach(node => deleteNodeById(node.id))
-  }, [selectedNodes, deleteNodeById])
+    const updatedPillars: Pillar[] = pillars.filter(pillar => {
+      const keepPillar = !selectedNodes.some(node => 
+        node.id === `pillar-${pillar.id}`
+      )
+      if (keepPillar) {
+        return {
+          ...pillar,
+          subpillars: pillar.subpillars.filter(sub => 
+            !selectedNodes.some(node => node.id === `subpillar-${sub.id}`)
+          )
+        }
+      }
+      return false
+    })
+    onPillarsChange(updatedPillars)
+    addToHistory(updatedPillars)
+    setSelectedNodes([])
+  }, [selectedNodes, pillars, onPillarsChange, addToHistory])
 
-  // Effect hook last
   useEffect(() => {
     try {
       setIsLoading(true)
@@ -128,12 +189,37 @@ function PillarWhiteboardViewContent({
   }, [pillars, handleNodeUpdate, deleteNodeById, setNodes, setEdges])
 
   if (isLoading) {
-    return <div>Loading...</div>
+    return (
+      <div className="flex h-full items-center justify-center">
+        <div className="animate-pulse text-lg">Loading whiteboard...</div>
+      </div>
+    )
   }
 
+  const currentNiche = niches.find(niche => niche.id === currentNicheId)
+
   return (
-    <div className="w-full h-[800px] border rounded-lg bg-background relative">
-      <div className="absolute top-4 left-4 z-10 flex gap-2">
+    <div className={`relative ${isFullScreen ? 'fixed inset-0 z-50 bg-background' : 'w-full h-[800px]'} border rounded-lg bg-background`}>
+      <Panel position="top-left" className="flex gap-2">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2">
+              {currentNiche?.name || 'Select Niche'}
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            {niches.map(niche => (
+              <DropdownMenuItem
+                key={niche.id}
+                onClick={() => onNicheChange(niche.id)}
+              >
+                {niche.name}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <Button
           onClick={addNewPillar}
           variant="outline"
@@ -143,25 +229,33 @@ function PillarWhiteboardViewContent({
           <Plus className="h-4 w-4" />
           Add Pillar
         </Button>
+
+        {selectedNodes.length > 0 && (
+          <Button
+            onClick={deleteSelectedNodes}
+            variant="destructive"
+            size="sm"
+            className="gap-2"
+          >
+            <MinusCircle className="h-4 w-4" />
+            Delete Selected
+          </Button>
+        )}
+
         <Button
-          onClick={addNewSubpillar}
+          onClick={toggleFullScreen}
           variant="outline"
           size="sm"
           className="gap-2"
         >
-          <Link className="h-4 w-4" />
-          Add Subpillar
+          {isFullScreen ? (
+            <Minimize2 className="h-4 w-4" />
+          ) : (
+            <Maximize2 className="h-4 w-4" />
+          )}
         </Button>
-        <Button
-          onClick={deleteSelectedNodes}
-          variant="destructive"
-          size="sm"
-          className="gap-2"
-        >
-          <MinusCircle className="h-4 w-4" />
-          Delete Node
-        </Button>
-      </div>
+      </Panel>
+
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -171,17 +265,23 @@ function PillarWhiteboardViewContent({
         onNodeClick={handleNodeClick}
         nodeTypes={nodeTypes}
         connectionMode={ConnectionMode.Loose}
-        fitView
-        onNodeDragStop={onNodeDragStop}
-        onSelectionChange={(params) => {
-          if (params.nodes) {
-            setSelectedNodes(params.nodes)
-          }
+        defaultEdgeOptions={{
+          type: 'smoothstep',
+          animated: true
         }}
+        fitView
+        onSelectionChange={(params) => {
+          setSelectedNodes(params.nodes || [])
+        }}
+        selectNodesOnDrag={false}
       >
         <Controls />
         <Background />
-        <MiniMap />
+        <MiniMap 
+          nodeColor={(node) => {
+            return node.data?.type === 'pillar' ? '#3b82f6' : '#10b981'
+          }}
+        />
       </ReactFlow>
     </div>
   )

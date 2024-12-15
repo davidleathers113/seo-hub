@@ -1,12 +1,13 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction, RequestHandler } from 'express';
 import { logger } from '../utils/log';
 import { generateToken } from '../utils/jwt';
 import { DatabaseClient } from '../database/interfaces';
 import { UserService } from '../services/UserService';
 import { SessionService } from '../services/SessionService';
-import { authenticateWithToken } from './middleware/auth';
+import { authenticateToken } from '../middleware/auth';
 import { isValidEmail, isNonEmptyString } from '../utils/validation';
 import { ValidationError } from '../database/mongodb/client';
+import { AuthUser } from '../types/user';
 
 const log = logger('auth-routes');
 
@@ -17,20 +18,24 @@ declare module 'express-session' {
   }
 }
 
-// Extend express Request type to include user
+// Extend express Request type
 declare module 'express' {
   interface Request {
-    user?: {
-      id: string;
-      [key: string]: any;
-    };
+    user?: AuthUser;
   }
 }
+
+// Define a type for request handlers that use AuthUser
+type AuthHandler = (
+  req: Request,
+  res: Response,
+  next?: NextFunction
+) => Promise<void | Response> | void | Response;
 
 export function createAuthRouter(userService: UserService, sessionService: SessionService) {
   const router = express.Router();
 
-  router.post('/login', async (req, res) => {
+  const loginHandler: RequestHandler = async (req, res) => {
     try {
       const { email, password } = req.body;
 
@@ -68,7 +73,7 @@ export function createAuthRouter(userService: UserService, sessionService: Sessi
 
       log.info(`Successful login for user: ${email}`);
       return res.json({
-        user,
+        user: { id: user.id, email: user.email },
         token: session.token
       });
 
@@ -79,9 +84,9 @@ export function createAuthRouter(userService: UserService, sessionService: Sessi
         message: 'An unexpected error occurred during login'
       });
     }
-  });
+  };
 
-  router.post('/register', async (req, res) => {
+  const registerHandler: RequestHandler = async (req, res) => {
     try {
       const { email, password, name } = req.body;
 
@@ -104,18 +109,18 @@ export function createAuthRouter(userService: UserService, sessionService: Sessi
         });
       }
 
-      const result = await userService.createUser({ email, password, name });
+      const user = await userService.createUser({ email, password, name });
 
       // Create session for new user
       const session = await sessionService.createSession(
-        result.user.id,
+        user.id,
         req.get('User-Agent'),
         req.ip
       );
 
       log.info(`User registered successfully: ${email}`);
       return res.status(201).json({
-        user: result.user,
+        user: { id: user.id, email: user.email },
         token: session.token
       });
 
@@ -133,9 +138,10 @@ export function createAuthRouter(userService: UserService, sessionService: Sessi
         message: 'An unexpected error occurred during registration'
       });
     }
-  });
+  };
 
-  router.post('/logout', authenticateWithToken, async (req, res) => {
+  // Protected routes using AuthHandler type
+  const logout: AuthHandler = async (req, res) => {
     try {
       const token = req.session.token;
       if (!token) {
@@ -150,16 +156,16 @@ export function createAuthRouter(userService: UserService, sessionService: Sessi
         message: 'An unexpected error occurred during logout'
       });
     }
-  });
+  };
 
-  router.get('/me', authenticateWithToken, (req, res) => {
+  const getMe: AuthHandler = (req, res) => {
     if (!req.user) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
     res.json(req.user);
-  });
+  };
 
-  router.get('/sessions', authenticateWithToken, async (req, res) => {
+  const getSessions: AuthHandler = async (req, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ error: 'User not authenticated' });
@@ -173,9 +179,9 @@ export function createAuthRouter(userService: UserService, sessionService: Sessi
         message: 'An unexpected error occurred while fetching sessions'
       });
     }
-  });
+  };
 
-  router.post('/logout/all', authenticateWithToken, async (req, res) => {
+  const logoutAll: AuthHandler = async (req, res) => {
     try {
       if (!req.user) {
         return res.status(401).json({ error: 'User not authenticated' });
@@ -189,7 +195,17 @@ export function createAuthRouter(userService: UserService, sessionService: Sessi
         message: 'An unexpected error occurred during logout'
       });
     }
-  });
+  };
+
+  // Apply routes
+  router.post('/login', loginHandler);
+  router.post('/register', registerHandler);
+  
+  // Protected routes with type assertion for the middleware
+  router.post('/logout', authenticateToken, logout);
+  router.get('/me', authenticateToken, getMe);
+  router.get('/sessions', authenticateToken, getSessions);
+  router.post('/logout/all', authenticateToken, logoutAll);
 
   return router;
 }

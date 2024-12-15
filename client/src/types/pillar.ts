@@ -1,20 +1,25 @@
-export interface SubpillarItem {
+export interface Subpillar {
   id: string
   title: string
   status: 'research' | 'outline' | 'draft' | 'complete'
   progress: number
 }
 
-export interface PillarItem {
+export interface Pillar {
   id: string
   title: string
   status: 'approved' | 'pending' | 'rejected'
-  subpillars: SubpillarItem[]
+  updatedAt: string
+  subpillars: Subpillar[]
 }
 
-export interface PillarWhiteboardViewProps {
-  pillars: PillarItem[]
-  onNodeClick: (nodeId: string) => void
-  onPillarUpdate: (nodeId: string, newData: any) => void
-  onPillarsChange: (updatedPillars: PillarItem[]) => void
+export interface PillarUpdateData {
+  title?: string
+  status?: 'approved' | 'pending' | 'rejected'
+}
+
+export interface SubpillarUpdateData {
+  title?: string
+  status?: 'research' | 'outline' | 'draft' | 'complete'
+  progress?: number
 }

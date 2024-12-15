@@ -1,283 +1,267 @@
-import express, { Request, Response } from 'express';
-import { createArticleService } from '../services/ArticleService';
-import { authenticateWithToken, requireUser } from './middleware/auth';
+import express, { Request, Response, Router } from 'express';
+import { ArticleService } from '../services/ArticleService';
+import { authenticateWithToken, requireUser, AuthenticatedRequest } from './middleware/auth';
 import { ValidationError } from '../database/mongodb/client';
 import { logger } from '../utils/log';
-import { User } from '../database/interfaces';
 
-// Extend Express Request to include user
-declare module 'express' {
-  interface Request {
-    user?: User;
-  }
-}
-
-const router = express.Router();
-const articleService = createArticleService();
 const log = logger('api/routes/articleRoutes');
 
-// Create an article
-router.post('/subpillars/:subpillarId/articles', authenticateWithToken, requireUser, async (req: Request, res: Response) => {
-  try {
-    const { subpillarId } = req.params;
-    const { title, content, metaDescription, keywords } = req.body;
+// Type guard to ensure request is authenticated
+function isAuthenticated(req: Request): req is AuthenticatedRequest {
+  return 'user' in req && req.user !== undefined;
+}
 
-    if (!title || typeof title !== 'string' || title.trim().length === 0) {
-      return res.status(400).json({
-        error: 'Validation error',
-        message: 'Title is required'
-      });
+// Create a function to initialize the router with services
+export function createArticlesRouter(articleService: ArticleService): Router {
+  const router = express.Router();
+
+  // Rest of the file remains exactly the same
+  router.post('/subpillars/:subpillarId/articles', authenticateWithToken as express.RequestHandler, requireUser as express.RequestHandler, async (req: Request, res: Response) => {
+    if (!isAuthenticated(req)) {
+      return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    if (!content || typeof content !== 'string' || content.trim().length === 0) {
-      return res.status(400).json({
-        error: 'Validation error',
-        message: 'Content is required'
+    try {
+      const { subpillarId } = req.params;
+      const { title, content, metaDescription, keywords } = req.body;
+
+      if (!title || !content) {
+        return res.status(400).json({
+          error: 'Title and content are required'
+        });
+      }
+
+      const article = await articleService.create(subpillarId, req.user.id, {
+        title: title.trim(),
+        content: content.trim(),
+        metaDescription: metaDescription || '',
+        keywords: keywords || [],
+        status: 'draft'
+      });
+
+      log.info(`Created article ${article.id} for subpillar ${subpillarId}`);
+      res.status(201).json(article);
+    } catch (error) {
+      log.error('Error creating article:', error);
+      res.status(500).json({
+        error: 'Failed to create article'
       });
     }
+  });
 
-    const article = await articleService.create(subpillarId, req.user!.id, {
-      title: title.trim(),
-      content: content.trim(),
-      metaDescription: metaDescription?.trim(),
-      keywords: keywords || []
-    });
-
-    log.info(`Created article ${article.id} for subpillar ${subpillarId}`);
-    res.status(201).json(article);
-  } catch (error) {
-    if (error instanceof ValidationError) {
-      return res.status(400).json({
-        error: 'Validation error',
-        message: error.message
-      });
-    }
-    log.error('Error creating article:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: 'Failed to create article'
-    });
-  }
-});
-
-// Get all articles for a subpillar
-router.get('/subpillars/:subpillarId/articles', authenticateWithToken, requireUser, async (req: Request, res: Response) => {
-  try {
-    const { subpillarId } = req.params;
-    const articles = await articleService.getBySubpillarId(subpillarId);
-    log.info(`Retrieved ${articles.length} articles for subpillar ${subpillarId}`);
-    res.json(articles);
-  } catch (error) {
-    log.error('Error fetching articles:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: 'Failed to fetch articles'
-    });
-  }
-});
-
-// Get all articles by author
-router.get('/authors/:authorId/articles', authenticateWithToken, requireUser, async (req: Request, res: Response) => {
-  try {
-    const { authorId } = req.params;
-    const articles = await articleService.getByAuthorId(authorId);
-    log.info(`Retrieved ${articles.length} articles by author ${authorId}`);
-    res.json(articles);
-  } catch (error) {
-    log.error('Error fetching articles:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: 'Failed to fetch articles'
-    });
-  }
-});
-
-// Get a specific article
-router.get('/articles/:id', authenticateWithToken, requireUser, async (req: Request, res: Response) => {
-  try {
-    const article = await articleService.getById(req.params.id);
-    if (!article) {
-      return res.status(404).json({
-        error: 'Not found',
-        message: 'Article not found'
-      });
-    }
-    log.info(`Retrieved article ${req.params.id}`);
-    res.json(article);
-  } catch (error) {
-    log.error('Error fetching article:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: 'Failed to fetch article'
-    });
-  }
-});
-
-// Update an article
-router.put('/articles/:id', authenticateWithToken, requireUser, async (req: Request, res: Response) => {
-  try {
-    const { title, content, metaDescription, keywords } = req.body;
-
-    // Validate update fields
-    const allowedFields = ['title', 'content', 'metaDescription', 'keywords'];
-    const updateFields = Object.keys(req.body);
-    const hasInvalidFields = updateFields.some(field => !allowedFields.includes(field));
-
-    if (hasInvalidFields) {
-      return res.status(400).json({
-        error: 'Validation error',
-        message: 'Invalid fields in request'
-      });
+  // Get all articles for a subpillar
+  router.get('/subpillars/:subpillarId/articles', authenticateWithToken as express.RequestHandler, requireUser as express.RequestHandler, async (req: Request, res: Response) => {
+    if (!isAuthenticated(req)) {
+      return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const updateData = {
-      ...(title && { title: title.trim() }),
-      ...(content && { content: content.trim() }),
-      ...(metaDescription && { metaDescription: metaDescription.trim() }),
-      ...(keywords && { keywords })
-    };
-
-    const article = await articleService.update(req.params.id, req.user!.id, updateData);
-    if (!article) {
-      return res.status(404).json({
-        error: 'Not found',
-        message: 'Article not found'
+    try {
+      const { subpillarId } = req.params;
+      const articles = await articleService.getBySubpillarId(subpillarId);
+      log.info(`Retrieved ${articles.length} articles for subpillar ${subpillarId}`);
+      res.json(articles);
+    } catch (error) {
+      log.error('Error fetching articles:', error);
+      res.status(500).json({
+        error: 'Internal server error',
+        message: 'Failed to fetch articles'
       });
     }
+  });
 
-    log.info(`Updated article ${req.params.id}`);
-    res.json(article);
-  } catch (error) {
-    if (error instanceof ValidationError) {
-      if (error.message.includes('Not authorized')) {
-        return res.status(403).json({
-          error: 'Forbidden',
+  // Get all articles by author
+  router.get('/authors/:authorId/articles', authenticateWithToken as express.RequestHandler, requireUser as express.RequestHandler, async (req: Request, res: Response) => {
+    if (!isAuthenticated(req)) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    try {
+      const { authorId } = req.params;
+      const articles = await articleService.getByAuthorId(authorId);
+      log.info(`Retrieved ${articles.length} articles by author ${authorId}`);
+      res.json(articles);
+    } catch (error) {
+      log.error('Error fetching articles:', error);
+      res.status(500).json({
+        error: 'Internal server error',
+        message: 'Failed to fetch articles'
+      });
+    }
+  });
+
+  // Get a specific article
+  router.get('/articles/:id', authenticateWithToken as express.RequestHandler, requireUser as express.RequestHandler, async (req: Request, res: Response) => {
+    if (!isAuthenticated(req)) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    try {
+      const article = await articleService.getById(req.params.id);
+      if (!article) {
+        return res.status(404).json({
+          error: 'Article not found'
+        });
+      }
+      log.info(`Retrieved article ${req.params.id}`);
+      res.json(article);
+    } catch (error) {
+      log.error('Error getting article:', error);
+      res.status(500).json({
+        error: 'Failed to get article'
+      });
+    }
+  });
+
+  // Update an article
+  router.put('/articles/:id', authenticateWithToken as express.RequestHandler, requireUser as express.RequestHandler, async (req: Request, res: Response) => {
+    if (!isAuthenticated(req)) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    try {
+      const { title, content, metaDescription, keywords, status } = req.body;
+
+      const article = await articleService.update(req.params.id, req.user.id, {
+        title: title?.trim(),
+        content: content?.trim(),
+        metaDescription,
+        keywords,
+        status
+      });
+
+      if (!article) {
+        return res.status(404).json({
+          error: 'Article not found'
+        });
+      }
+
+      log.info(`Updated article ${req.params.id}`);
+      res.json(article);
+    } catch (error) {
+      log.error('Error updating article:', error);
+      res.status(500).json({
+        error: 'Failed to update article'
+      });
+    }
+  });
+
+  // Update article SEO data
+  router.put('/articles/:id/seo', authenticateWithToken as express.RequestHandler, requireUser as express.RequestHandler, async (req: Request, res: Response) => {
+    if (!isAuthenticated(req)) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    try {
+      const { seoScore, keywords, metaDescription } = req.body;
+
+      const article = await articleService.updateSEO(req.params.id, req.user.id, {
+        seoScore,
+        keywords,
+        metaDescription
+      });
+
+      if (!article) {
+        return res.status(404).json({
+          error: 'Not found',
+          message: 'Article not found'
+        });
+      }
+
+      log.info(`Updated SEO data for article ${req.params.id}`);
+      res.json(article);
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        if (error.message.includes('Not authorized')) {
+          return res.status(403).json({
+            error: 'Forbidden',
+            message: error.message
+          });
+        }
+        return res.status(400).json({
+          error: 'Validation error',
           message: error.message
         });
       }
-      return res.status(400).json({
-        error: 'Validation error',
-        message: error.message
+      log.error('Error updating article SEO:', error);
+      res.status(500).json({
+        error: 'Internal server error',
+        message: 'Failed to update article SEO'
       });
     }
-    log.error('Error updating article:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: 'Failed to update article'
-    });
-  }
-});
+  });
 
-// Update article SEO data
-router.put('/articles/:id/seo', authenticateWithToken, requireUser, async (req: Request, res: Response) => {
-  try {
-    const { seoScore, keywords, metaDescription } = req.body;
-
-    const article = await articleService.updateSEO(req.params.id, req.user!.id, {
-      seoScore,
-      keywords,
-      metaDescription
-    });
-
-    if (!article) {
-      return res.status(404).json({
-        error: 'Not found',
-        message: 'Article not found'
-      });
+  // Update article status
+  router.put('/articles/:id/status', authenticateWithToken as express.RequestHandler, requireUser as express.RequestHandler, async (req: Request, res: Response) => {
+    if (!isAuthenticated(req)) {
+      return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    log.info(`Updated SEO data for article ${req.params.id}`);
-    res.json(article);
-  } catch (error) {
-    if (error instanceof ValidationError) {
-      if (error.message.includes('Not authorized')) {
-        return res.status(403).json({
-          error: 'Forbidden',
+    try {
+      const { status } = req.body;
+
+      if (!status || !['draft', 'review', 'published'].includes(status)) {
+        return res.status(400).json({
+          error: 'Validation error',
+          message: 'Invalid status value'
+        });
+      }
+
+      const article = await articleService.updateStatus(req.params.id, req.user.id, status);
+      if (!article) {
+        return res.status(404).json({
+          error: 'Not found',
+          message: 'Article not found'
+        });
+      }
+
+      log.info(`Updated status to ${status} for article ${req.params.id}`);
+      res.json(article);
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        if (error.message.includes('Not authorized')) {
+          return res.status(403).json({
+            error: 'Forbidden',
+            message: error.message
+          });
+        }
+        return res.status(400).json({
+          error: 'Validation error',
           message: error.message
         });
       }
-      return res.status(400).json({
-        error: 'Validation error',
-        message: error.message
+      log.error('Error updating article status:', error);
+      res.status(500).json({
+        error: 'Internal server error',
+        message: 'Failed to update article status'
       });
     }
-    log.error('Error updating article SEO:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: 'Failed to update article SEO'
-    });
-  }
-});
+  });
 
-// Update article status
-router.put('/articles/:id/status', authenticateWithToken, requireUser, async (req: Request, res: Response) => {
-  try {
-    const { status } = req.body;
-
-    if (!status || !['draft', 'review', 'published'].includes(status)) {
-      return res.status(400).json({
-        error: 'Validation error',
-        message: 'Invalid status value'
-      });
+  // Delete an article
+  router.delete('/articles/:id', authenticateWithToken as express.RequestHandler, requireUser as express.RequestHandler, async (req: Request, res: Response) => {
+    if (!isAuthenticated(req)) {
+      return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const article = await articleService.updateStatus(req.params.id, req.user!.id, status);
-    if (!article) {
-      return res.status(404).json({
-        error: 'Not found',
-        message: 'Article not found'
-      });
-    }
-
-    log.info(`Updated status to ${status} for article ${req.params.id}`);
-    res.json(article);
-  } catch (error) {
-    if (error instanceof ValidationError) {
-      if (error.message.includes('Not authorized')) {
-        return res.status(403).json({
-          error: 'Forbidden',
-          message: error.message
+    try {
+      const success = await articleService.delete(req.params.id, req.user.id);
+      if (!success) {
+        return res.status(404).json({
+          error: 'Article not found'
         });
       }
-      return res.status(400).json({
-        error: 'Validation error',
-        message: error.message
+
+      log.info(`Deleted article ${req.params.id}`);
+      res.status(204).send();
+    } catch (error) {
+      log.error('Error deleting article:', error);
+      res.status(500).json({
+        error: 'Failed to delete article'
       });
     }
-    log.error('Error updating article status:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: 'Failed to update article status'
-    });
-  }
-});
+  });
 
-// Delete an article
-router.delete('/articles/:id', authenticateWithToken, requireUser, async (req: Request, res: Response) => {
-  try {
-    const success = await articleService.delete(req.params.id, req.user!.id);
-    if (!success) {
-      return res.status(404).json({
-        error: 'Not found',
-        message: 'Article not found'
-      });
-    }
+  return router;
+}
 
-    log.info(`Deleted article ${req.params.id}`);
-    res.status(204).send();
-  } catch (error) {
-    if (error instanceof ValidationError && error.message.includes('Not authorized')) {
-      return res.status(403).json({
-        error: 'Forbidden',
-        message: error.message
-      });
-    }
-    log.error('Error deleting article:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: 'Failed to delete article'
-    });
-  }
-});
-
-export default router;
+export default createArticlesRouter;

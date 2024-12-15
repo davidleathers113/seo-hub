@@ -47,7 +47,7 @@ interface OpenRouterResponse {
   };
 }
 
-class OpenRouterService {
+export default class OpenRouterService {
   private client: AxiosInstance;
   private config: OpenRouterConfig;
 
@@ -56,22 +56,15 @@ class OpenRouterService {
       apiKey: process.env.OPENROUTER_API_KEY || '',
       baseURL: 'https://openrouter.ai/api/v1',
       defaultModel: OPENROUTER_MODELS.GPT4,
-      httpReferrer: process.env.APP_URL || 'http://localhost:3001',
-      title: 'Content Creation App',
       ...config
     };
-
-    if (!this.config.apiKey) {
-      throw new Error('OPENROUTER_API_KEY is not set in environment variables');
-    }
 
     this.client = axios.create({
       baseURL: this.config.baseURL,
       headers: {
         'Authorization': `Bearer ${this.config.apiKey}`,
-        'HTTP-Referer': this.config.httpReferrer,
-        'X-Title': this.config.title,
-        'Content-Type': 'application/json'
+        'HTTP-Referer': this.config.httpReferrer || '',
+        'X-Title': this.config.title || 'Content Creation App'
       }
     });
   }
@@ -81,8 +74,8 @@ class OpenRouterService {
     options: Partial<OpenRouterRequestParams> = {}
   ): Promise<string> {
     try {
-      const messages = Array.isArray(prompt) ? prompt : [{
-        role: 'user',
+      const messages: OpenRouterMessage[] = Array.isArray(prompt) ? prompt : [{
+        role: 'user' as const,
         content: prompt
       }];
 
@@ -184,5 +177,3 @@ class OpenRouterService {
     }
   }
 }
-
-export default OpenRouterService;

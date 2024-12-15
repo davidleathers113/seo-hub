@@ -6,7 +6,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card"
 import {
   Tabs,
@@ -16,36 +15,15 @@ import {
 } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { Slider } from "@/components/ui/slider"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { useToast } from "@/hooks/useToast"
-import { User, Key, Bell, Palette, Database, AlertTriangle, Copy, RefreshCw } from "lucide-react"
+import { User, Key, Bell, Palette, Database, Bot, Settings as SettingsIcon } from "lucide-react"
+import { WorkflowSettings } from "@/components/WorkflowSettings"
 
 export function Settings() {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
 
-  useEffect(() => {
-    console.log("Settings component mounted")
-    try {
-      // Test if all required components are available
-      console.log("Tabs component available:", !!Tabs)
-      console.log("Card component available:", !!Card)
-      console.log("Button component available:", !!Button)
-    } catch (err) {
-      console.error("Error in Settings component:", err)
-      setError(err instanceof Error ? err : new Error(String(err)))
-    }
-  }, [])
-
-  // Add error display
   if (error) {
     return (
       <div className="p-4 bg-red-50 text-red-500">
@@ -55,35 +33,13 @@ export function Settings() {
     )
   }
 
-  const handleSaveChanges = () => {
-    setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
-      toast({
-        title: "Success",
-        description: "Your settings have been saved.",
-      })
-    }, 1000)
-  }
-
-  const copyApiKey = () => {
-    navigator.clipboard.writeText("sk-...")
-    toast({
-      title: "Copied",
-      description: "API key copied to clipboard",
-    })
-  }
-
-  const regenerateApiKey = () => {
-    toast({
-      title: "Regenerated",
-      description: "New API key has been generated",
-    })
-  }
-
   return (
-    <Tabs defaultValue="account" className="space-y-6">
-      <TabsList className="grid w-full grid-cols-6">
+    <Tabs defaultValue="workflow" className="space-y-6">
+      <TabsList className="grid w-full grid-cols-7">
+        <TabsTrigger value="workflow" className="flex items-center gap-2">
+          <Bot className="h-4 w-4" />
+          Workflow
+        </TabsTrigger>
         <TabsTrigger value="account" className="flex items-center gap-2">
           <User className="h-4 w-4" />
           Account
@@ -91,10 +47,6 @@ export function Settings() {
         <TabsTrigger value="api" className="flex items-center gap-2">
           <Key className="h-4 w-4" />
           API
-        </TabsTrigger>
-        <TabsTrigger value="content" className="flex items-center gap-2">
-          <RefreshCw className="h-4 w-4" />
-          Content
         </TabsTrigger>
         <TabsTrigger value="notifications" className="flex items-center gap-2">
           <Bell className="h-4 w-4" />
@@ -108,7 +60,15 @@ export function Settings() {
           <Database className="h-4 w-4" />
           Data
         </TabsTrigger>
+        <TabsTrigger value="settings" className="flex items-center gap-2">
+          <SettingsIcon className="h-4 w-4" />
+          Settings
+        </TabsTrigger>
       </TabsList>
+
+      <TabsContent value="workflow">
+        <WorkflowSettings />
+      </TabsContent>
 
       <TabsContent value="account">
         <Card>
@@ -117,7 +77,71 @@ export function Settings() {
             <CardDescription>Manage your account preferences</CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Add account settings form */}
+            {/* Account settings content */}
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="api">
+        <Card>
+          <CardHeader>
+            <CardTitle>API Settings</CardTitle>
+            <CardDescription>Manage your API keys and access</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* API settings content */}
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="notifications">
+        <Card>
+          <CardHeader>
+            <CardTitle>Notification Preferences</CardTitle>
+            <CardDescription>Manage how you receive notifications</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="email-notifications">Email Notifications</Label>
+              <Switch id="email-notifications" />
+            </div>
+            {/* More notification settings */}
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="appearance">
+        <Card>
+          <CardHeader>
+            <CardTitle>Appearance Settings</CardTitle>
+            <CardDescription>Customize how the app looks</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* Appearance settings content */}
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="data">
+        <Card>
+          <CardHeader>
+            <CardTitle>Data Management</CardTitle>
+            <CardDescription>Manage your data and exports</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* Data management content */}
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="settings">
+        <Card>
+          <CardHeader>
+            <CardTitle>General Settings</CardTitle>
+            <CardDescription>Configure general application settings</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* General settings content */}
           </CardContent>
         </Card>
       </TabsContent>

@@ -1,4 +1,4 @@
-import { DatabaseClient, Niche, NicheCreateInput, NicheUpdateInput } from '../database/interfaces';
+import { DatabaseClient, Niche, NicheCreateInput, NicheUpdateInput, BaseEntity } from '../database/interfaces';
 import { getDatabase } from '../database';
 import { logger } from '../utils/log';
 import { ValidationError } from '../database/mongodb/client';
@@ -36,7 +36,7 @@ export class NicheService {
         userId,
         pillars: [],
         progress: 0,
-        status: 'new'
+        status: 'pending'
       };
       const niche = await this.db.createNiche(nicheData);
       log.info(`Created niche ${niche.id}`);

@@ -188,7 +188,10 @@ export class MongoDBClient implements DatabaseClient {
   }
 
   async findUserByEmail(email: string): Promise<User | null> {
-    const user = await UserModel.findOne({ email }).exec();
+    // Include password field for authentication
+    const user = await UserModel.findOne({ email })
+      .select('+password')
+      .exec();
     return convertDocument<User>(user);
   }
 

@@ -12,7 +12,7 @@ import { NotFound } from "./pages/NotFound"
 import { Layout } from "./components/Layout"
 import { ProtectedRoute } from "./components/ProtectedRoute"
 import { NicheSelection } from "./pages/NicheSelection"
-import { PillarsList } from "./pages/PillarsList"
+import { PillarsList } from "./pages/PillarsList/index"
 import { Subpillars } from "./pages/Subpillars"
 import { SubpillarDetail } from "./pages/SubpillarDetail"
 import { ContentMerge } from "./pages/ContentMerge"
@@ -23,6 +23,7 @@ import { Footer } from "./components/Footer"
 import { Header } from "./components/Header"
 import { ResearchManager } from "./pages/ResearchManager"
 import { NicheDetail } from "./pages/NicheDetail"
+import TodoList from "./pages/TodoList"
 
 function RouteLogger() {
   const location = useLocation()
@@ -71,6 +72,7 @@ function App() {
                             <Route path="/articles/:articleId" element={<FinalArticle />} />
                             <Route path="/research/:subpillarId?" element={<ResearchManager />} />
                             <Route path="/niches/:id" element={<NicheDetail />} />
+                            <Route path="/todos" element={<TodoList />} />
                             <Route path="*" element={<NotFound />} />
                           </Routes>
                         </Layout>

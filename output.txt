@@ -47,6 +47,7 @@
 │   │       ├── routeConfig.js.html
 │   │       └── routeUpdater.js.html
 │   └── lcov.info
+├── .env
 ├── .gitignore
 ├── README.md
 ├── __mocks__
@@ -110,13 +111,15 @@
 │   │   │   ├── dashboard.early.test
 │   │   │   │   └── getDashboardStats.early.test.ts
 │   │   │   ├── dashboard.ts
+│   │   │   ├── niches.ts
 │   │   │   ├── settings.early.test
 │   │   │   │   ├── changePassword.early.test.ts
 │   │   │   │   ├── deleteAccount.early.test.ts
 │   │   │   │   ├── exportUserData.early.test.ts
 │   │   │   │   ├── updateProfile.early.test.ts
 │   │   │   │   └── updateSettings.early.test.ts
-│   │   │   └── settings.ts
+│   │   │   ├── settings.ts
+│   │   │   └── workflow.ts
 │   │   ├── components
 │   │   │   ├── ContentReview.early.test
 │   │   │   │   └── ContentReview.early.test.tsx
@@ -167,111 +170,130 @@
 │   │   │   ├── WhiteboardToolbar.early.test
 │   │   │   │   └── WhiteboardToolbar.early.test.tsx
 │   │   │   ├── WhiteboardToolbar.tsx
-│   │   │   └── ui
-│   │   │       ├── accordion.tsx
-│   │   │       ├── alert-dialog.early.test
-│   │   │       │   ├── AlertDialogFooter.early.test.tsx
-│   │   │       │   └── AlertDialogHeader.early.test.tsx
-│   │   │       ├── alert-dialog.tsx
-│   │   │       ├── alert.tsx
-│   │   │       ├── aspect-ratio.tsx
-│   │   │       ├── avatar.tsx
-│   │   │       ├── badge.early.test
-│   │   │       │   └── Badge.early.test.tsx
-│   │   │       ├── badge.tsx
-│   │   │       ├── breadcrumb.early.test
-│   │   │       │   ├── BreadcrumbEllipsis.early.test.tsx
-│   │   │       │   └── BreadcrumbSeparator.early.test.tsx
-│   │   │       ├── breadcrumb.tsx
-│   │   │       ├── button.tsx
-│   │   │       ├── calendar.early.test
-│   │   │       │   └── Calendar.early.test.tsx
-│   │   │       ├── calendar.tsx
-│   │   │       ├── card.tsx
-│   │   │       ├── carousel.tsx
-│   │   │       ├── chart.early.test
-│   │   │       │   └── ChartStyle.early.test.tsx
-│   │   │       ├── chart.tsx
-│   │   │       ├── checkbox.tsx
-│   │   │       ├── collapsible.tsx
-│   │   │       ├── command.early.test
-│   │   │       │   ├── CommandDialog.early.test.tsx
-│   │   │       │   └── CommandShortcut.early.test.tsx
-│   │   │       ├── command.tsx
-│   │   │       ├── context-menu.early.test
-│   │   │       │   └── ContextMenuShortcut.early.test.tsx
-│   │   │       ├── context-menu.tsx
-│   │   │       ├── dialog.early.test
-│   │   │       │   ├── DialogFooter.early.test.tsx
-│   │   │       │   └── DialogHeader.early.test.tsx
-│   │   │       ├── dialog.tsx
-│   │   │       ├── drawer.early.test
-│   │   │       │   ├── Drawer.early.test.tsx
-│   │   │       │   ├── DrawerFooter.early.test.tsx
-│   │   │       │   └── DrawerHeader.early.test.tsx
-│   │   │       ├── drawer.tsx
-│   │   │       ├── dropdown-menu.early.test
-│   │   │       │   └── DropdownMenuShortcut.early.test.tsx
-│   │   │       ├── dropdown-menu.tsx
-│   │   │       ├── form.early.test
-│   │   │       │   ├── FormField.early.test.tsx
-│   │   │       │   └── useFormField.early.test.tsx
-│   │   │       ├── form.tsx
-│   │   │       ├── hover-card.tsx
-│   │   │       ├── input-otp.tsx
-│   │   │       ├── input.tsx
-│   │   │       ├── label.tsx
-│   │   │       ├── menubar.early.test
-│   │   │       │   └── MenubarShortcut.early.test.tsx
-│   │   │       ├── menubar.tsx
-│   │   │       ├── navigation-menu.tsx
-│   │   │       ├── pagination.early.test
-│   │   │       │   ├── Pagination.early.test.tsx
-│   │   │       │   ├── PaginationEllipsis.early.test.tsx
-│   │   │       │   ├── PaginationLink.early.test.tsx
-│   │   │       │   ├── PaginationNext.early.test.tsx
-│   │   │       │   └── PaginationPrevious.early.test.tsx
-│   │   │       ├── pagination.tsx
-│   │   │       ├── popover.tsx
-│   │   │       ├── progress.tsx
-│   │   │       ├── radio-group.tsx
-│   │   │       ├── resizable.early.test
-│   │   │       │   ├── ResizableHandle.early.test.tsx
-│   │   │       │   └── ResizablePanelGroup.early.test.tsx
-│   │   │       ├── resizable.tsx
-│   │   │       ├── scroll-area.tsx
-│   │   │       ├── select.tsx
-│   │   │       ├── separator.tsx
-│   │   │       ├── sheet.early.test
-│   │   │       │   ├── SheetFooter.early.test.tsx
-│   │   │       │   └── SheetHeader.early.test.tsx
-│   │   │       ├── sheet.tsx
-│   │   │       ├── skeleton.early.test
-│   │   │       │   └── Skeleton.early.test.tsx
-│   │   │       ├── skeleton.tsx
-│   │   │       ├── slider.tsx
-│   │   │       ├── sonner.early.test
-│   │   │       │   └── Toaster.early.test.tsx
-│   │   │       ├── sonner.tsx
-│   │   │       ├── switch.tsx
-│   │   │       ├── table.tsx
-│   │   │       ├── tabs.tsx
-│   │   │       ├── textarea.tsx
-│   │   │       ├── theme-provider.early.test
-│   │   │       │   ├── ThemeProvider.early.test.tsx
-│   │   │       │   └── useTheme.early.test.tsx
-│   │   │       ├── theme-provider.tsx
-│   │   │       ├── theme-toggle.early.test
-│   │   │       │   └── ThemeToggle.early.test.tsx
-│   │   │       ├── theme-toggle.tsx
-│   │   │       ├── toast.tsx
-│   │   │       ├── toaster.early.test
-│   │   │       │   └── Toaster.early.test.tsx
-│   │   │       ├── toaster.tsx
-│   │   │       ├── toggle-group.tsx
-│   │   │       ├── toggle.tsx
-│   │   │       ├── tooltip.tsx
-│   │   │       └── use-toast.tsx
+│   │   │   ├── WorkflowSettings.tsx
+│   │   │   ├── tree
+│   │   │   │   ├── EditableItem.tsx
+│   │   │   │   ├── PillarItem.tsx
+│   │   │   │   ├── PillarTreeView.tsx
+│   │   │   │   ├── SubpillarItem.tsx
+│   │   │   │   └── __tests__
+│   │   │   │       ├── EditableItem.test.tsx
+│   │   │   │       ├── PillarItem.test.tsx
+│   │   │   │       ├── PillarTreeView.test.tsx
+│   │   │   │       ├── SubpillarItem.test.tsx
+│   │   │   │       └── test-utils.tsx
+│   │   │   ├── ui
+│   │   │   │   ├── accordion.tsx
+│   │   │   │   ├── alert-dialog.early.test
+│   │   │   │   │   ├── AlertDialogFooter.early.test.tsx
+│   │   │   │   │   └── AlertDialogHeader.early.test.tsx
+│   │   │   │   ├── alert-dialog.tsx
+│   │   │   │   ├── alert.tsx
+│   │   │   │   ├── aspect-ratio.tsx
+│   │   │   │   ├── avatar.tsx
+│   │   │   │   ├── badge.early.test
+│   │   │   │   │   └── Badge.early.test.tsx
+│   │   │   │   ├── badge.tsx
+│   │   │   │   ├── breadcrumb.early.test
+│   │   │   │   │   ├── BreadcrumbEllipsis.early.test.tsx
+│   │   │   │   │   └── BreadcrumbSeparator.early.test.tsx
+│   │   │   │   ├── breadcrumb.tsx
+│   │   │   │   ├── button.tsx
+│   │   │   │   ├── calendar.early.test
+│   │   │   │   │   └── Calendar.early.test.tsx
+│   │   │   │   ├── calendar.tsx
+│   │   │   │   ├── card.tsx
+│   │   │   │   ├── carousel.tsx
+│   │   │   │   ├── chart.early.test
+│   │   │   │   │   └── ChartStyle.early.test.tsx
+│   │   │   │   ├── chart.tsx
+│   │   │   │   ├── checkbox.tsx
+│   │   │   │   ├── collapsible.tsx
+│   │   │   │   ├── command.early.test
+│   │   │   │   │   ├── CommandDialog.early.test.tsx
+│   │   │   │   │   └── CommandShortcut.early.test.tsx
+│   │   │   │   ├── command.tsx
+│   │   │   │   ├── context-menu.early.test
+│   │   │   │   │   └── ContextMenuShortcut.early.test.tsx
+│   │   │   │   ├── context-menu.tsx
+│   │   │   │   ├── dialog.early.test
+│   │   │   │   │   ├── DialogFooter.early.test.tsx
+│   │   │   │   │   └── DialogHeader.early.test.tsx
+│   │   │   │   ├── dialog.tsx
+│   │   │   │   ├── drawer.early.test
+│   │   │   │   │   ├── Drawer.early.test.tsx
+│   │   │   │   │   ├── DrawerFooter.early.test.tsx
+│   │   │   │   │   └── DrawerHeader.early.test.tsx
+│   │   │   │   ├── drawer.tsx
+│   │   │   │   ├── dropdown-menu.early.test
+│   │   │   │   │   └── DropdownMenuShortcut.early.test.tsx
+│   │   │   │   ├── dropdown-menu.tsx
+│   │   │   │   ├── form.early.test
+│   │   │   │   │   ├── FormField.early.test.tsx
+│   │   │   │   │   └── useFormField.early.test.tsx
+│   │   │   │   ├── form.tsx
+│   │   │   │   ├── hover-card.tsx
+│   │   │   │   ├── input-otp.tsx
+│   │   │   │   ├── input.tsx
+│   │   │   │   ├── label.tsx
+│   │   │   │   ├── menubar.early.test
+│   │   │   │   │   └── MenubarShortcut.early.test.tsx
+│   │   │   │   ├── menubar.tsx
+│   │   │   │   ├── navigation-menu.tsx
+│   │   │   │   ├── pagination.early.test
+│   │   │   │   │   ├── Pagination.early.test.tsx
+│   │   │   │   │   ├── PaginationEllipsis.early.test.tsx
+│   │   │   │   │   ├── PaginationLink.early.test.tsx
+│   │   │   │   │   ├── PaginationNext.early.test.tsx
+│   │   │   │   │   └── PaginationPrevious.early.test.tsx
+│   │   │   │   ├── pagination.tsx
+│   │   │   │   ├── popover.tsx
+│   │   │   │   ├── progress.tsx
+│   │   │   │   ├── radio-group.tsx
+│   │   │   │   ├── resizable.early.test
+│   │   │   │   │   ├── ResizableHandle.early.test.tsx
+│   │   │   │   │   └── ResizablePanelGroup.early.test.tsx
+│   │   │   │   ├── resizable.tsx
+│   │   │   │   ├── scroll-area.tsx
+│   │   │   │   ├── select.tsx
+│   │   │   │   ├── separator.tsx
+│   │   │   │   ├── sheet.early.test
+│   │   │   │   │   ├── SheetFooter.early.test.tsx
+│   │   │   │   │   └── SheetHeader.early.test.tsx
+│   │   │   │   ├── sheet.tsx
+│   │   │   │   ├── skeleton.early.test
+│   │   │   │   │   └── Skeleton.early.test.tsx
+│   │   │   │   ├── skeleton.tsx
+│   │   │   │   ├── slider.tsx
+│   │   │   │   ├── sonner.early.test
+│   │   │   │   │   └── Toaster.early.test.tsx
+│   │   │   │   ├── sonner.tsx
+│   │   │   │   ├── switch.tsx
+│   │   │   │   ├── table.tsx
+│   │   │   │   ├── tabs.tsx
+│   │   │   │   ├── textarea.tsx
+│   │   │   │   ├── theme-provider.early.test
+│   │   │   │   │   ├── ThemeProvider.early.test.tsx
+│   │   │   │   │   └── useTheme.early.test.tsx
+│   │   │   │   ├── theme-provider.tsx
+│   │   │   │   ├── theme-toggle.early.test
+│   │   │   │   │   └── ThemeToggle.early.test.tsx
+│   │   │   │   ├── theme-toggle.tsx
+│   │   │   │   ├── toast.tsx
+│   │   │   │   ├── toaster.early.test
+│   │   │   │   │   └── Toaster.early.test.tsx
+│   │   │   │   ├── toaster.tsx
+│   │   │   │   ├── toggle-group.tsx
+│   │   │   │   ├── toggle.tsx
+│   │   │   │   ├── tooltip.tsx
+│   │   │   │   └── use-toast.tsx
+│   │   │   └── whiteboard
+│   │   │       ├── PillarWhiteboardView.tsx
+│   │   │       ├── WhiteboardToolbar.tsx
+│   │   │       └── hooks
+│   │   │           ├── useFullscreen.ts
+│   │   │           ├── useHistory.ts
+│   │   │           └── useWhiteboardNodes.ts
 │   │   ├── config
 │   │   │   └── menu.tsx
 │   │   ├── contexts
@@ -285,6 +307,9 @@
 │   │   │   ├── useMobile.early.test
 │   │   │   │   └── useIsMobile.early.test.tsx
 │   │   │   ├── useMobile.tsx
+│   │   │   ├── useNiches.ts
+│   │   │   ├── usePillarModifications.ts
+│   │   │   ├── usePillarsState.ts
 │   │   │   ├── useToast.early.test
 │   │   │   │   ├── reducer.early.test.ts
 │   │   │   │   ├── toast.early.test.ts
@@ -321,9 +346,10 @@
 │   │   │   ├── NotFound.early.test
 │   │   │   │   └── NotFound.early.test.tsx
 │   │   │   ├── NotFound.tsx
+│   │   │   ├── PillarsList
+│   │   │   │   └── index.tsx
 │   │   │   ├── PillarsList.early.test
 │   │   │   │   └── PillarsList.early.test.tsx
-│   │   │   ├── PillarsList.tsx
 │   │   │   ├── Register.early.test
 │   │   │   │   ├── Register.early.test.tsx
 │   │   │   │   └── RegisterPage.early.test.tsx
@@ -360,11 +386,14 @@
 │   │   │   │   └── renderWithProviders.early.test.tsx
 │   │   │   └── test-utils.tsx
 │   │   ├── types
+│   │   │   ├── ai-settings.ts
+│   │   │   ├── niche.ts
 │   │   │   └── pillar.ts
 │   │   ├── utils
 │   │   │   ├── nodeCalculations.early.test
 │   │   │   │   └── calculateNodesAndEdges.early.test.ts
-│   │   │   └── nodeCalculations.ts
+│   │   │   ├── nodeCalculations.ts
+│   │   │   └── statusUtils.ts
 │   │   └── vite-env.d.ts
 │   ├── tailwind.config.ts
 │   ├── tsconfig.app.json
@@ -378,20 +407,429 @@
 │       ├── commands.ts
 │       └── e2e.ts
 ├── cypress.config.ts
+├── database-migration-plan.md
+├── dist
+│   └── server
+│       ├── analysis
+│       │   ├── analyzers
+│       │   │   ├── APIAnalyzer.d.ts
+│       │   │   ├── APIAnalyzer.d.ts.map
+│       │   │   ├── APIAnalyzer.js
+│       │   │   ├── ComplexityAnalyzer.d.ts
+│       │   │   ├── ComplexityAnalyzer.d.ts.map
+│       │   │   ├── ComplexityAnalyzer.js
+│       │   │   ├── DependencyAnalyzer.d.ts
+│       │   │   ├── DependencyAnalyzer.d.ts.map
+│       │   │   ├── DependencyAnalyzer.js
+│       │   │   ├── PatternAnalyzer.d.ts
+│       │   │   ├── PatternAnalyzer.d.ts.map
+│       │   │   ├── PatternAnalyzer.js
+│       │   │   ├── SecurityAnalyzer.d.ts
+│       │   │   ├── SecurityAnalyzer.d.ts.map
+│       │   │   └── SecurityAnalyzer.js
+│       │   ├── codeAnalyzer.d.ts
+│       │   ├── codeAnalyzer.d.ts.map
+│       │   ├── codeAnalyzer.js
+│       │   ├── core
+│       │   │   ├── BaseAnalyzer.d.ts
+│       │   │   ├── BaseAnalyzer.d.ts.map
+│       │   │   └── BaseAnalyzer.js
+│       │   └── scripts
+│       │       ├── analyze-niches.d.ts
+│       │       ├── analyze-niches.d.ts.map
+│       │       ├── analyze-niches.js
+│       │       ├── analyze.d.ts
+│       │       ├── analyze.d.ts.map
+│       │       └── analyze.js
+│       ├── config
+│       │   ├── openRouter.d.ts
+│       │   ├── openRouter.d.ts.map
+│       │   └── openRouter.js
+│       ├── cypress.config.d.ts
+│       ├── cypress.config.d.ts.map
+│       ├── cypress.config.js
+│       ├── database
+│       │   ├── index.d.ts
+│       │   ├── index.d.ts.map
+│       │   ├── index.js
+│       │   ├── interfaces.d.ts
+│       │   ├── interfaces.d.ts.map
+│       │   ├── interfaces.js
+│       │   └── mongodb
+│       │       ├── client.d.ts
+│       │       ├── client.d.ts.map
+│       │       ├── client.js
+│       │       └── models
+│       │           ├── Article.d.ts
+│       │           ├── Article.d.ts.map
+│       │           ├── Article.js
+│       │           ├── Niche.d.ts
+│       │           ├── Niche.d.ts.map
+│       │           ├── Niche.js
+│       │           ├── Outline.d.ts
+│       │           ├── Outline.d.ts.map
+│       │           ├── Outline.js
+│       │           ├── Pillar.d.ts
+│       │           ├── Pillar.d.ts.map
+│       │           ├── Pillar.js
+│       │           ├── Research.d.ts
+│       │           ├── Research.d.ts.map
+│       │           ├── Research.js
+│       │           ├── Session.d.ts
+│       │           ├── Session.d.ts.map
+│       │           ├── Session.js
+│       │           ├── Subpillar.d.ts
+│       │           ├── Subpillar.d.ts.map
+│       │           ├── Subpillar.js
+│       │           ├── User.d.ts
+│       │           ├── User.d.ts.map
+│       │           ├── User.js
+│       │           ├── index.d.ts
+│       │           ├── index.d.ts.map
+│       │           └── index.js
+│       ├── models
+│       │   ├── TestFixture.d.ts
+│       │   ├── TestFixture.d.ts.map
+│       │   ├── TestFixture.js
+│       │   ├── init.d.ts
+│       │   ├── init.d.ts.map
+│       │   └── init.js
+│       ├── routes
+│       │   ├── __mocks__
+│       │   │   ├── auth.d.ts
+│       │   │   ├── auth.d.ts.map
+│       │   │   └── auth.js
+│       │   ├── __tests__
+│       │   │   ├── articles.test.d.ts
+│       │   │   ├── articles.test.d.ts.map
+│       │   │   ├── articles.test.js
+│       │   │   ├── auth.test.d.ts
+│       │   │   ├── auth.test.d.ts.map
+│       │   │   ├── auth.test.js
+│       │   │   ├── niches.test.d.ts
+│       │   │   ├── niches.test.d.ts.map
+│       │   │   ├── niches.test.js
+│       │   │   ├── outlines.test.d.ts
+│       │   │   ├── outlines.test.d.ts.map
+│       │   │   ├── outlines.test.js
+│       │   │   ├── pillars.test.d.ts
+│       │   │   ├── pillars.test.d.ts.map
+│       │   │   ├── pillars.test.js
+│       │   │   ├── seo.test.d.ts
+│       │   │   ├── seo.test.d.ts.map
+│       │   │   ├── seo.test.js
+│       │   │   ├── subpillars.test.d.ts
+│       │   │   ├── subpillars.test.d.ts.map
+│       │   │   └── subpillars.test.js
+│       │   ├── articles.d.ts
+│       │   ├── articles.d.ts.map
+│       │   ├── articles.js
+│       │   ├── auth.d.ts
+│       │   ├── auth.d.ts.map
+│       │   ├── auth.early.test
+│       │   │   ├── initRedis.early.test.d.ts
+│       │   │   ├── initRedis.early.test.d.ts.map
+│       │   │   └── initRedis.early.test.js
+│       │   ├── auth.js
+│       │   ├── health.d.ts
+│       │   ├── health.d.ts.map
+│       │   ├── health.js
+│       │   ├── index.d.ts
+│       │   ├── index.d.ts.map
+│       │   ├── index.js
+│       │   ├── middleware
+│       │   │   ├── auth.d.ts
+│       │   │   ├── auth.d.ts.map
+│       │   │   ├── auth.early.test
+│       │   │   │   ├── authenticateWithToken.early.test.d.ts
+│       │   │   │   ├── authenticateWithToken.early.test.d.ts.map
+│       │   │   │   ├── authenticateWithToken.early.test.js
+│       │   │   │   ├── initRedis.early.test.d.ts
+│       │   │   │   ├── initRedis.early.test.d.ts.map
+│       │   │   │   ├── initRedis.early.test.js
+│       │   │   │   ├── requireUser.early.test.d.ts
+│       │   │   │   ├── requireUser.early.test.d.ts.map
+│       │   │   │   └── requireUser.early.test.js
+│       │   │   └── auth.js
+│       │   ├── niche.d.ts
+│       │   ├── niche.d.ts.map
+│       │   ├── niche.js
+│       │   ├── niches.d.ts
+│       │   ├── niches.d.ts.map
+│       │   ├── niches.js
+│       │   ├── outlines.d.ts
+│       │   ├── outlines.d.ts.map
+│       │   ├── outlines.js
+│       │   ├── pillars.d.ts
+│       │   ├── pillars.d.ts.map
+│       │   ├── pillars.js
+│       │   ├── research.d.ts
+│       │   ├── research.d.ts.map
+│       │   ├── research.js
+│       │   ├── seo.d.ts
+│       │   ├── seo.d.ts.map
+│       │   ├── seo.js
+│       │   ├── subpillars.d.ts
+│       │   ├── subpillars.d.ts.map
+│       │   └── subpillars.js
+│       ├── server.d.ts
+│       ├── server.d.ts.map
+│       ├── server.js
+│       ├── services
+│       │   ├── ArticleService.d.ts
+│       │   ├── ArticleService.d.ts.map
+│       │   ├── ArticleService.js
+│       │   ├── LLMService.d.ts
+│       │   ├── LLMService.d.ts.map
+│       │   ├── LLMService.js
+│       │   ├── NicheService.d.ts
+│       │   ├── NicheService.d.ts.map
+│       │   ├── NicheService.js
+│       │   ├── OutlineService.d.ts
+│       │   ├── OutlineService.d.ts.map
+│       │   ├── OutlineService.js
+│       │   ├── PillarService.d.ts
+│       │   ├── PillarService.d.ts.map
+│       │   ├── PillarService.js
+│       │   ├── ResearchService.d.ts
+│       │   ├── ResearchService.d.ts.map
+│       │   ├── ResearchService.js
+│       │   ├── SessionService.d.ts
+│       │   ├── SessionService.d.ts.map
+│       │   ├── SessionService.js
+│       │   ├── SubpillarService.d.ts
+│       │   ├── SubpillarService.d.ts.map
+│       │   ├── SubpillarService.js
+│       │   ├── UserService.d.ts
+│       │   ├── UserService.d.ts.map
+│       │   ├── UserService.js
+│       │   ├── __mocks__
+│       │   │   ├── anthropic.d.ts
+│       │   │   ├── anthropic.d.ts.map
+│       │   │   ├── anthropic.js
+│       │   │   ├── llm.d.ts
+│       │   │   ├── llm.d.ts.map
+│       │   │   ├── llm.js
+│       │   │   ├── openai.d.ts
+│       │   │   ├── openai.d.ts.map
+│       │   │   ├── openai.js
+│       │   │   ├── user.d.ts
+│       │   │   ├── user.d.ts.map
+│       │   │   ├── user.js
+│       │   │   └── utils
+│       │   │       ├── mockHelpers.d.ts
+│       │   │       ├── mockHelpers.d.ts.map
+│       │   │       └── mockHelpers.js
+│       │   ├── llm.d.ts
+│       │   ├── llm.d.ts.map
+│       │   ├── llm.early.test
+│       │   │   ├── generateContentPoints.early.test.d.ts
+│       │   │   ├── generateContentPoints.early.test.d.ts.map
+│       │   │   ├── generateContentPoints.early.test.js
+│       │   │   ├── generateOutline.early.test.d.ts
+│       │   │   ├── generateOutline.early.test.d.ts.map
+│       │   │   ├── generateOutline.early.test.js
+│       │   │   ├── generatePillars.early.test.d.ts
+│       │   │   ├── generatePillars.early.test.d.ts.map
+│       │   │   ├── generatePillars.early.test.js
+│       │   │   ├── mergeContentIntoArticle.early.test.d.ts
+│       │   │   ├── mergeContentIntoArticle.early.test.d.ts.map
+│       │   │   ├── mergeContentIntoArticle.early.test.js
+│       │   │   ├── sendLLMRequest.early.test.d.ts
+│       │   │   ├── sendLLMRequest.early.test.d.ts.map
+│       │   │   └── sendLLMRequest.early.test.js
+│       │   ├── llm.js
+│       │   ├── openRouter.d.ts
+│       │   ├── openRouter.d.ts.map
+│       │   └── openRouter.js
+│       ├── test
+│       │   ├── analysis
+│       │   │   ├── connection-debug.d.ts
+│       │   │   ├── connection-debug.d.ts.map
+│       │   │   ├── connection-debug.js
+│       │   │   ├── mongoose-connection-check.d.ts
+│       │   │   ├── mongoose-connection-check.d.ts.map
+│       │   │   └── mongoose-connection-check.js
+│       │   ├── fixtures
+│       │   │   ├── llm-responses.d.ts
+│       │   │   ├── llm-responses.d.ts.map
+│       │   │   └── llm-responses.js
+│       │   ├── helpers
+│       │   │   ├── databaseHelper.d.ts
+│       │   │   ├── databaseHelper.d.ts.map
+│       │   │   ├── databaseHelper.js
+│       │   │   ├── fixtureHelper.d.ts
+│       │   │   ├── fixtureHelper.d.ts.map
+│       │   │   └── fixtureHelper.js
+│       │   ├── helpers.d.ts
+│       │   ├── helpers.d.ts.map
+│       │   ├── helpers.early.test
+│       │   │   ├── createTestNiche.early.test.d.ts
+│       │   │   ├── createTestNiche.early.test.d.ts.map
+│       │   │   ├── createTestNiche.early.test.js
+│       │   │   ├── createTestPillar.early.test.d.ts
+│       │   │   ├── createTestPillar.early.test.d.ts.map
+│       │   │   ├── createTestPillar.early.test.js
+│       │   │   ├── createTestUser.early.test.d.ts
+│       │   │   ├── createTestUser.early.test.d.ts.map
+│       │   │   ├── createTestUser.early.test.js
+│       │   │   ├── generateTestToken.early.test.d.ts
+│       │   │   ├── generateTestToken.early.test.d.ts.map
+│       │   │   └── generateTestToken.early.test.js
+│       │   ├── helpers.js
+│       │   ├── infrastructure
+│       │   │   ├── TestDatabaseClient.d.ts
+│       │   │   ├── TestDatabaseClient.d.ts.map
+│       │   │   ├── TestDatabaseClient.js
+│       │   │   ├── enhanced-redis-mock.d.ts
+│       │   │   ├── enhanced-redis-mock.d.ts.map
+│       │   │   ├── enhanced-redis-mock.js
+│       │   │   ├── errors.d.ts
+│       │   │   ├── errors.d.ts.map
+│       │   │   ├── errors.js
+│       │   │   ├── protocol-guard.d.ts
+│       │   │   ├── protocol-guard.d.ts.map
+│       │   │   ├── protocol-guard.js
+│       │   │   ├── server-lifecycle.d.ts
+│       │   │   ├── server-lifecycle.d.ts.map
+│       │   │   ├── server-lifecycle.js
+│       │   │   ├── test-container.d.ts
+│       │   │   ├── test-container.d.ts.map
+│       │   │   ├── test-container.js
+│       │   │   ├── test-monitor.d.ts
+│       │   │   ├── test-monitor.d.ts.map
+│       │   │   ├── test-monitor.js
+│       │   │   ├── test-server-factory.d.ts
+│       │   │   ├── test-server-factory.d.ts.map
+│       │   │   ├── test-server-factory.js
+│       │   │   ├── test-types.d.ts
+│       │   │   ├── test-types.d.ts.map
+│       │   │   ├── test-types.js
+│       │   │   ├── test-validator.d.ts
+│       │   │   ├── test-validator.d.ts.map
+│       │   │   ├── test-validator.js
+│       │   │   ├── types.d.ts
+│       │   │   ├── types.d.ts.map
+│       │   │   └── types.js
+│       │   ├── mocks
+│       │   │   ├── auth.d.ts
+│       │   │   ├── auth.d.ts.map
+│       │   │   ├── auth.js
+│       │   │   ├── jwt.d.ts
+│       │   │   ├── jwt.d.ts.map
+│       │   │   ├── jwt.js
+│       │   │   ├── log.d.ts
+│       │   │   ├── log.d.ts.map
+│       │   │   ├── log.js
+│       │   │   ├── redis.d.ts
+│       │   │   ├── redis.d.ts.map
+│       │   │   └── redis.js
+│       │   ├── setup.d.ts
+│       │   ├── setup.d.ts.map
+│       │   ├── setup.js
+│       │   ├── testServer.d.ts
+│       │   ├── testServer.d.ts.map
+│       │   ├── testServer.early.test
+│       │   │   ├── createTestServer.early.test.d.ts
+│       │   │   ├── createTestServer.early.test.d.ts.map
+│       │   │   └── createTestServer.early.test.js
+│       │   └── testServer.js
+│       ├── tools
+│       │   └── analysis
+│       │       ├── apiAnalyzer.d.ts
+│       │       ├── apiAnalyzer.d.ts.map
+│       │       ├── apiAnalyzer.js
+│       │       ├── complexityAnalyzer.d.ts
+│       │       ├── complexityAnalyzer.d.ts.map
+│       │       ├── complexityAnalyzer.js
+│       │       ├── dependencyAnalyzer.d.ts
+│       │       ├── dependencyAnalyzer.d.ts.map
+│       │       ├── dependencyAnalyzer.js
+│       │       ├── securityAnalyzer.d.ts
+│       │       ├── securityAnalyzer.d.ts.map
+│       │       └── securityAnalyzer.js
+│       ├── types
+│       │   ├── express.d.ts
+│       │   ├── express.d.ts.map
+│       │   └── express.js
+│       ├── updateRoutes.d.ts
+│       ├── updateRoutes.d.ts.map
+│       ├── updateRoutes.js
+│       └── utils
+│           ├── errors.d.ts
+│           ├── errors.d.ts.map
+│           ├── errors.js
+│           ├── jwt.d.ts
+│           ├── jwt.d.ts.map
+│           ├── jwt.early.test
+│           │   ├── generateToken.early.test.d.ts
+│           │   ├── generateToken.early.test.d.ts.map
+│           │   ├── generateToken.early.test.js
+│           │   ├── verifyToken.early.test.d.ts
+│           │   ├── verifyToken.early.test.d.ts.map
+│           │   └── verifyToken.early.test.js
+│           ├── jwt.js
+│           ├── log.d.ts
+│           ├── log.d.ts.map
+│           ├── log.early.test
+│           │   ├── logger.early.test.d.ts
+│           │   ├── logger.early.test.d.ts.map
+│           │   └── logger.early.test.js
+│           ├── log.js
+│           ├── logger.d.ts
+│           ├── logger.d.ts.map
+│           ├── logger.js
+│           ├── password.early.test
+│           │   ├── generatePasswordHash.early.test.d.ts
+│           │   ├── generatePasswordHash.early.test.d.ts.map
+│           │   ├── generatePasswordHash.early.test.js
+│           │   ├── isPasswordHash.early.test.d.ts
+│           │   ├── isPasswordHash.early.test.d.ts.map
+│           │   ├── isPasswordHash.early.test.js
+│           │   ├── validatePassword.early.test.d.ts
+│           │   ├── validatePassword.early.test.d.ts.map
+│           │   └── validatePassword.early.test.js
+│           ├── routeConfig.d.ts
+│           ├── routeConfig.d.ts.map
+│           ├── routeConfig.js
+│           ├── routeUpdater.d.ts
+│           ├── routeUpdater.d.ts.map
+│           ├── routeUpdater.early.test
+│           │   ├── updateRouteFiles.early.test.d.ts
+│           │   ├── updateRouteFiles.early.test.d.ts.map
+│           │   └── updateRouteFiles.early.test.js
+│           ├── routeUpdater.js
+│           ├── validation.d.ts
+│           ├── validation.d.ts.map
+│           └── validation.js
 ├── docs
 │   ├── SETUP.md
+│   ├── SUPABASE_SETUP.md
+│   ├── api-routes.md
 │   ├── project-structure.md
+│   ├── route-refactoring.md
 │   ├── test-execution-checklist.md
 │   └── test-implementation-checklist.md
 ├── ecosystem.config.mjs
 ├── jest.config.js
 ├── jest.setup.js
+├── lib
+│   └── supabase.ts
 ├── niche-selection-errors.md
 ├── output.txt
 ├── package-lock.json
 ├── package.json
+├── scripts
+│   └── migration
+│       ├── README.md
+│       ├── migrate-to-supabase.ts
+│       └── update-references.ts
 ├── server
 │   ├── .env
+│   ├── .vscode
+│   │   ├── extensions.json
+│   │   └── settings.json
+│   ├── README.md
 │   ├── analysis
 │   │   ├── README.md
 │   │   ├── analyzers
@@ -415,25 +853,75 @@
 │   │   │   └── analyze.js
 │   │   └── utils
 │   ├── config
-│   │   └── openRouter.ts
+│   │   ├── database.ts
+│   │   ├── middleware.ts
+│   │   ├── openRouter.ts
+│   │   ├── routes.ts
+│   │   ├── session.ts
+│   │   └── supabase.ts
 │   ├── cypress.config.js
 │   ├── database
 │   │   ├── MIGRATION.md
 │   │   ├── README.md
 │   │   ├── index.ts
+│   │   ├── interfaces
+│   │   │   ├── base.ts
+│   │   │   ├── content.ts
+│   │   │   ├── index.ts
+│   │   │   ├── structure.ts
+│   │   │   ├── user.ts
+│   │   │   └── workflow.ts
 │   │   ├── interfaces.ts
-│   │   └── mongodb
-│   │       ├── client.ts
-│   │       └── models
-│   │           ├── Article.ts
-│   │           ├── Niche.ts
-│   │           ├── Outline.ts
-│   │           ├── Pillar.ts
-│   │           ├── Research.ts
-│   │           ├── Session.ts
-│   │           ├── Subpillar.ts
-│   │           └── User.ts
+│   │   ├── migrations
+│   │   │   ├── 001_initial_schema.sql
+│   │   │   ├── 20240319_001_add_content_tracking_columns.sql
+│   │   │   ├── 20240319_002_create_content_generation_table.sql
+│   │   │   ├── chunks
+│   │   │   │   ├── 01_uuid_and_users.sql
+│   │   │   │   ├── 02_niches_and_pillars.sql
+│   │   │   │   ├── 03_subpillars_and_articles.sql
+│   │   │   │   └── 04_research_outlines_sessions.sql
+│   │   │   ├── create_base_tables.sql
+│   │   │   ├── create_llms_table.sql
+│   │   │   ├── create_test_user.sql
+│   │   │   ├── create_workflow_steps_table.sql
+│   │   │   └── run.ts
+│   │   ├── mongodb
+│   │   │   ├── client.ts
+│   │   │   └── models
+│   │   │       ├── Article.ts
+│   │   │       ├── Niche.ts
+│   │   │       ├── Outline.ts
+│   │   │       ├── Pillar.ts
+│   │   │       ├── Research.ts
+│   │   │       ├── Session.ts
+│   │   │       ├── Subpillar.ts
+│   │   │       ├── User.ts
+│   │   │       └── index.ts
+│   │   ├── postgres
+│   │   │   ├── base-client.ts
+│   │   │   ├── client.ts
+│   │   │   ├── clients
+│   │   │   │   ├── content-client.ts
+│   │   │   │   ├── niche-client.ts
+│   │   │   │   ├── structure-client.ts
+│   │   │   │   ├── user-client.ts
+│   │   │   │   ├── workflow
+│   │   │   │   │   ├── base-operations.ts
+│   │   │   │   │   ├── generation-operations.ts
+│   │   │   │   │   ├── llm-operations.ts
+│   │   │   │   │   └── step-operations.ts
+│   │   │   │   └── workflow-client.ts
+│   │   │   └── types.ts
+│   │   └── supabase
+│   │       └── supabase-client.ts
 │   ├── exports
+│   ├── logs
+│   │   ├── .32a067c018eded5ce51380c02679a47c694ec86e-audit.json
+│   │   └── .748c654c0f4297f5bdb5e063f63f0211033c933d-audit.json
+│   ├── middleware
+│   │   ├── auth.ts
+│   │   └── error.ts
 │   ├── models
 │   │   ├── TestFixture.js
 │   │   └── init.js
@@ -450,14 +938,13 @@
 │   │   │   ├── pillars.test.js
 │   │   │   ├── seo.test.js
 │   │   │   └── subpillars.test.js
-│   │   ├── articles.js
 │   │   ├── articles.ts
 │   │   ├── auth.early.test
 │   │   │   └── initRedis.early.test.js
-│   │   ├── auth.js
 │   │   ├── auth.ts
-│   │   ├── health.js
-│   │   ├── index.js
+│   │   ├── dashboard.ts
+│   │   ├── health.ts
+│   │   ├── index.ts
 │   │   ├── middleware
 │   │   │   ├── __tests__
 │   │   │   │   └── auth.test.ts
@@ -466,24 +953,58 @@
 │   │   │   │   ├── authenticateWithToken.early.test.js
 │   │   │   │   ├── initRedis.early.test.js
 │   │   │   │   └── requireUser.early.test.js
-│   │   │   ├── auth.js
 │   │   │   └── auth.ts
 │   │   ├── niche.ts
-│   │   ├── niches.js
 │   │   ├── niches.ts
-│   │   ├── outlines.js
-│   │   ├── outlines.ts
-│   │   ├── pillars.js
-│   │   ├── pillars.ts
-│   │   ├── research.js
+│   │   ├── outlines
+│   │   │   ├── handlers
+│   │   │   │   ├── __tests__
+│   │   │   │   │   ├── create.test.ts
+│   │   │   │   │   └── update-sections.test.ts
+│   │   │   │   ├── add-section.ts
+│   │   │   │   ├── create.ts
+│   │   │   │   ├── delete.ts
+│   │   │   │   ├── get.ts
+│   │   │   │   ├── update-sections.ts
+│   │   │   │   └── update-status.ts
+│   │   │   ├── index.ts
+│   │   │   └── types.ts
+│   │   ├── pillars
+│   │   │   ├── handlers
+│   │   │   │   ├── approve.ts
+│   │   │   │   ├── create.ts
+│   │   │   │   ├── delete.ts
+│   │   │   │   ├── generate.ts
+│   │   │   │   ├── get.ts
+│   │   │   │   ├── list.ts
+│   │   │   │   └── update.ts
+│   │   │   ├── index.ts
+│   │   │   └── types.ts
 │   │   ├── research.ts
 │   │   ├── seo.js
-│   │   ├── subpillars.js
-│   │   └── subpillars.ts
-│   ├── server.js
+│   │   ├── shared
+│   │   │   ├── errors.ts
+│   │   │   ├── middleware.ts
+│   │   │   └── types.ts
+│   │   ├── subpillars
+│   │   │   ├── handlers
+│   │   │   │   ├── create.ts
+│   │   │   │   ├── delete.ts
+│   │   │   │   ├── generate.ts
+│   │   │   │   ├── list.ts
+│   │   │   │   └── update.ts
+│   │   │   ├── index.ts
+│   │   │   ├── middleware.ts
+│   │   │   └── types.ts
+│   │   └── workflow.ts
+│   ├── run-migration.ts
+│   ├── server
+│   │   └── utils
+│   │       └── code-analysis
 │   ├── server.ts
 │   ├── services
 │   │   ├── ArticleService.ts
+│   │   ├── DashboardService.ts
 │   │   ├── LLMService.ts
 │   │   ├── NicheService.ts
 │   │   ├── OutlineService.ts
@@ -492,6 +1013,7 @@
 │   │   ├── SessionService.ts
 │   │   ├── SubpillarService.ts
 │   │   ├── UserService.ts
+│   │   ├── WorkflowService.ts
 │   │   ├── __mocks__
 │   │   │   ├── anthropic.js
 │   │   │   ├── llm.js
@@ -507,10 +1029,20 @@
 │   │   │   ├── generatePillars.early.test.js
 │   │   │   ├── mergeContentIntoArticle.early.test.js
 │   │   │   └── sendLLMRequest.early.test.js
-│   │   ├── niche.js
+│   │   ├── llm.ts
 │   │   ├── openRouter.ts
-│   │   ├── user.d.ts
-│   │   └── user.js
+│   │   └── user.d.ts
+│   ├── setup.sh
+│   ├── supabase
+│   │   ├── .gitignore
+│   │   ├── .temp
+│   │   │   └── cli-latest
+│   │   ├── config.toml
+│   │   └── migrations
+│   │       ├── 20240314000000_initial_schema.sql
+│   │       ├── 20240314000001_niches_and_pillars.sql
+│   │       ├── 20240314000002_subpillars_and_articles.sql
+│   │       └── 20240314000003_research_outlines_sessions.sql
 │   ├── test
 │   │   ├── analysis
 │   │   │   ├── articles-test-analysis.md
@@ -525,7 +1057,8 @@
 │   │   ├── helpers
 │   │   │   ├── databaseHelper.ts
 │   │   │   ├── fixtureHelper.js
-│   │   │   └── fixtureHelper.ts
+│   │   │   ├── fixtureHelper.ts
+│   │   │   └── route-testing.ts
 │   │   ├── helpers.early.test
 │   │   │   ├── createTestNiche.early.test.js
 │   │   │   ├── createTestPillar.early.test.js
@@ -545,6 +1078,7 @@
 │   │   │   ├── test-types.ts
 │   │   │   ├── test-validator.ts
 │   │   │   └── types.ts
+│   │   ├── logger.test.ts
 │   │   ├── mocks
 │   │   │   ├── auth.js
 │   │   │   ├── jwt.js
@@ -552,6 +1086,7 @@
 │   │   │   ├── redis.d.ts
 │   │   │   └── redis.js
 │   │   ├── setup.ts
+│   │   ├── simulate-changes.ts
 │   │   ├── suites
 │   │   │   ├── error-handling.test.ts
 │   │   │   ├── integration.test.ts
@@ -561,6 +1096,7 @@
 │   │   │   └── createTestServer.early.test.js
 │   │   ├── testServer.js
 │   │   └── testServer.ts
+│   ├── test-supabase-connection.ts
 │   ├── test.html
 │   ├── tools
 │   │   └── analysis
@@ -568,37 +1104,58 @@
 │   │       ├── complexityAnalyzer.ts
 │   │       ├── dependencyAnalyzer.ts
 │   │       └── securityAnalyzer.ts
+│   ├── tsconfig.json
 │   ├── types
 │   │   ├── env.d.ts
+│   │   ├── express
+│   │   │   └── index.d.ts
 │   │   ├── express.d.ts
-│   │   └── express.ts
-│   ├── updateRoutes.js
-│   └── utils
-│       ├── errors.js
-│       ├── jwt.d.ts
-│       ├── jwt.early.test
-│       │   ├── generateToken.early.test.js
-│       │   └── verifyToken.early.test.js
-│       ├── jwt.js
-│       ├── log.early.test
-│       │   └── logger.early.test.js
-│       ├── log.js
-│       ├── password.early.test
-│       │   ├── generatePasswordHash.early.test.js
-│       │   ├── isPasswordHash.early.test.js
-│       │   └── validatePassword.early.test.js
-│       ├── password.js
-│       ├── routeConfig.js
-│       ├── routeUpdater.early.test
-│       │   └── updateRouteFiles.early.test.js
-│       ├── routeUpdater.js
-│       ├── validation.js
-│       └── validation.ts
+│   │   ├── express.ts
+│   │   ├── user.ts
+│   │   └── workflow.ts
+│   ├── updateRoutes.ts
+│   ├── utils
+│   │   ├── errors.js
+│   │   ├── errors.ts
+│   │   ├── jwt.d.ts
+│   │   ├── jwt.early.test
+│   │   │   ├── generateToken.early.test.js
+│   │   │   └── verifyToken.early.test.js
+│   │   ├── jwt.ts
+│   │   ├── log.early.test
+│   │   │   └── logger.early.test.js
+│   │   ├── log.js
+│   │   ├── log.ts
+│   │   ├── logger.ts
+│   │   ├── password.early.test
+│   │   │   ├── generatePasswordHash.early.test.js
+│   │   │   ├── isPasswordHash.early.test.js
+│   │   │   └── validatePassword.early.test.js
+│   │   ├── password.ts
+│   │   ├── port.ts
+│   │   ├── routeConfig.js
+│   │   ├── routeUpdater.early.test
+│   │   │   └── updateRouteFiles.early.test.js
+│   │   ├── routeUpdater.js
+│   │   └── validation.ts
+│   └── verify-tables.ts
+├── server_connect.md
+├── supabase
+│   ├── .gitignore
+│   ├── .temp
+│   │   └── cli-latest
+│   ├── config.toml
+│   └── migrations
+│       └── 20240101000000_initial_schema.sql
+├── taskResetInstructions.md
 ├── test
 │   ├── globalSetup.js
 │   ├── globalTeardown.js
 │   └── redisServer.js
 ├── tsconfig.json
-└── tsconfig.test.json
+├── tsconfig.test.json
+├── types
+│   └── supabase.ts
+└── typescript-fixes.md
 
-148 directories, 454 files
+222 directories, 937 files

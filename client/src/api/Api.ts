@@ -112,15 +112,16 @@ const createApiWithRetry = (config: AxiosRequestConfig): AxiosInstance => {
   const api = axios.create(config);
 
   api.interceptors.request.use(request => {
-    const currentUrl = request.url || '';
-    const publicEndpoints = ['/auth/register', '/auth/login'];
-    const isPublicEndpoint = publicEndpoints.some(endpoint => currentUrl.includes(endpoint));
+    console.log('API Request:', {
+      method: request.method,
+      url: request.url,
+      data: request.data,
+      headers: request.headers
+    });
 
-    if (!isPublicEndpoint) {
-      const token = localStorage.getItem('token');
-      if (token) {
-        request.headers['Authorization'] = `Bearer ${token}`;
-      }
+    const token = localStorage.getItem('token');
+    if (token) {
+      request.headers['Authorization'] = `Bearer ${token}`;
     }
 
     // Add unique request ID for tracking retries
@@ -131,6 +132,12 @@ const createApiWithRetry = (config: AxiosRequestConfig): AxiosInstance => {
 
   api.interceptors.response.use(
     response => {
+      console.log('API Response:', {
+        status: response.status,
+        data: response.data,
+        headers: response.headers
+      });
+
       // Clear any failed request on success
       const requestId = response.config.headers?.['X-Request-ID'];
       if (requestId) {
@@ -138,15 +145,28 @@ const createApiWithRetry = (config: AxiosRequestConfig): AxiosInstance => {
       }
       return response;
     },
-    error => {
+    async error => {
+      console.error('API Error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        config: {
+          method: error.config?.method,
+          url: error.config?.url,
+          data: error.config?.data
+        }
+      });
+
       const config = error.config;
       const requestId = config.headers['X-Request-ID'];
 
-      // Skip storing certain errors
+      // Handle authentication errors
       if (error.response?.status === 401) {
         localStorage.removeItem('token');
-        window.location.href = '/login';
-        return Promise.reject(new Error('Session expired. Please log in again.'));
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+        return Promise.reject(new Error('Please log in to continue.'));
       }
 
       // Store failed request for manual retry if it meets retry criteria
@@ -167,7 +187,12 @@ const createApiWithRetry = (config: AxiosRequestConfig): AxiosInstance => {
         return Promise.reject(new Error('An unexpected error occurred. Please try again later.'));
       }
 
-      const errorMessage = error.response.data?.message || error.response.data?.error || error.message;
+      // Extract error message from response
+      const errorMessage = error.response.data?.error || 
+                         error.response.data?.message || 
+                         error.message || 
+                         'An error occurred';
+      
       return Promise.reject(new Error(errorMessage));
     }
   );
@@ -177,7 +202,7 @@ const createApiWithRetry = (config: AxiosRequestConfig): AxiosInstance => {
 
 // Create and export the API instance
 const api = createApiWithRetry({
-  baseURL: 'http://localhost:3001',
+  // No need to specify baseURL since we're using Vite's proxy
   headers: {
     'Content-Type': 'application/json',
   },

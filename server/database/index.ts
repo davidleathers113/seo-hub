@@ -1,46 +1,101 @@
+import { Pool, QueryResult, QueryResultRow } from 'pg';
 import { DatabaseClient } from './interfaces';
-import { MongoDBClient } from './mongodb/client';
+import { logger } from '../utils/log';
+import { NicheClient } from './postgres/clients/niche-client';
+import { UserClient } from './postgres/clients/user-client';
 
-type DatabaseType = 'mongodb' | 'postgres' | 'sqlite';
+const log = logger('database');
 
-export class DatabaseFactory {
-  private static instance: DatabaseClient;
+const pool = new Pool({
+    user: process.env.DB_USER || 'postgres',
+    host: process.env.DB_HOST || 'localhost',
+    database: process.env.DB_NAME || 'content_creation_app',
+    password: process.env.DB_PASSWORD || 'postgres',
+    port: parseInt(process.env.DB_PORT || '5432'),
+});
 
-  static async createClient(type: DatabaseType, config: any): Promise<DatabaseClient> {
-    switch (type) {
-      case 'mongodb':
-        this.instance = new MongoDBClient(config.uri);
-        break;
-      // Add other database implementations here
-      // case 'postgres':
-      //   this.instance = new PostgresClient(config);
-      //   break;
-      default:
-        throw new Error(`Unsupported database type: ${type}`);
-    }
+export const db = {
+    query: async <T extends QueryResultRow = any>(
+        text: string,
+        params?: any[]
+    ): Promise<QueryResult<T>> => {
+        const result = await pool.query<T>(text, params);
+        return result;
+    },
+    getClient: () => pool.connect(),
+};
 
-    await this.instance.connect();
-    return this.instance;
-  }
+let dbClient: DatabaseClient | null = null;
 
-  static getInstance(): DatabaseClient {
-    if (!this.instance) {
-      throw new Error('Database client not initialized. Call createClient first.');
-    }
-    return this.instance;
-  }
-
-  static async closeConnection(): Promise<void> {
-    if (this.instance) {
-      await this.instance.disconnect();
-    }
-  }
-}
-
-// Export a convenience function to get the database client
 export function getDatabase(): DatabaseClient {
-  return DatabaseFactory.getInstance();
-}
+    if (!dbClient) {
+        log.info('Initializing database client');
+        const nicheClient = new NicheClient(pool);
+        const userClient = new UserClient(pool);
 
-// Export interfaces
-export * from './interfaces';
+        dbClient = {
+            // Use actual PostgreSQL implementations where available
+            connect: async () => {},
+            disconnect: async () => {},
+            healthCheck: async () => true,
+            ping: async () => true,
+
+            // Use the PostgreSQL user client
+            findUsers: userClient.findUsers.bind(userClient),
+            findUserById: userClient.findUserById.bind(userClient),
+            findUserByEmail: userClient.findUserByEmail.bind(userClient),
+            findUserByToken: userClient.findUserByToken.bind(userClient),
+            createUser: userClient.createUser.bind(userClient),
+            updateUser: userClient.updateUser.bind(userClient),
+            deleteUser: userClient.deleteUser.bind(userClient),
+
+            // Use the PostgreSQL niche client
+            createNiche: nicheClient.createNiche.bind(nicheClient),
+            findNicheById: nicheClient.findNicheById.bind(nicheClient),
+            findNichesByUserId: nicheClient.findNichesByUserId.bind(nicheClient),
+            updateNiche: nicheClient.updateNiche.bind(nicheClient),
+            deleteNiche: nicheClient.deleteNiche.bind(nicheClient),
+            findNiches: async () => [],
+
+            // Mock implementations for other operations
+            createPillar: async () => { throw new Error('Not implemented') },
+            findPillarById: async () => null,
+            findPillarsByNicheId: async () => [],
+            updatePillar: async () => null,
+            deletePillar: async () => false,
+            findPillars: async () => [],
+            createSubpillar: async () => { throw new Error('Not implemented') },
+            findSubpillarById: async () => null,
+            findSubpillarsByPillarId: async () => [],
+            updateSubpillar: async () => null,
+            deleteSubpillar: async () => false,
+            findSubpillars: async () => [],
+            createArticle: async () => { throw new Error('Not implemented') },
+            findArticleById: async () => null,
+            findArticlesBySubpillarId: async () => [],
+            updateArticle: async () => null,
+            deleteArticle: async () => false,
+            findArticles: async () => [],
+            createResearch: async () => { throw new Error('Not implemented') },
+            findResearchById: async () => null,
+            findResearchBySubpillarId: async () => [],
+            updateResearch: async () => null,
+            deleteResearch: async () => false,
+            createOutline: async () => { throw new Error('Not implemented') },
+            findOutlineById: async () => null,
+            findOutlineBySubpillarId: async () => null,
+            updateOutline: async () => null,
+            deleteOutline: async () => false,
+            createSession: async () => { throw new Error('Not implemented') },
+            findSessionById: async () => null,
+            findSessionByToken: async () => null,
+            findSessionsByUserId: async () => [],
+            updateSession: async () => null,
+            deleteSession: async () => false,
+            deleteExpiredSessions: async () => 0,
+            deleteUserSessions: async () => 0,
+            cleanupSessions: async () => {},
+        };
+    }
+    return dbClient;
+}

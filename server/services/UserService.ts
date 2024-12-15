@@ -1,75 +1,96 @@
 import { DatabaseClient, User } from '../database/interfaces';
-import { getDatabase } from '../database';
-import { logger } from '../utils/log';
-import { ValidationError } from '../database/mongodb/client';
+import { logger } from '../utils/logger';
 import { generateToken } from '../utils/jwt';
-import { randomUUID } from 'crypto';
+import { generatePasswordHash, validatePassword } from '../utils/password';
 
-const log = logger('services/UserService');
+const log = logger('UserService');
 
 export class UserService {
-  private db: DatabaseClient;
-
-  constructor(dbClient?: DatabaseClient) {
-    this.db = dbClient || getDatabase();
-  }
+  constructor(private db: DatabaseClient) {}
 
   async list(): Promise<User[]> {
     try {
-      log.info('Listing all users');
+      log.info('Fetching all users');
       return await this.db.findUsers();
     } catch (error) {
-      log.error('Error in UserService.list:', error);
+      log.error('Failed to list users', { error });
       throw error;
     }
   }
 
   async get(id: string): Promise<User | null> {
     try {
-      log.info(`Getting user ${id}`);
+      log.info('Fetching user by ID', { userId: id });
       return await this.db.findUserById(id);
     } catch (error) {
-      log.error('Error in UserService.get:', error);
+      log.error('Failed to get user', { userId: id, error });
       throw error;
     }
   }
 
   async getByEmail(email: string): Promise<User | null> {
     try {
-      log.info(`Getting user by email ${email}`);
-      return await this.db.findUserByEmail(email);
+      log.info('Fetching user by email', { email });
+      const user = await this.db.findUserByEmail(email);
+      log.info('User lookup result', { 
+        email,
+        found: !!user,
+        userId: user?.id
+      });
+      return user;
     } catch (error) {
-      log.error('Error in UserService.getByEmail:', error);
+      log.error('Failed to get user by email', { email, error });
       throw error;
     }
   }
 
   async update(id: string, data: Partial<User>): Promise<User | null> {
     try {
-      log.info(`Updating user ${id}`);
+      log.info('Updating user', { 
+        userId: id, 
+        fields: Object.keys(data),
+        isPasswordUpdate: !!data.password 
+      });
+      
+      if (data.password) {
+        data.password = await generatePasswordHash(data.password);
+      }
       return await this.db.updateUser(id, data);
     } catch (error) {
-      log.error('Error in UserService.update:', error);
+      log.error('Failed to update user', { userId: id, error });
       throw error;
     }
   }
 
   async delete(id: string): Promise<boolean> {
     try {
-      log.info(`Deleting user ${id}`);
+      log.info('Deleting user', { userId: id });
       return await this.db.deleteUser(id);
     } catch (error) {
-      log.error('Error in UserService.delete:', error);
+      log.error('Failed to delete user', { userId: id, error });
       throw error;
     }
   }
 
   async authenticateWithPassword(email: string, password: string): Promise<User | null> {
     try {
-      log.info(`Authenticating user ${email} with password`);
+      log.info('Attempting password authentication', { email });
       const user = await this.getByEmail(email);
+      
       if (!user) {
-        log.info(`User not found: ${email}`);
+        log.info('Authentication failed - user not found', { email });
+        return null;
+      }
+
+      log.debug('Validating password', {
+        userId: user.id,
+        email: user.email
+      });
+
+      const isValid = await validatePassword(password, user.password);
+      
+      if (!isValid) {
+        log.info('Authentication failed - invalid password', { email });
         return null;
       }
 
@@ -81,29 +102,35 @@ export class UserService {
         throw new Error('Failed to update last login time');
       }
 
+      log.info('Authentication successful', { userId: user.id, email });
       return updatedUser;
     } catch (error) {
-      log.error('Error in UserService.authenticateWithPassword:', error);
+      log.error('Authentication error', {
+        email,
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack
+        } : error
+      });
       throw error;
     }
   }
 
   async authenticateWithToken(token: string): Promise<User | null> {
     try {
-      log.info('Authenticating user with token');
+      log.info('Attempting token authentication');
       return await this.db.findUserByToken(token);
     } catch (error) {
-      log.error('Error in UserService.authenticateWithToken:', error);
+      log.error('Token authentication failed', { error });
       throw error;
     }
   }
 
   async regenerateToken(user: User): Promise<User> {
     try {
-      log.info(`Regenerating token for user ${user.id}`);
-      const updatedUser = await this.update(user.id, {
-        token: randomUUID()
-      });
+      log.info('Regenerating user token', { userId: user.id });
+      const token = generateToken({ _id: user.id, email: user.email });
+      const updatedUser = await this.update(user.id, { token });
 
       if (!updatedUser) {
         throw new Error('Failed to regenerate token');
@@ -111,48 +138,53 @@ export class UserService {
 
       return updatedUser;
     } catch (error) {
-      log.error('Error in UserService.regenerateToken:', error);
+      log.error('Failed to regenerate token', { userId: user.id, error });
       throw error;
     }
   }
 
-  async createUser({ email, password, name = '' }: { email: string; password: string; name?: string }): Promise<{ user: User; token: string }> {
+  async createUser({ email, password, name = '' }: { email: string; password: string; name?: string }): Promise<User> {
     try {
-      log.info(`Creating new user: ${email}`);
+      log.info('Creating new user', { email, hasName: !!name });
 
-      if (!email) throw new ValidationError('Email is required');
-      if (!password) throw new ValidationError('Password is required');
+      if (!email) throw new Error('Email is required');
+      if (!password) throw new Error('Password is required');
 
       const existingUser = await this.getByEmail(email);
       if (existingUser) {
-        log.info(`User already exists: ${email}`);
-        throw new ValidationError('User with this email already exists');
+        log.info('User creation failed - email already exists', { email });
+        throw new Error('User with this email already exists');
       }
+
+      log.debug('Hashing password for new user');
+      const hashedPassword = await generatePasswordHash(password);
 
       const userData = {
         email,
-        password,
+        password: hashedPassword,
         name,
-        token: randomUUID(),
-        isActive: true,
+        role: 'user' as const
       };
 
-      log.info('Saving new user to database');
+      log.info('Creating user in database', { email });
       const user = await this.db.createUser(userData);
-      log.info(`User created successfully: ${user.id}`);
+      log.info('User created successfully', { userId: user.id, email });
 
-      const token = generateToken({ _id: user.id, email: user.email });
-      log.info('Token generated for new user');
-
-      return { user, token };
+      return user;
     } catch (error) {
-      log.error('Error in UserService.createUser:', error);
+      log.error('Failed to create user', {
+        email,
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack
+        } : error
+      });
       throw error;
     }
   }
 }
 
 // Factory function to create UserService instance
-export function createUserService(dbClient?: DatabaseClient): UserService {
-  return new UserService(dbClient);
+export function createUserService(db: DatabaseClient): UserService {
+  return new UserService(db);
 }

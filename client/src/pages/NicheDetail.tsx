@@ -36,9 +36,9 @@ export const NicheDetail: React.FC = () => {
         setLoading(true);
         setError(null);
         console.log('Fetching niche with ID:', nicheId);
-        const response = await api.get(`/niches/${nicheId}`);
+        const response = await api.get(`/api/niches/${nicheId}`);
         console.log('Niche response:', response.data);
-        setNiche(response.data.data);
+        setNiche(response.data);
       } catch (error: any) {
         console.error('Error fetching niche:', error);
         setError(error.response?.data?.error || 'Failed to load niche details');
@@ -55,7 +55,7 @@ export const NicheDetail: React.FC = () => {
   const handleDeleteNiche = async () => {
     try {
       console.log(`Attempting to delete niche with ID: ${nicheId}`);
-      await api.delete(`/niches/${nicheId}`);
+      await api.delete(`/api/niches/${nicheId}`);
       console.log('Niche deleted successfully');
       toast({
         title: "Niche deleted",
@@ -77,14 +77,14 @@ export const NicheDetail: React.FC = () => {
     try {
       setGeneratingPillars(true);
       console.log(`Generating pillars for niche: ${nicheId}`);
-      const response = await api.post(`/niches/${nicheId}/pillars/generate`);
+      const response = await api.post(`/api/niches/${nicheId}/pillars/generate`);
       console.log('Pillars generated:', response.data);
 
       // Update the niche state with new pillars
       setNiche(prev => prev ? {
         ...prev,
-        pillars: response.data.data,
-        pillarsCount: response.data.data.length
+        pillars: response.data,
+        pillarsCount: response.data.length
       } : null);
 
       toast({

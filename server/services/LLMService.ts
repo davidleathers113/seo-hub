@@ -1,10 +1,8 @@
-import OpenAI from 'openai';
-import { Anthropic } from '@anthropic-ai/sdk';
-import { OpenRouterService } from './openRouter';
+import OpenRouterService from './openRouter';
 import { DatabaseClient, Research, Niche } from '../database/interfaces';
 import { getDatabase } from '../database';
 import { logger } from '../utils/log';
-import { OPENROUTER_MODELS } from '../config/openRouter';
+import { OPENROUTER_MODELS, OpenRouterModel } from '../config/openRouter';
 import { ValidationError } from '../database/mongodb/client';
 
 const log = logger('services/LLMService');
@@ -14,97 +12,23 @@ const RETRY_DELAY = 1000;
 
 export class LLMService {
   private db: DatabaseClient;
-  private openai: OpenAI;
-  private anthropic: Anthropic;
   private openRouter: OpenRouterService;
 
   constructor(dbClient?: DatabaseClient) {
     this.db = dbClient || getDatabase();
-    this.openai = this.getOpenAIClient();
-    this.anthropic = this.getAnthropicClient();
-    this.openRouter = this.getOpenRouterClient();
-  }
-
-  private getOpenAIClient(): OpenAI {
-    if (!process.env.OPENAI_API_KEY) {
-      if (process.env.NODE_ENV === 'test') {
-        return new OpenAI();
-      }
-      throw new Error('OPENAI_API_KEY is not set in the environment variables');
-    }
-    return new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
-  }
-
-  private getAnthropicClient(): Anthropic {
-    if (!process.env.ANTHROPIC_API_KEY) {
-      if (process.env.NODE_ENV === 'test') {
-        return new Anthropic();
-      }
-      throw new Error('ANTHROPIC_API_KEY is not set in the environment variables');
-    }
-    return new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    });
-  }
-
-  private getOpenRouterClient(): OpenRouterService {
-    return new OpenRouterService();
+    this.openRouter = new OpenRouterService();
   }
 
   private async sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
-  private async sendRequestToOpenAI(model: string, message: string): Promise<string> {
-    for (let i = 0; i < MAX_RETRIES; i++) {
-      try {
-        const response = await this.openai.chat.completions.create({
-          model: model,
-          messages: [{ role: 'user', content: message }],
-          max_tokens: 1024,
-        });
-        return response.choices[0].message.content || '';
-      } catch (error) {
-        log.error(`Error sending request to OpenAI (attempt ${i + 1}):`, error);
-        if (i === MAX_RETRIES - 1) throw error;
-        await this.sleep(RETRY_DELAY);
-      }
-    }
-    throw new Error('Failed to get response from OpenAI after max retries');
-  }
-
-  private async sendRequestToAnthropic(model: string, message: string): Promise<string> {
-    for (let i = 0; i < MAX_RETRIES; i++) {
-      try {
-        log.info(`Sending request to Anthropic with model: ${model}`);
-        const response = await this.anthropic.messages.create({
-          model: model,
-          system: "You are a helpful AI assistant that writes high-quality, engaging content.",
-          messages: [{
-            role: 'user',
-            content: message
-          }],
-          max_tokens: 1024
-        });
-        log.info('Received response from Anthropic');
-        return response.content[0].text;
-      } catch (error) {
-        log.error(`Error sending request to Anthropic (attempt ${i + 1}):`, error);
-        if (i === MAX_RETRIES - 1) throw error;
-        await this.sleep(RETRY_DELAY);
-      }
-    }
-    throw new Error('Failed to get response from Anthropic after max retries');
-  }
-
-  private async sendRequestToOpenRouter(model: string, message: string): Promise<string> {
+  private async sendLLMRequest(message: string, model: OpenRouterModel = OPENROUTER_MODELS.GPT4): Promise<string> {
     for (let i = 0; i < MAX_RETRIES; i++) {
       try {
         log.info(`Sending request to OpenRouter with model: ${model}`);
         const response = await this.openRouter.generateWithRetry(message, {
-          model: model,
+          model,
           temperature: 0.7,
           max_tokens: 1024
         });
@@ -119,19 +43,6 @@ export class LLMService {
     throw new Error('Failed to get response from OpenRouter after max retries');
   }
 
-  private async sendLLMRequest(provider: string, model: string, message: string): Promise<string> {
-    switch (provider.toLowerCase()) {
-      case 'openai':
-        return this.sendRequestToOpenAI(model, message);
-      case 'anthropic':
-        return this.sendRequestToAnthropic(model, message);
-      case 'openrouter':
-        return this.sendRequestToOpenRouter(model, message);
-      default:
-        throw new Error(`Unsupported LLM provider: ${provider}`);
-    }
-  }
-
   async generatePillars(nicheId: string): Promise<string[]> {
     try {
       const niche = await this.db.findNicheById(nicheId);
@@ -144,11 +55,7 @@ export class LLMService {
       Each pillar should be unique and cover a different aspect of the niche.
       Format the response as a numbered list (1., 2., etc.).`;
 
-      const response = await this.sendLLMRequest(
-        'openrouter',
-        OPENROUTER_MODELS.GPT4,
-        prompt
-      );
+      const response = await this.sendLLMRequest(prompt);
 
       // Parse the response into individual pillar titles
       const pillars = response
@@ -195,11 +102,7 @@ Format the response as:
 2. [Section Title]
 etc.`;
 
-      const response = await this.sendLLMRequest(
-        'openai',
-        'gpt-4',
-        prompt
-      );
+      const response = await this.sendLLMRequest(prompt);
 
       // Parse the response into sections
       const sections = response
@@ -235,11 +138,7 @@ ${research.map(r => `Source: ${r.source}\nContent: ${r.content}`).join('\n\n')}
 
 Format each point as a clear, detailed statement that can be expanded into full paragraphs.`;
 
-      const response = await this.sendLLMRequest(
-        'openai',
-        'gpt-4',
-        prompt
-      );
+      const response = await this.sendLLMRequest(prompt);
 
       // Parse the response into content points
       const contentPoints = response
