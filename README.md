@@ -145,6 +145,56 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Security vulnerability scanning with Snyk
 - Dependency analysis with npm audit
 
+### Casing Conventions
+The project follows strict casing conventions to maintain consistency:
+
+1. **Database/API Fields (Supabase)**
+   - Use `snake_case` for all database fields and API responses
+   - Examples: `user_id`, `created_at`, `domain_name`, `all_verified`
+   - This matches Supabase's default convention
+
+2. **TypeScript/JavaScript**
+   - Variables and Properties: `camelCase`
+     ```typescript
+     const userId = '123';
+     const createdAt = new Date();
+     ```
+   - React Components: `PascalCase`
+     ```typescript
+     export function UserProfile() { ... }
+     export function ContentEditor() { ... }
+     ```
+   - Component Files: `PascalCase.tsx`
+     ```
+     UserProfile.tsx
+     ContentEditor.tsx
+     ```
+   - Non-Component Files: `kebab-case.ts`
+     ```
+     api-client.ts
+     use-auth.ts
+     ```
+
+3. **Directories**
+   - Use `kebab-case` for all directories
+     ```
+     src/components/ui/
+     src/components/content/
+     src/hooks/data/
+     ```
+
+4. **Type Interfaces**
+   - Use `PascalCase` for type and interface names
+   - Use `camelCase` for properties unless they represent database fields
+     ```typescript
+     interface UserProfile {
+       userId: string;        // Local property
+       user_id: string;       // Database field
+       createdAt: Date;       // Local property
+       created_at: string;    // Database field
+     }
+     ```
+
 ### Code Metrics
 - Cyclomatic complexity monitoring
 - Code coverage tracking

@@ -4,7 +4,7 @@ CREATE TABLE team_groups (
   workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
   description TEXT,
-  created_by UUID NOT NULL REFERENCES auth.users(id),
+  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -13,7 +13,7 @@ CREATE TABLE team_groups (
 CREATE TABLE team_group_members (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   group_id UUID NOT NULL REFERENCES team_groups(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES auth.users(id),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   role VARCHAR(50) DEFAULT 'member',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
@@ -28,7 +28,7 @@ CREATE TABLE team_discussions (
   title VARCHAR(255) NOT NULL,
   content TEXT NOT NULL,
   is_pinned BOOLEAN DEFAULT false,
-  created_by UUID NOT NULL REFERENCES auth.users(id),
+  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -38,7 +38,7 @@ CREATE TABLE discussion_comments (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   discussion_id UUID NOT NULL REFERENCES team_discussions(id) ON DELETE CASCADE,
   content TEXT NOT NULL,
-  created_by UUID NOT NULL REFERENCES auth.users(id),
+  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   parent_comment_id UUID REFERENCES discussion_comments(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -54,8 +54,8 @@ CREATE TABLE team_tasks (
   status VARCHAR(50) DEFAULT 'pending',
   priority VARCHAR(50) DEFAULT 'medium',
   due_date TIMESTAMPTZ,
-  assigned_to UUID REFERENCES auth.users(id),
-  created_by UUID NOT NULL REFERENCES auth.users(id),
+  assigned_to UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -65,7 +65,7 @@ CREATE TABLE task_comments (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   task_id UUID NOT NULL REFERENCES team_tasks(id) ON DELETE CASCADE,
   content TEXT NOT NULL,
-  created_by UUID NOT NULL REFERENCES auth.users(id),
+  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -78,7 +78,7 @@ CREATE TABLE team_documents (
   title VARCHAR(255) NOT NULL,
   content TEXT NOT NULL,
   is_template BOOLEAN DEFAULT false,
-  created_by UUID NOT NULL REFERENCES auth.users(id),
+  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -89,7 +89,7 @@ CREATE TABLE document_versions (
   document_id UUID NOT NULL REFERENCES team_documents(id) ON DELETE CASCADE,
   content TEXT NOT NULL,
   version_number INTEGER NOT NULL,
-  created_by UUID NOT NULL REFERENCES auth.users(id),
+  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(document_id, version_number)
 );
@@ -105,7 +105,7 @@ ALTER TABLE team_documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE document_versions ENABLE ROW LEVEL SECURITY;
 
 -- Team Groups Policies
-CREATE POLICY "Allow workspace members to view groups"
+CREATE POLICY "select_team_groups_policy"
   ON team_groups FOR SELECT
   USING (EXISTS (
     SELECT 1 FROM members
@@ -113,17 +113,17 @@ CREATE POLICY "Allow workspace members to view groups"
     AND members.user_id = auth.uid()
   ));
 
-CREATE POLICY "Allow workspace admins to manage groups"
+CREATE POLICY "all_team_groups_policy"
   ON team_groups FOR ALL
   USING (EXISTS (
     SELECT 1 FROM members
     WHERE members.workspace_id = team_groups.workspace_id
     AND members.user_id = auth.uid()
-    AND members.role = 'admin'
+    AND members.role IN ('owner', 'admin')
   ));
 
 -- Group Members Policies
-CREATE POLICY "Allow group members to view membership"
+CREATE POLICY "select_team_group_members_policy"
   ON team_group_members FOR SELECT
   USING (EXISTS (
     SELECT 1 FROM team_groups
@@ -132,18 +132,18 @@ CREATE POLICY "Allow group members to view membership"
     AND members.user_id = auth.uid()
   ));
 
-CREATE POLICY "Allow workspace admins to manage group membership"
+CREATE POLICY "all_team_group_members_policy"
   ON team_group_members FOR ALL
   USING (EXISTS (
     SELECT 1 FROM team_groups
     JOIN members ON members.workspace_id = team_groups.workspace_id
     WHERE team_groups.id = team_group_members.group_id
     AND members.user_id = auth.uid()
-    AND members.role = 'admin'
+    AND members.role IN ('owner', 'admin')
   ));
 
 -- Discussions Policies
-CREATE POLICY "Allow workspace members to view discussions"
+CREATE POLICY "select_team_discussions_policy"
   ON team_discussions FOR SELECT
   USING (EXISTS (
     SELECT 1 FROM members
@@ -151,7 +151,7 @@ CREATE POLICY "Allow workspace members to view discussions"
     AND members.user_id = auth.uid()
   ));
 
-CREATE POLICY "Allow discussion creation by workspace members"
+CREATE POLICY "insert_team_discussions_policy"
   ON team_discussions FOR INSERT
   WITH CHECK (EXISTS (
     SELECT 1 FROM members
@@ -159,7 +159,7 @@ CREATE POLICY "Allow discussion creation by workspace members"
     AND members.user_id = auth.uid()
   ));
 
-CREATE POLICY "Allow discussion updates by creator or admin"
+CREATE POLICY "update_team_discussions_policy"
   ON team_discussions FOR UPDATE
   USING (
     created_by = auth.uid() OR
@@ -167,12 +167,12 @@ CREATE POLICY "Allow discussion updates by creator or admin"
       SELECT 1 FROM members
       WHERE members.workspace_id = team_discussions.workspace_id
       AND members.user_id = auth.uid()
-      AND members.role = 'admin'
+      AND members.role IN ('owner', 'admin')
     )
   );
 
 -- Comments Policies
-CREATE POLICY "Allow viewing comments by workspace members"
+CREATE POLICY "select_discussion_comments_policy"
   ON discussion_comments FOR SELECT
   USING (EXISTS (
     SELECT 1 FROM team_discussions
@@ -181,7 +181,7 @@ CREATE POLICY "Allow viewing comments by workspace members"
     AND members.user_id = auth.uid()
   ));
 
-CREATE POLICY "Allow comment creation by workspace members"
+CREATE POLICY "insert_discussion_comments_policy"
   ON discussion_comments FOR INSERT
   WITH CHECK (EXISTS (
     SELECT 1 FROM team_discussions
@@ -191,7 +191,7 @@ CREATE POLICY "Allow comment creation by workspace members"
   ));
 
 -- Tasks Policies
-CREATE POLICY "Allow workspace members to view tasks"
+CREATE POLICY "select_team_tasks_policy"
   ON team_tasks FOR SELECT
   USING (EXISTS (
     SELECT 1 FROM members
@@ -199,7 +199,7 @@ CREATE POLICY "Allow workspace members to view tasks"
     AND members.user_id = auth.uid()
   ));
 
-CREATE POLICY "Allow task creation by workspace members"
+CREATE POLICY "insert_team_tasks_policy"
   ON team_tasks FOR INSERT
   WITH CHECK (EXISTS (
     SELECT 1 FROM members
@@ -207,7 +207,7 @@ CREATE POLICY "Allow task creation by workspace members"
     AND members.user_id = auth.uid()
   ));
 
-CREATE POLICY "Allow task updates by assignee, creator or admin"
+CREATE POLICY "update_team_tasks_policy"
   ON team_tasks FOR UPDATE
   USING (
     created_by = auth.uid() OR
@@ -216,12 +216,12 @@ CREATE POLICY "Allow task updates by assignee, creator or admin"
       SELECT 1 FROM members
       WHERE members.workspace_id = team_tasks.workspace_id
       AND members.user_id = auth.uid()
-      AND members.role = 'admin'
+      AND members.role IN ('owner', 'admin')
     )
   );
 
 -- Task Comments Policies
-CREATE POLICY "Allow viewing task comments by workspace members"
+CREATE POLICY "select_task_comments_policy"
   ON task_comments FOR SELECT
   USING (EXISTS (
     SELECT 1 FROM team_tasks
@@ -230,7 +230,7 @@ CREATE POLICY "Allow viewing task comments by workspace members"
     AND members.user_id = auth.uid()
   ));
 
-CREATE POLICY "Allow task comment creation by workspace members"
+CREATE POLICY "insert_task_comments_policy"
   ON task_comments FOR INSERT
   WITH CHECK (EXISTS (
     SELECT 1 FROM team_tasks
@@ -240,7 +240,7 @@ CREATE POLICY "Allow task comment creation by workspace members"
   ));
 
 -- Documents Policies
-CREATE POLICY "Allow workspace members to view documents"
+CREATE POLICY "select_team_documents_policy"
   ON team_documents FOR SELECT
   USING (EXISTS (
     SELECT 1 FROM members
@@ -248,7 +248,7 @@ CREATE POLICY "Allow workspace members to view documents"
     AND members.user_id = auth.uid()
   ));
 
-CREATE POLICY "Allow document creation by workspace members"
+CREATE POLICY "insert_team_documents_policy"
   ON team_documents FOR INSERT
   WITH CHECK (EXISTS (
     SELECT 1 FROM members
@@ -256,7 +256,7 @@ CREATE POLICY "Allow document creation by workspace members"
     AND members.user_id = auth.uid()
   ));
 
-CREATE POLICY "Allow document updates by creator or admin"
+CREATE POLICY "update_team_documents_policy"
   ON team_documents FOR UPDATE
   USING (
     created_by = auth.uid() OR
@@ -264,12 +264,12 @@ CREATE POLICY "Allow document updates by creator or admin"
       SELECT 1 FROM members
       WHERE members.workspace_id = team_documents.workspace_id
       AND members.user_id = auth.uid()
-      AND members.role = 'admin'
+      AND members.role IN ('owner', 'admin')
     )
   );
 
 -- Document Versions Policies
-CREATE POLICY "Allow viewing document versions by workspace members"
+CREATE POLICY "select_document_versions_policy"
   ON document_versions FOR SELECT
   USING (EXISTS (
     SELECT 1 FROM team_documents
@@ -278,7 +278,7 @@ CREATE POLICY "Allow viewing document versions by workspace members"
     AND members.user_id = auth.uid()
   ));
 
-CREATE POLICY "Allow version creation by document editors"
+CREATE POLICY "insert_document_versions_policy"
   ON document_versions FOR INSERT
   WITH CHECK (EXISTS (
     SELECT 1 FROM team_documents
@@ -286,6 +286,6 @@ CREATE POLICY "Allow version creation by document editors"
     WHERE team_documents.id = document_versions.document_id
     AND (
       team_documents.created_by = auth.uid() OR
-      members.role = 'admin'
+      members.role IN ('owner', 'admin')
     )
   ));

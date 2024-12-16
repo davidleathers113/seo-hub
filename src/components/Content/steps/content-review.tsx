@@ -1,116 +1,108 @@
-"use client"
-
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Check, X } from "lucide-react"
-import { Textarea } from "@/components/ui/textarea"
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs"
+import React from 'react';
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import { Icons } from "@/components/ui/icons";
+import { Badge } from "@/components/ui/badge";
 
 interface ContentReviewProps {
-  content: {
-    title: string
-    sections: {
-      id: string
-      title: string
-      content: string
-    }[]
-  }
-  onApprove: () => void
-  onReject: (feedback: string) => void
-  isProcessing: boolean
+  formData: {
+    topic: string;
+    keywords: string[];
+    outline: {
+      sections: {
+        title: string;
+        points: string[];
+      }[];
+    };
+    content: string;
+  };
+  onBack: () => void;
+  onComplete: () => Promise<void>;
 }
 
-export function ContentReview({
-  content,
-  onApprove,
-  onReject,
-  isProcessing
-}: ContentReviewProps) {
-  const [feedback, setFeedback] = useState('')
-  const [activeTab, setActiveTab] = useState('preview')
+export default function ContentReview({ formData, onBack, onComplete }: ContentReviewProps) {
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const renderPreview = () => (
-    <div className="prose prose-sm max-w-none dark:prose-invert">
-      <h1>{content.title}</h1>
-      {content.sections.map((section) => (
-        <div key={section.id} className="mb-8">
-          <h2>{section.title}</h2>
-          <div className="whitespace-pre-wrap">{section.content}</div>
-        </div>
-      ))}
-    </div>
-  )
-
-  const renderRawContent = () => (
-    <div className="space-y-6">
-      {content.sections.map((section) => (
-        <div key={section.id}>
-          <h3 className="font-medium mb-2">{section.title}</h3>
-          <pre className="bg-muted p-4 rounded-lg overflow-x-auto">
-            <code>{section.content}</code>
-          </pre>
-        </div>
-      ))}
-    </div>
-  )
+  const handleComplete = async () => {
+    try {
+      setIsSubmitting(true);
+      await onComplete();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardContent className="p-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-4">
-              <TabsTrigger value="preview">Preview</TabsTrigger>
-              <TabsTrigger value="raw">Raw Content</TabsTrigger>
-            </TabsList>
-            <TabsContent value="preview" className="mt-0">
-              {renderPreview()}
-            </TabsContent>
-            <TabsContent value="raw" className="mt-0">
-              {renderRawContent()}
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+      <div>
+        <h3 className="text-lg font-medium">Review Content</h3>
+        <p className="text-sm text-muted-foreground">
+          Review your content before finalizing
+        </p>
+      </div>
 
-      <Card>
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            <h3 className="font-medium">Review Feedback</h3>
-            <Textarea
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
-              placeholder="Add any feedback or suggestions for improvement..."
-              className="h-32"
-              disabled={isProcessing}
-            />
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <h4 className="font-medium">Topic</h4>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary">{formData.topic}</Badge>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      <div className="flex justify-end space-x-4">
-        <Button
-          variant="destructive"
-          onClick={() => onReject(feedback)}
-          disabled={isProcessing || !feedback}
+        <div className="space-y-2">
+          <h4 className="font-medium">Outline</h4>
+          <ScrollArea className="h-[200px] rounded-md border p-4">
+            {formData.outline.sections.map((section, sectionIndex) => (
+              <div key={sectionIndex} className="space-y-2 mb-4">
+                <h5 className="font-medium">{section.title}</h5>
+                <ul className="list-disc list-inside space-y-1">
+                  {section.points.map((point, pointIndex) => (
+                    <li key={pointIndex} className="text-sm">
+                      {point}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </ScrollArea>
+        </div>
+
+        <div className="space-y-2">
+          <h4 className="font-medium">Content</h4>
+          <Textarea
+            value={formData.content}
+            readOnly
+            className="h-[300px] resize-none"
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-between">
+        <button
+          onClick={onBack}
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background border border-input hover:bg-accent hover:text-accent-foreground h-10 py-2 px-4"
         >
-          <X className="mr-2 h-4 w-4" />
-          Reject
-        </Button>
-        <Button
-          onClick={onApprove}
-          disabled={isProcessing}
+          <Icons.arrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </button>
+        <button
+          onClick={handleComplete}
+          disabled={isSubmitting}
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-primary text-primary-foreground hover:bg-primary/90 h-10 py-2 px-4"
         >
-          <Check className="mr-2 h-4 w-4" />
-          Approve
-        </Button>
+          {isSubmitting ? (
+            <>
+              <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              Complete
+              <Icons.check className="ml-2 h-4 w-4" />
+            </>
+          )}
+        </button>
       </div>
     </div>
-  )
+  );
 }

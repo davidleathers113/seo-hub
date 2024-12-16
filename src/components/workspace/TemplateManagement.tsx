@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Layout, Plus, Template, Globe, Lock } from 'lucide-react';
+import { Layout, Plus, FileText, Globe, Lock } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 interface WorkspaceTemplate {
@@ -244,7 +244,7 @@ export function TemplateManagement() {
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle className="flex items-center space-x-2">
-                        <Template className="w-4 h-4" />
+                        <FileText className="w-4 h-4" />
                         <span>{template.name}</span>
                       </CardTitle>
                       <Badge variant={template.is_public ? 'default' : 'secondary'}>

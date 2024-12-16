@@ -23,11 +23,19 @@ interface KeywordResult {
   competition: number
 }
 
+interface KeywordResearchResponse {
+  keywords: KeywordResult[]
+}
+
 export function KeywordResearch() {
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<KeywordResult[]>([])
 
-  const { mutate: searchKeywords, isLoading } = useMutation({
+  const { mutate: searchKeywords, isPending } = useMutation<
+    KeywordResearchResponse,
+    Error,
+    string
+  >({
     mutationFn: async (searchQuery: string) => {
       const response = await fetch("/api/research/keywords", {
         method: "POST",
@@ -68,8 +76,8 @@ export function KeywordResearch() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Enter a seed keyword"
             />
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? (
+            <Button type="submit" disabled={isPending}>
+              {isPending ? (
                 <>
                   <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
                   Searching...

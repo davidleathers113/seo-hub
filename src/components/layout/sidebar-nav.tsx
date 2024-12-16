@@ -1,3 +1,5 @@
+import { Settings, Upload } from "lucide-react";
+
 const adminItems = [
   {
     title: "Settings",

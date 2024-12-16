@@ -2,6 +2,17 @@ import { Database } from '@/types/database'
 
 export type Research = Database['public']['Tables']['research']['Row']
 
+export type ResearchType = 'keyword' | 'competitor' | 'content' | 'web'
+
+export interface KeywordResearchParams {
+  topic: string;
+  niche: string;
+  language?: string;
+  country?: string;
+  limit?: number;
+  include_metrics?: boolean;
+}
+
 export async function getResearchById(id: string) {
   // ... existing code ...
 }

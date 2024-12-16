@@ -8,13 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/components/ui/use-toast';
 import { CheckCircle, Circle, AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
-
-interface VerificationStatus {
-  mx_verified: boolean;
-  spf_verified: boolean;
-  dkim_verified: boolean;
-  all_verified: boolean;
-}
+import { VerificationStatus } from '@/types/supabase';
 
 interface DomainVerificationStepsProps {
   workspaceId: string;

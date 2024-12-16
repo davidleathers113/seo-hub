@@ -70,26 +70,26 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Create triggers
-DROP TRIGGER IF EXISTS update_users_updated_at ON users;
-CREATE TRIGGER update_users_updated_at
+DROP TRIGGER IF EXISTS users_update_trigger ON users;
+CREATE TRIGGER users_update_trigger
     BEFORE UPDATE ON users
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_niches_updated_at ON niches;
-CREATE TRIGGER update_niches_updated_at
+DROP TRIGGER IF EXISTS niches_update_trigger ON niches;
+CREATE TRIGGER niches_update_trigger
     BEFORE UPDATE ON niches
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_pillars_updated_at ON pillars;
-CREATE TRIGGER update_pillars_updated_at
+DROP TRIGGER IF EXISTS pillars_update_trigger ON pillars;
+CREATE TRIGGER pillars_update_trigger
     BEFORE UPDATE ON pillars
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_articles_updated_at ON articles;
-CREATE TRIGGER update_articles_updated_at
+DROP TRIGGER IF EXISTS articles_update_trigger ON articles;
+CREATE TRIGGER articles_update_trigger
     BEFORE UPDATE ON articles
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
@@ -101,47 +101,47 @@ ALTER TABLE pillars ENABLE ROW LEVEL SECURITY;
 ALTER TABLE articles ENABLE ROW LEVEL SECURITY;
 
 -- Create RLS policies for users
-CREATE POLICY "Users can view their own data" ON users
+CREATE POLICY "select_users_policy" ON users
     FOR SELECT USING (auth.uid() = id);
 
-CREATE POLICY "Users can update their own data" ON users
+CREATE POLICY "update_users_policy" ON users
     FOR UPDATE USING (auth.uid() = id);
 
 -- Create RLS policies for niches
-CREATE POLICY "Users can view their own niches" ON niches
+CREATE POLICY "select_niches_policy" ON niches
     FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can insert their own niches" ON niches
+CREATE POLICY "insert_niches_policy" ON niches
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can update their own niches" ON niches
+CREATE POLICY "update_niches_policy" ON niches
     FOR UPDATE USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can delete their own niches" ON niches
+CREATE POLICY "delete_niches_policy" ON niches
     FOR DELETE USING (auth.uid() = user_id);
 
 -- Create RLS policies for pillars
-CREATE POLICY "Users can view their own pillars" ON pillars
+CREATE POLICY "select_pillars_policy" ON pillars
     FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can insert their own pillars" ON pillars
+CREATE POLICY "insert_pillars_policy" ON pillars
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can update their own pillars" ON pillars
+CREATE POLICY "update_pillars_policy" ON pillars
     FOR UPDATE USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can delete their own pillars" ON pillars
+CREATE POLICY "delete_pillars_policy" ON pillars
     FOR DELETE USING (auth.uid() = user_id);
 
 -- Create RLS policies for articles
-CREATE POLICY "Users can view their own articles" ON articles
+CREATE POLICY "select_articles_policy" ON articles
     FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can insert their own articles" ON articles
+CREATE POLICY "insert_articles_policy" ON articles
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can update their own articles" ON articles
+CREATE POLICY "update_articles_policy" ON articles
     FOR UPDATE USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can delete their own articles" ON articles
+CREATE POLICY "delete_articles_policy" ON articles
     FOR DELETE USING (auth.uid() = user_id);

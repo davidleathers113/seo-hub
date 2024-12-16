@@ -20,12 +20,14 @@ interface HeaderProps {
 
 export function Header({ onMobileMenuToggle }: HeaderProps) {
   const { setTheme, theme } = useTheme();
-  const { supabase } = useSupabase();
+  const supabaseClient = useSupabase();
   const router = useRouter();
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    router.push('/signin');
+    if (supabaseClient) {
+      await supabaseClient.auth.signOut();
+      router.push('/signin');
+    }
   };
 
   return (

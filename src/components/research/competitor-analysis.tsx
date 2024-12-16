@@ -38,12 +38,20 @@ interface CompetitorResult {
   }
 }
 
+interface CompetitorAnalysisResponse {
+  competitors: CompetitorResult[]
+}
+
 export function CompetitorAnalysis() {
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<CompetitorResult[]>([])
   const [selectedTab, setSelectedTab] = useState("overview")
 
-  const { mutate: analyzeCompetitors, isLoading } = useMutation({
+  const { mutate: analyzeCompetitors, isPending } = useMutation<
+    CompetitorAnalysisResponse,
+    Error,
+    string
+  >({
     mutationFn: async (searchQuery: string) => {
       const response = await fetch("/api/research/competitors", {
         method: "POST",
@@ -84,8 +92,8 @@ export function CompetitorAnalysis() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Enter a keyword to analyze competitors"
             />
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? (
+            <Button type="submit" disabled={isPending}>
+              {isPending ? (
                 <>
                   <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
                   Analyzing...

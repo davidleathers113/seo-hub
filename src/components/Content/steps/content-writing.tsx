@@ -1,162 +1,128 @@
-"use client"
-
-import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Textarea } from "@/components/ui/textarea"
-import { getNicheById } from "@/lib/api"
-import { Icons } from "@/components/ui/icons"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Niche } from "@/types/database"
+import React from 'react';
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import { Icons } from "@/components/ui/icons";
+import { useQuery } from '@tanstack/react-query';
 
 interface ContentWritingProps {
   formData: {
-    topic: string
-    keywords: string[]
+    topic: string;
+    keywords: string[];
     outline: {
-      sections: Array<{
-        title: string
-        points: string[]
-      }>
-    }
-    content: string
-  }
-  setFormData: (data: typeof formData) => void
-  onNext: () => void
-  onBack: () => void
+      sections: {
+        title: string;
+        points: string[];
+      }[];
+    };
+    content: string;
+  };
+  onBack: () => void;
+  onNext: () => void;
+  setFormData: React.Dispatch<React.SetStateAction<{
+    topic: string;
+    keywords: string[];
+    outline: {
+      sections: {
+        title: string;
+        points: string[];
+      }[];
+    };
+    content: string;
+  }>>;
 }
 
-export function ContentWriting({
-  formData,
-  setFormData,
-  onNext,
-  onBack,
-}: ContentWritingProps) {
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [currentSection, setCurrentSection] = useState(0)
-  const { data: niche, isLoading: isLoadingNiche } = useQuery<Niche>({
-    queryKey: ["niche", formData.topic],
-    queryFn: () => getNicheById(formData.topic),
-    enabled: Boolean(formData.topic),
-  })
+export default function ContentWriting({ formData, onBack, onNext, setFormData }: ContentWritingProps) {
+  const { data: generatedContent, isLoading } = useQuery({
+    queryKey: ['generate-content', formData.topic, formData.outline],
+    queryFn: async () => {
+      // Replace with your actual API call
+      return `# ${formData.topic}\n\n` + 
+        formData.outline.sections.map(section => 
+          `## ${section.title}\n\n${section.points.join('\n\n')}`
+        ).join('\n\n');
+    },
+    enabled: !!formData.topic && !!formData.outline.sections.length
+  });
 
-  const generateContent = async () => {
-    setIsGenerating(true)
-    try {
-      const section = formData.outline.sections[currentSection]
-      const response = await fetch("/api/generate/content", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          niche: niche?.name,
-          keywords: formData.keywords,
-          section: {
-            title: section.title,
-            points: section.points,
-          },
-          previousContent: formData.content,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to generate content")
-      }
-
-      const data = await response.json()
-      setFormData({
-        ...formData,
-        content: formData.content + "\n\n" + data.content,
-      })
-
-      if (currentSection < formData.outline.sections.length - 1) {
-        setCurrentSection(currentSection + 1)
-      }
-    } catch (error) {
-      console.error("Error generating content:", error)
-    } finally {
-      setIsGenerating(false)
+  React.useEffect(() => {
+    if (generatedContent) {
+      setFormData(prev => ({
+        ...prev,
+        content: generatedContent
+      }));
     }
-  }
+  }, [generatedContent, setFormData]);
 
-  if (isLoadingNiche) {
-    return <Skeleton className="h-[400px]" />
-  }
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      content: e.target.value
+    }));
+  };
 
   return (
     <div className="space-y-6">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-medium">Generate Content</h3>
-            <p className="text-sm text-muted-foreground">
-              Generating content section by section ({currentSection + 1} of{" "}
-              {formData.outline.sections.length})
-            </p>
-          </div>
-          <Button
-            onClick={generateContent}
-            disabled={isGenerating}
-          >
-            {isGenerating ? (
-              <>
-                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              "Generate Section"
-            )}
-          </Button>
-        </div>
+      <div>
+        <h3 className="text-lg font-medium">Write Content</h3>
+        <p className="text-sm text-muted-foreground">
+          Review and edit the generated content
+        </p>
+      </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <Card className="p-4">
-            <h4 className="text-base font-medium mb-2">Current Section</h4>
-            <div className="space-y-2">
-              <h5 className="font-medium">
-                {formData.outline.sections[currentSection].title}
-              </h5>
-              <ul className="list-disc list-inside space-y-1">
-                {formData.outline.sections[currentSection].points.map(
-                  (point: string, i: number) => (
-                    <li key={i} className="text-sm text-muted-foreground">
+      <div className="grid grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <h4 className="font-medium">Outline</h4>
+          <ScrollArea className="h-[500px] rounded-md border p-4">
+            {formData.outline.sections.map((section, sectionIndex) => (
+              <div key={sectionIndex} className="space-y-2 mb-4">
+                <h5 className="font-medium">{section.title}</h5>
+                <ul className="list-disc list-inside space-y-1">
+                  {section.points.map((point, pointIndex) => (
+                    <li key={pointIndex} className="text-sm">
                       {point}
                     </li>
-                  )
-                )}
-              </ul>
-            </div>
-          </Card>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </ScrollArea>
+        </div>
 
-          <Card className="p-4">
-            <h4 className="text-base font-medium mb-2">Generated Content</h4>
-            <ScrollArea className="h-[300px]">
-              <Textarea
-                value={formData.content}
-                onChange={(e) =>
-                  setFormData({ ...formData, content: e.target.value })
-                }
-                className="min-h-[300px] resize-none"
-              />
-            </ScrollArea>
-          </Card>
+        <div className="space-y-4">
+          <h4 className="font-medium">Content</h4>
+          {isLoading ? (
+            <div className="flex items-center justify-center h-[500px] rounded-md border">
+              <Icons.spinner className="h-6 w-6 animate-spin" />
+              <span className="ml-2">Generating content...</span>
+            </div>
+          ) : (
+            <Textarea
+              value={formData.content}
+              onChange={handleContentChange}
+              className="h-[500px] resize-none"
+              placeholder="Content will appear here..."
+            />
+          )}
         </div>
       </div>
 
       <div className="flex justify-between">
-        <Button variant="outline" onClick={onBack}>
-          Back
-        </Button>
-        <Button
-          onClick={onNext}
-          disabled={!formData.content || currentSection < formData.outline.sections.length - 1}
+        <button
+          onClick={onBack}
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background border border-input hover:bg-accent hover:text-accent-foreground h-10 py-2 px-4"
         >
-          Next Step
-        </Button>
+          <Icons.arrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </button>
+        <button
+          onClick={onNext}
+          disabled={isLoading || !formData.content}
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background bg-primary text-primary-foreground hover:bg-primary/90 h-10 py-2 px-4"
+        >
+          Next
+          <Icons.arrowRight className="ml-2 h-4 w-4" />
+        </button>
       </div>
     </div>
-  )
+  );
 }

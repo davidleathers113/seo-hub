@@ -15,12 +15,27 @@ interface WebResearchProps {
   onResearchComplete?: () => void
 }
 
+interface WebResearchRequest {
+  query: string
+  includeImages: boolean
+}
+
+interface WebResearchResponse {
+  success: boolean
+  message: string
+}
+
 export function WebResearch({ subpillarId, onResearchComplete }: WebResearchProps) {
   const [query, setQuery] = useState("")
   const [includeImages, setIncludeImages] = useState(true)
   const { toast } = useToast()
 
-  const { mutate: performResearch, isLoading } = useMutation({
+  const { mutate: performResearch, isPending } = useMutation<
+    WebResearchResponse,
+    Error,
+    void,
+    unknown
+  >({
     mutationFn: async () => {
       const response = await fetch(`/api/subpillars/${subpillarId}/research`, {
         method: "POST",
@@ -30,7 +45,7 @@ export function WebResearch({ subpillarId, onResearchComplete }: WebResearchProp
         body: JSON.stringify({
           query,
           includeImages,
-        }),
+        } as WebResearchRequest),
       })
 
       if (!response.ok) {
@@ -86,8 +101,8 @@ export function WebResearch({ subpillarId, onResearchComplete }: WebResearchProp
           <Label htmlFor="include-images">Include Images</Label>
         </div>
 
-        <Button type="submit" disabled={isLoading} className="w-full">
-          {isLoading ? (
+        <Button type="submit" disabled={isPending} className="w-full">
+          {isPending ? (
             <>
               <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
               Researching...

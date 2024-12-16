@@ -14,13 +14,6 @@ if (!supabaseUrl || !serviceRoleKey) {
   throw new Error('Missing required environment variables')
 }
 
-interface SqlError {
-  message: string;
-  details?: string;
-  hint?: string;
-  code?: string;
-}
-
 async function executeSql(sql: string): Promise<void> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -36,10 +29,7 @@ async function executeSql(sql: string): Promise<void> {
     method: 'POST',
     headers,
     body: JSON.stringify({
-      name: 'exec',
-      arguments: {
-        query: sql
-      }
+      query: sql
     })
   })
 
@@ -49,12 +39,12 @@ async function executeSql(sql: string): Promise<void> {
   }
 }
 
-async function applyMigration(): Promise<void> {
-  console.log('Applying Nextacular migration...')
+async function applyMigration(migrationFile: string): Promise<void> {
+  console.log(`Applying migration: ${migrationFile}...`)
 
   try {
     // Read the migration file
-    const migrationPath = path.join(__dirname, '../supabase/migrations/20240320000000_add_nextacular_workspaces.sql')
+    const migrationPath = path.join(__dirname, '../supabase/migrations', migrationFile)
     const sql = fs.readFileSync(migrationPath, 'utf8')
 
     // Split SQL into individual statements
@@ -84,5 +74,12 @@ async function applyMigration(): Promise<void> {
   }
 }
 
+// Get migration file from command line argument
+const migrationFile = process.argv[2]
+if (!migrationFile) {
+  console.error('Please provide a migration file name')
+  process.exit(1)
+}
+
 // Run the migration
-applyMigration().catch(console.error)
+applyMigration(migrationFile).catch(console.error)

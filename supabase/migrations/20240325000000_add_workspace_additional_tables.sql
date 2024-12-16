@@ -26,7 +26,7 @@ CREATE TABLE workspace_quotas (
 CREATE TABLE workspace_audit_logs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES auth.users(id),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   action VARCHAR(255) NOT NULL,
   resource_type VARCHAR(255),
   resource_id UUID,
@@ -56,7 +56,7 @@ CREATE TABLE workspace_templates (
   content JSONB NOT NULL,
   is_public BOOLEAN DEFAULT false,
   category VARCHAR(100),
-  created_by UUID NOT NULL REFERENCES auth.users(id),
+  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -100,7 +100,7 @@ ALTER TABLE workspace_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE workspace_invoices ENABLE ROW LEVEL SECURITY;
 
 -- Stats policies
-CREATE POLICY "Allow workspace members to view stats"
+CREATE POLICY "select_workspace_stats_policy"
   ON workspace_stats FOR SELECT
   USING (EXISTS (
     SELECT 1 FROM members
@@ -109,7 +109,7 @@ CREATE POLICY "Allow workspace members to view stats"
   ));
 
 -- Quotas policies
-CREATE POLICY "Allow workspace members to view quotas"
+CREATE POLICY "select_workspace_quotas_policy"
   ON workspace_quotas FOR SELECT
   USING (EXISTS (
     SELECT 1 FROM members
@@ -118,31 +118,31 @@ CREATE POLICY "Allow workspace members to view quotas"
   ));
 
 -- Audit logs policies
-CREATE POLICY "Allow workspace admins to view audit logs"
+CREATE POLICY "select_workspace_audit_logs_policy"
   ON workspace_audit_logs FOR SELECT
   USING (EXISTS (
     SELECT 1 FROM members
     WHERE members.workspace_id = workspace_audit_logs.workspace_id
     AND members.user_id = auth.uid()
-    AND members.role = 'admin'
+    AND members.role IN ('owner', 'admin')
   ));
 
 -- Backups policies
-CREATE POLICY "Allow workspace admins to manage backups"
+CREATE POLICY "all_workspace_backups_policy"
   ON workspace_backups FOR ALL
   USING (EXISTS (
     SELECT 1 FROM members
     WHERE members.workspace_id = workspace_backups.workspace_id
     AND members.user_id = auth.uid()
-    AND members.role = 'admin'
+    AND members.role IN ('owner', 'admin')
   ));
 
 -- Templates policies
-CREATE POLICY "Allow public template access"
+CREATE POLICY "select_public_workspace_templates_policy"
   ON workspace_templates FOR SELECT
   USING (is_public = true);
 
-CREATE POLICY "Allow workspace members to view private templates"
+CREATE POLICY "select_workspace_templates_policy"
   ON workspace_templates FOR SELECT
   USING (EXISTS (
     SELECT 1 FROM members
@@ -150,17 +150,17 @@ CREATE POLICY "Allow workspace members to view private templates"
     AND members.user_id = auth.uid()
   ));
 
-CREATE POLICY "Allow workspace admins to manage templates"
+CREATE POLICY "all_workspace_templates_policy"
   ON workspace_templates FOR ALL
   USING (EXISTS (
     SELECT 1 FROM members
     WHERE members.workspace_id = workspace_templates.workspace_id
     AND members.user_id = auth.uid()
-    AND members.role = 'admin'
+    AND members.role IN ('owner', 'admin')
   ));
 
 -- Settings policies
-CREATE POLICY "Allow workspace members to view settings"
+CREATE POLICY "select_workspace_settings_policy"
   ON workspace_settings FOR SELECT
   USING (EXISTS (
     SELECT 1 FROM members
@@ -168,21 +168,21 @@ CREATE POLICY "Allow workspace members to view settings"
     AND members.user_id = auth.uid()
   ));
 
-CREATE POLICY "Allow workspace admins to manage settings"
+CREATE POLICY "all_workspace_settings_policy"
   ON workspace_settings FOR ALL
   USING (EXISTS (
     SELECT 1 FROM members
     WHERE members.workspace_id = workspace_settings.workspace_id
     AND members.user_id = auth.uid()
-    AND members.role = 'admin'
+    AND members.role IN ('owner', 'admin')
   ));
 
 -- Invoices policies
-CREATE POLICY "Allow workspace admins to view invoices"
+CREATE POLICY "select_workspace_invoices_policy"
   ON workspace_invoices FOR SELECT
   USING (EXISTS (
     SELECT 1 FROM members
     WHERE members.workspace_id = workspace_invoices.workspace_id
     AND members.user_id = auth.uid()
-    AND members.role = 'admin'
+    AND members.role IN ('owner', 'admin')
   ));

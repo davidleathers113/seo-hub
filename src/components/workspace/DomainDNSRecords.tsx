@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { CheckCircle, XCircle, Copy, RefreshCw } from 'lucide-react';
+import { EmailDomainSetupStatus } from '@/types/supabase';
 
 interface DomainDNSRecordsProps {
   workspaceId: string;
@@ -22,7 +23,7 @@ interface DNSRecord {
 export function DomainDNSRecords({ workspaceId, domainId }: DomainDNSRecordsProps) {
   const [dnsRecords, setDNSRecords] = useState<Record<string, DNSRecord>>();
   const [isLoading, setIsLoading] = useState(false);
-  const [verificationStatus, setVerificationStatus] = useState({
+  const [verificationStatus, setVerificationStatus] = useState<EmailDomainSetupStatus>({
     mx_verified: false,
     spf_verified: false,
     dkim_verified: false,

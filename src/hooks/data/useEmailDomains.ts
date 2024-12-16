@@ -1,6 +1,14 @@
 import { useCallback } from 'react';
 import { useSupabaseClient } from '@supabase/auth-helpers-react';
-import { EmailDomain, EmailDomainVerification, EmailDomainWithVerifications, EmailDomainSetupStatus } from '@/types/email-domain';
+import { EmailDomain, EmailDomainVerification, EmailDomainWithVerifications, EmailDomainSetupStatus } from '@/types/supabase';
+
+interface ForwardingRule {
+  id: string;
+  source: string;
+  destination: string;
+  created_at: string;
+  is_active: boolean;
+}
 
 export function useEmailDomains(workspaceId: string) {
   const supabase = useSupabaseClient();
@@ -146,6 +154,37 @@ export function useEmailDomains(workspaceId: string) {
     };
   }, [supabase]);
 
+  const getForwardingRules = useCallback(async (domainId: string) => {
+    const { data, error } = await supabase
+      .from('email_forwarding_rules')
+      .select('*')
+      .eq('domain_id', domainId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data as ForwardingRule[];
+  }, [supabase]);
+
+  const deleteForwardingRule = useCallback(async (domainId: string, ruleId: string) => {
+    const { error } = await supabase
+      .from('email_forwarding_rules')
+      .delete()
+      .eq('id', ruleId)
+      .eq('domain_id', domainId);
+
+    if (error) throw error;
+  }, [supabase]);
+
+  const toggleForwardingRule = useCallback(async (domainId: string, ruleId: string, isActive: boolean) => {
+    const { error } = await supabase
+      .from('email_forwarding_rules')
+      .update({ is_active: isActive })
+      .eq('id', ruleId)
+      .eq('domain_id', domainId);
+
+    if (error) throw error;
+  }, [supabase]);
+
   return {
     addEmailDomain,
     getEmailDomains,
@@ -153,6 +192,9 @@ export function useEmailDomains(workspaceId: string) {
     deleteEmailDomain,
     configureEmailServer,
     createEmailForwarding,
-    getDNSRecords
+    getDNSRecords,
+    getForwardingRules,
+    deleteForwardingRule,
+    toggleForwardingRule
   };
 }

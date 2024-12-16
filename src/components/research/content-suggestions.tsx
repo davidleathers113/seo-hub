@@ -18,11 +18,19 @@ interface ContentSuggestion {
   targetKeywords: string[]
 }
 
+interface ContentSuggestionsResponse {
+  suggestions: ContentSuggestion[]
+}
+
 export function ContentSuggestions() {
   const [topic, setTopic] = useState("")
   const [results, setResults] = useState<ContentSuggestion[]>([])
 
-  const { mutate: getSuggestions, isLoading } = useMutation({
+  const { mutate: getSuggestions, isPending } = useMutation<
+    ContentSuggestionsResponse,
+    Error,
+    string
+  >({
     mutationFn: async (searchTopic: string) => {
       const response = await fetch("/api/research/suggestions", {
         method: "POST",
@@ -76,8 +84,8 @@ export function ContentSuggestions() {
               onChange={(e) => setTopic(e.target.value)}
               placeholder="Enter your topic"
             />
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? (
+            <Button type="submit" disabled={isPending}>
+              {isPending ? (
                 <>
                   <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
                   Generating...

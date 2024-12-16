@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { CreditCard, Calendar, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
-import { loadStripe } from '@stripe/stripe-js';
+import { loadStripe, Stripe } from '@stripe/stripe-js';
 
 interface BillingManagementProps {
   stripePublicKey: string;
@@ -83,8 +83,12 @@ export function BillingManagement({ stripePublicKey }: BillingManagementProps) {
       if (!stripe) throw new Error('Failed to load Stripe');
 
       const { error: stripeError } = await stripe.redirectToCheckout({
-        mode: 'setup',
-        customerId: currentSubscription?.stripe_customer_id,
+        submitType: 'auto',
+        mode: 'subscription',
+        lineItems: [{
+          price: currentSubscription?.price_id,
+          quantity: 1
+        }],
         successUrl: window.location.href,
         cancelUrl: window.location.href,
       });

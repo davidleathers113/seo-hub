@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import type { Database } from '@/types/supabase';
+import type { Database, Workspace, WorkspaceSettings } from '@/types/supabase';
 
 interface Member {
   id: string;
@@ -22,19 +22,6 @@ interface WorkspaceQuota {
   maxMembers: number;
   maxStorage: number;
   maxApiCalls: number;
-}
-
-interface Workspace {
-  id: string;
-  name: string;
-  slug: string;
-  members: Member[];
-  created_at: string;
-  updated_at: string;
-  stats?: WorkspaceStats;
-  quota?: WorkspaceQuota;
-  categories?: string[];
-  isArchived?: boolean;
 }
 
 interface SubscriptionPlan {
@@ -108,7 +95,8 @@ const WorkspaceContext = createContext<WorkspaceContextType>({
     id: '',
     name: '',
     slug: '',
-    members: [],
+    owner_id: '',
+    settings: {} as WorkspaceSettings,
     created_at: '',
     updated_at: ''
   }),
@@ -140,7 +128,8 @@ const WorkspaceContext = createContext<WorkspaceContextType>({
     id: '',
     name: '',
     slug: '',
-    members: [],
+    owner_id: '',
+    settings: {} as WorkspaceSettings,
     created_at: '',
     updated_at: ''
   }),
@@ -480,10 +469,13 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
   const getWorkspaceTemplates = async () => {
     try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
       const { data: templates, error } = await supabase
         .from('workspace_templates')
         .select('*')
-        .or(`is_public.eq.true,created_by.eq.${supabase.auth.user()?.id}`);
+        .or(`is_public.eq.true,created_by.eq.${user?.id}`);
 
       if (error) throw error;
       return templates;
