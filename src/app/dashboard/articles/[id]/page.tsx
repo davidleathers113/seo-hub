@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Database } from '@/types/database'
@@ -22,11 +22,7 @@ export default function ArticlePage() {
   })
   const [isLoading, setIsLoading] = useState(false)
 
-  useEffect(() => {
-    fetchArticle()
-  }, [articleId])
-
-  async function fetchArticle() {
+  const fetchArticle = useCallback(async () => {
     const { data } = await supabase
       .from('articles')
       .select('*')
@@ -41,7 +37,11 @@ export default function ArticlePage() {
         status: data.status,
       })
     }
-  }
+  }, [articleId])
+
+  useEffect(() => {
+    fetchArticle()
+  }, [fetchArticle])
 
   async function handleSave() {
     setIsLoading(true)

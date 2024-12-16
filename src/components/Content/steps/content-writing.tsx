@@ -9,15 +9,21 @@ import { Textarea } from "@/components/ui/textarea"
 import { getNicheById } from "@/lib/api"
 import { Icons } from "@/components/ui/icons"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Niche } from "@/types/database"
 
 interface ContentWritingProps {
   formData: {
     topic: string
     keywords: string[]
-    outline: any
+    outline: {
+      sections: Array<{
+        title: string
+        points: string[]
+      }>
+    }
     content: string
   }
-  setFormData: (data: any) => void
+  setFormData: (data: typeof formData) => void
   onNext: () => void
   onBack: () => void
 }
@@ -30,10 +36,10 @@ export function ContentWriting({
 }: ContentWritingProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [currentSection, setCurrentSection] = useState(0)
-  const { data: niche, isLoading: isLoadingNiche } = useQuery({
+  const { data: niche, isLoading: isLoadingNiche } = useQuery<Niche>({
     queryKey: ["niche", formData.topic],
     queryFn: () => getNicheById(formData.topic),
-    enabled: !!formData.topic,
+    enabled: Boolean(formData.topic),
   })
 
   const generateContent = async () => {
@@ -79,8 +85,6 @@ export function ContentWriting({
   if (isLoadingNiche) {
     return <Skeleton className="h-[400px]" />
   }
-
-  const progress = ((currentSection + 1) / formData.outline.sections.length) * 100
 
   return (
     <div className="space-y-6">

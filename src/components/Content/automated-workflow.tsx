@@ -2,26 +2,41 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
+import { useToast } from '@/components/ui/use-toast'
 
-type WorkflowStep = {
+interface WorkflowStep {
   id: string
   title: string
   status: 'pending' | 'in-progress' | 'completed' | 'error'
   description: string
 }
 
+interface PillarData {
+  id: string;
+  title: string;
+  // Add other fields as needed
+}
+
+interface ValidationMetrics {
+  relevance: number;
+  coherence: number;
+  completeness: number;
+}
+
+interface ValidationData {
+  score: number;
+  status: 'passed' | 'failed';
+  details?: string;
+  metrics?: ValidationMetrics;
+}
+
 export function AutomatedWorkflow() {
   const [activeStep, setActiveStep] = useState(0)
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [workflowData, setWorkflowData] = useState({
-    pillar: null,
-    subpillars: [],
-    outlines: [],
-    content: null
-  })
-
-  const steps: WorkflowStep[] = [
+  const [pillarData, setPillarData] = useState<PillarData | null>(null)
+  const [validationData, setValidationData] = useState<ValidationData | null>(null)
+  const [steps, setSteps] = useState<WorkflowStep[]>([
     {
       id: 'pillar-generation',
       title: 'Pillar Generation',
@@ -70,28 +85,86 @@ export function AutomatedWorkflow() {
       status: 'pending',
       description: 'Final review and approval of generated content'
     }
-  ]
+  ])
+  const { toast } = useToast()
+
+  const updateStepStatus = (stepId: string, status: WorkflowStep['status']) => {
+    setSteps(prevSteps =>
+      prevSteps.map(step =>
+        step.id === stepId ? { ...step, status } : step
+      )
+    )
+  }
 
   const handleGeneratePillar = async () => {
     setIsProcessing(true)
     setError(null)
+    updateStepStatus('pillar-generation', 'in-progress')
+
     try {
       const response = await fetch('/api/generate/pillars', {
         method: 'POST'
       })
       if (!response.ok) throw new Error('Failed to generate pillar')
-      const data = await response.json()
-      setWorkflowData(prev => ({ ...prev, pillar: data }))
-      setActiveStep(1)
+
+      const responseData = await response.json()
+      setPillarData(responseData)
+      updateStepStatus('pillar-generation', 'completed')
+      setActiveStep(prev => prev + 1)
+
+      toast({
+        title: 'Success',
+        description: `Pillar "${responseData.title}" generated successfully`,
+      })
     } catch (err) {
-      setError(err.message)
+      const message = err instanceof Error ? err.message : 'An error occurred'
+      setError(message)
+      updateStepStatus('pillar-generation', 'error')
+
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: message,
+      })
     } finally {
       setIsProcessing(false)
     }
   }
 
   const handleValidatePillar = async () => {
-    // Similar implementation for pillar validation
+    setIsProcessing(true)
+    setError(null)
+    updateStepStatus('pillar-validation', 'in-progress')
+
+    try {
+      const response = await fetch('/api/generate/pillars/validate', {
+        method: 'POST',
+        body: JSON.stringify({ pillarId: pillarData?.id })
+      })
+      if (!response.ok) throw new Error('Failed to validate pillar')
+
+      const responseData = await response.json()
+      setValidationData(responseData)
+      updateStepStatus('pillar-validation', 'completed')
+      setActiveStep(prev => prev + 1)
+
+      toast({
+        title: 'Success',
+        description: `Pillar validation completed with score: ${responseData.score}`,
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'An error occurred'
+      setError(message)
+      updateStepStatus('pillar-validation', 'error')
+
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: message,
+      })
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   const handleGenerateSubpillars = async () => {
@@ -123,6 +196,16 @@ export function AutomatedWorkflow() {
       <Card>
         <CardHeader>
           <CardTitle>Automated Content Generation Workflow</CardTitle>
+          {pillarData && (
+            <div className="text-sm text-muted-foreground">
+              Current Pillar: {pillarData.title}
+            </div>
+          )}
+          {validationData && (
+            <div className="text-sm text-muted-foreground">
+              Validation Score: {validationData.score}
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
@@ -139,6 +222,8 @@ export function AutomatedWorkflow() {
                       ? 'bg-green-500 text-white'
                       : step.status === 'error'
                       ? 'bg-red-500 text-white'
+                      : step.status === 'in-progress'
+                      ? 'bg-blue-500 text-white'
                       : 'bg-gray-200'
                   }`}
                 >
@@ -155,10 +240,10 @@ export function AutomatedWorkflow() {
                     onClick={() => {
                       switch (step.id) {
                         case 'pillar-generation':
-                          handleGeneratePillar()
+                          void handleGeneratePillar()
                           break
                         case 'pillar-validation':
-                          handleValidatePillar()
+                          void handleValidatePillar()
                           break
                         case 'subpillar-generation':
                           handleGenerateSubpillars()

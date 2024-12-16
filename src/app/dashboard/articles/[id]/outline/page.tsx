@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Database } from '@/types/database'
@@ -24,13 +24,8 @@ export default function ArticleOutlinePage() {
   const [article, setArticle] = useState<Article | null>(null)
   const [outline, setOutline] = useState<Outline | null>(null)
   const [outlineContent, setOutlineContent] = useState<OutlineSection[]>([])
-  const [isLoading, setIsLoading] = useState(false)
 
-  useEffect(() => {
-    fetchArticleAndOutline()
-  }, [articleId])
-
-  async function fetchArticleAndOutline() {
+  const fetchArticleAndOutline = useCallback(async () => {
     // Fetch article details
     const { data: articleData } = await supabase
       .from('articles')
@@ -70,7 +65,11 @@ export default function ArticleOutlinePage() {
         setOutlineContent([])
       }
     }
-  }
+  }, [articleId])
+
+  useEffect(() => {
+    fetchArticleAndOutline()
+  }, [fetchArticleAndOutline])
 
   async function handleAddSection() {
     const newSection: OutlineSection = {

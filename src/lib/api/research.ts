@@ -1,10 +1,9 @@
-import { ResearchType } from '@/types/database';
+import { Database } from '@/types/database'
 
-interface KeywordResearchParams {
-  topic: string;
-  niche: string;
-  target_audience?: string;
-  intent?: 'informational' | 'commercial' | 'navigational' | 'transactional';
+export type Research = Database['public']['Tables']['research']['Row']
+
+export async function getResearchById(id: string) {
+  // ... existing code ...
 }
 
 interface CompetitorAnalysisParams {

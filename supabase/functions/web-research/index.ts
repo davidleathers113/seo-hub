@@ -1,8 +1,7 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { serve } from 'https://deno.land/std@0.208.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4';
 import { corsHeaders } from '../_shared/cors.ts';
-import { Document } from 'https://esm.sh/@docarray/core';
-import { DocArray } from 'https://esm.sh/@docarray/core';
+import { Document, DocArray } from 'https://esm.sh/@docarray/core@0.40.0';
 
 interface WebResearchRequestBody {
   query: string;

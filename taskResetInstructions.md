@@ -1,67 +1,128 @@
-# Task Overview & Current Status
+# Nextacular Integration Status
 
-## Core Problem
-- Workflow settings and niches endpoints were failing due to a mismatch between MongoDB and PostgreSQL user IDs
-- The database was using integer IDs while the auth system was using UUIDs
+## Task Overview
+- **Core Problem**: Integrating Nextacular's workspace features into existing Supabase-based content creation app
+- **Current Status**: Migration files created, awaiting successful execution
+- **Key Decisions**: 
+  - Keeping existing Supabase direct client setup instead of switching to Next.js's built-in integration
+  - Adding workspace support to existing tables rather than recreating schema
+  - Using RLS policies for multi-tenant data isolation
 
-## Implementation Status
-- Successfully migrated user_step_settings table to use UUID for user_id
-- Updated workflow routes to use JWT auth middleware
-- Implemented PostgreSQL niche client for proper database access
-- Both endpoints now working correctly with UUID user IDs
+## Codebase Navigation
 
-## Key Architectural Decisions
-1. Switched from MongoDB-specific auth to JWT-based auth for consistency
-2. Created dedicated PostgreSQL clients for better separation of concerns
-3. Implemented proper data transformation between client and server
-4. Used UUID for user IDs across all tables for consistency
+### Key Files (By Priority)
+1. `supabase/migrations/20240320000000_add_workspace_features.sql`
+   - Adds workspace tables and columns
+   - Implements RLS policies
+   - Modifies existing tables to support workspaces
+
+2. `types/supabase.ts`
+   - Updated with workspace-related types
+   - Added workspace_id to existing table types
+   - Maintains compatibility with existing code
+
+3. `lib/supabase.ts`
+   - Main Supabase client configuration
+   - Contains helper functions for data access
+   - Needs workspace-related helpers added
+
+4. `src/utils/supabase/server.ts` & `client.ts`
+   - New Next.js 13+ Supabase utilities
+   - Currently not in use (keeping existing setup)
+
+5. `src/app/dashboard/page.tsx`
+   - Main dashboard implementation
+   - Uses existing Supabase client
+   - Will need workspace context added
 
 ## Technical Context
 
-### Database Schema Changes
-- Modified user_step_settings table to use UUID for user_id
-- Niches table already using UUID for user_id and id columns
-- Maintained PostgreSQL's native UUID type support
+### External Services
+- Supabase (PostgreSQL + Auth)
+  - URL: https://hylrjzwgqwzlrlunhuom.supabase.co
+  - Using service role key for migrations
+  - RLS enabled for multi-tenant security
 
-### Key Files Modified
-1. server/routes/workflow.ts
-   - Updated to use JWT auth middleware
-   - Added data transformation for client/server formats
+### Security Considerations
+- Row Level Security (RLS) policies implemented for:
+  - Workspace access control
+  - Member management
+  - Resource isolation
+- Service role access limited to migrations
 
-2. server/database/postgres/clients/niche-client.ts
-   - New PostgreSQL client for niche operations
-   - Handles proper data types and transformations
+### Failed Approaches
+1. Prisma with Supabase
+   - Connection issues with pooler
+   - RLS compatibility problems
+2. Next.js built-in Supabase integration
+   - Would require significant refactoring
+   - Current setup working well
 
-3. server/database/index.ts
-   - Updated to use PostgreSQL niche client
-   - Maintains mock implementations for unimplemented features
+## Development Progress
 
-4. server/routes/niches.ts
-   - Updated to use JWT auth middleware
-   - Simplified auth type handling
-
-### Current Status
-- Workflow settings endpoint working (/api/workflow/settings)
-  - Successfully fetches LLMs and workflow steps
-  - Returns empty settings for new users (expected)
-- Niches endpoint working (/api/niches)
-  - Successfully authenticates with JWT
-  - Returns empty list for new users (expected)
+### Completed
+1. Created workspace database schema
+2. Updated TypeScript types
+3. Added RLS policies
+4. Created migration scripts
+5. Verified existing Supabase connection
 
 ### Next Steps
-1. Implement remaining PostgreSQL clients for other features
-2. Update other routes to use JWT auth consistently
-3. Add proper error handling for database operations
-4. Implement data validation and sanitization
+1. Execute workspace migration
+   - Using new `scripts/apply-workspace-migration.ts`
+   - Handles SQL statement splitting
+   - Includes error handling
+
+2. Add workspace context
+   - Create workspace context provider
+   - Update existing components
+   - Add workspace selection UI
+
+3. Update API routes
+   - Add workspace filtering
+   - Implement member management
+   - Add domain handling
 
 ### Known Issues
-- Other database operations still using mock implementations
-- Need to implement proper session management
-- Error handling could be improved
-- Need to add proper logging for debugging
+1. Migration script execution failing
+   - RPC function not available
+   - Working on direct SQL execution
+2. Existing data needs workspace assignment
+   - Migration should handle null workspace_ids
+   - Need to consider data migration strategy
 
-### Developer Notes
-- Always use UUID for user IDs in new tables
-- Use camelCase in client code, snake_case in database
-- Implement proper data transformations in the clients
-- Follow the pattern in niche-client.ts for new clients
+## Developer Notes
+
+### Architecture Insights
+- App uses hybrid approach:
+  - Server-side: Next.js App Router
+  - Client-side: Direct Supabase client
+  - Real-time: Supabase subscriptions
+
+### Critical Areas
+1. Data Migration
+   - Existing content needs workspace assignment
+   - Consider default workspace creation
+
+2. Authentication Flow
+   - Needs workspace context after login
+   - Consider workspace invitation flow
+
+3. Real-time Updates
+   - Existing subscriptions need workspace filtering
+   - Consider performance with multiple workspaces
+
+### Environment Setup
+```env
+VITE_SUPABASE_URL=https://hylrjzwgqwzlrlunhuom.supabase.co
+VITE_SUPABASE_ANON_KEY=[your-anon-key]
+SUPABASE_SERVICE_ROLE_KEY=[your-service-key]
+```
+
+### Migration Commands
+```bash
+# Test connection
+ts-node scripts/test-supabase.ts
+
+# Apply workspace migration
+ts-node scripts/apply-workspace-migration.ts

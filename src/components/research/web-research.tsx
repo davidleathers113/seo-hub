@@ -6,28 +6,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Icons } from "@/components/ui/icons"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/components/ui/use-toast"
-import { Image as ImageIcon, Link as LinkIcon, Sparkles } from "lucide-react"
+import { Sparkles } from "lucide-react"
 
 interface WebResearchProps {
   subpillarId: string
   onResearchComplete?: () => void
-}
-
-interface ResearchResult {
-  id: string
-  content: string
-  source: string
-  relevance: number
-  images?: {
-    url: string
-    alt: string
-    context: string
-  }[]
 }
 
 export function WebResearch({ subpillarId, onResearchComplete }: WebResearchProps) {
@@ -54,7 +39,7 @@ export function WebResearch({ subpillarId, onResearchComplete }: WebResearchProp
 
       return response.json()
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast({
         title: "Research Complete",
         description: "Web research results have been saved.",
@@ -63,7 +48,7 @@ export function WebResearch({ subpillarId, onResearchComplete }: WebResearchProp
         onResearchComplete()
       }
     },
-    onError: (error) => {
+    onError: () => {
       toast({
         variant: "destructive",
         title: "Error",

@@ -8,12 +8,12 @@ export type Json =
 
 export interface ResearchType {
   id: string
-  created_at: string
-  user_id: string
-  niche_id: string
-  type: 'keywords' | 'competitors' | 'suggestions'
+  subpillar_id: string
   query: string
-  results: Json
+  results: any[] // Array of research results
+  include_images: boolean
+  created_at: string
+  updated_at: string
 }
 
 export interface Database {

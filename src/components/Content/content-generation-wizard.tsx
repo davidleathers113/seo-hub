@@ -3,16 +3,33 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
+import { useToast } from "@/components/ui/use-toast"
 
 import { TopicSelection } from "./steps/topic-selection"
 import { OutlineGeneration } from "./steps/outline-generation"
 import { ContentWriting } from "./steps/content-writing"
 import { ContentReview } from "./steps/content-review"
 
-const STEPS = [
+interface Step {
+  id: "topic" | "outline" | "writing" | "review"
+  label: string
+}
+
+interface FormData {
+  topic: string
+  keywords: string[]
+  outline: {
+    sections: Array<{
+      title: string
+      points: string[]
+    }>
+  } | null
+  content: string
+}
+
+const STEPS: Step[] = [
   { id: "topic", label: "Topic Selection" },
   { id: "outline", label: "Outline Generation" },
   { id: "writing", label: "Content Writing" },
@@ -21,8 +38,9 @@ const STEPS = [
 
 export function ContentGenerationWizard() {
   const router = useRouter()
+  const { toast } = useToast()
   const [currentStep, setCurrentStep] = useState(0)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     topic: "",
     keywords: [],
     outline: null,
@@ -44,8 +62,37 @@ export function ContentGenerationWizard() {
   }
 
   const handleComplete = async () => {
-    // Save the generated content and redirect to the articles page
-    router.push("/dashboard/articles")
+    try {
+      const response = await fetch("/api/articles", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          topic: formData.topic,
+          keywords: formData.keywords,
+          outline: formData.outline,
+          content: formData.content,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to save article")
+      }
+
+      toast({
+        title: "Success",
+        description: "Article saved successfully",
+      })
+
+      router.push("/dashboard/articles")
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to save article",
+      })
+    }
   }
 
   return (
