@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import mongoose from 'mongoose'
+import { connect } from 'mongoose'
 import dotenv from 'dotenv'
 import { UserModel, UserDocument } from '../../server/database/mongodb/models/User'
 import { PillarModel, PillarDocument } from '../../server/database/mongodb/models/Pillar'
@@ -10,7 +10,7 @@ import { Database } from '../../types/supabase'
 dotenv.config()
 
 // Supabase client initialization
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseUrl = process.env.VITE_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 if (!supabaseUrl || !supabaseServiceKey) {
@@ -20,16 +20,17 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey)
 
 // MongoDB connection
-const MONGODB_URI = process.env.DATABASE_URL || 'mongodb://localhost/pythagora'
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost/pythagora'
 
 async function connectToMongo() {
   try {
-    await mongoose.connect(MONGODB_URI)
+    await connect(MONGODB_URI)
     console.log('Connected to MongoDB')
   } catch (error) {
-    console.error('MongoDB connection error:', error)
-    process.exit(1)
+    console.log('No MongoDB connection available - skipping data migration')
+    return false
   }
+  return true
 }
 
 async function migrateUsers() {
@@ -140,19 +141,21 @@ async function migrateArticles() {
 
 async function main() {
   try {
-    await connectToMongo()
+    const isMongoConnected = await connectToMongo()
 
-    // Run migrations in sequence
-    await migrateUsers()
-    await migrateNiches()
-    await migratePillars()
-    await migrateArticles()
-
-    console.log('Migration completed successfully')
+    if (isMongoConnected) {
+      // Run migrations in sequence
+      await migrateUsers()
+      await migrateNiches()
+      await migratePillars()
+      await migrateArticles()
+      console.log('Migration completed successfully')
+    } else {
+      console.log('Creating fresh Supabase database without migrating data')
+    }
   } catch (error) {
     console.error('Migration failed:', error)
   } finally {
-    await mongoose.disconnect()
     process.exit()
   }
 }

@@ -1,4 +1,4 @@
-import { Document } from 'mongoose';
+import { Document } from '@supabase/supabase-js';
 
 export interface BaseEntity {
     id: string;
@@ -21,7 +21,7 @@ export interface User extends BaseEntity {
     role?: 'user' | 'admin';
 }
 
-export interface UserDocument extends BaseDocument, Omit<User, 'id'> {
+export interface UserDocument extends BaseDatabase["public"]["Tables"][TableName]["Row"], Omit<User, 'id'> {
     generateAuthToken(): string;
     regenerateToken(): Promise<UserDocument>;
 }
@@ -40,7 +40,7 @@ export interface Niche extends BaseEntity {
     status: 'pending' | 'approved' | 'rejected' | 'in_progress';
 }
 
-export interface NicheDocument extends BaseDocument, Omit<Niche, 'id'> {}
+export interface NicheDocument extends BaseDatabase["public"]["Tables"][TableName]["Row"], Omit<Niche, 'id'> {}
 
 export interface Pillar extends BaseEntity {
     title: string;
@@ -49,7 +49,7 @@ export interface Pillar extends BaseEntity {
     createdById: string;
 }
 
-export interface PillarDocument extends BaseDocument, Omit<Pillar, 'id'> {}
+export interface PillarDocument extends BaseDatabase["public"]["Tables"][TableName]["Row"], Omit<Pillar, 'id'> {}
 
 export interface Subpillar extends BaseEntity {
     title: string;
@@ -58,7 +58,7 @@ export interface Subpillar extends BaseEntity {
     status: 'draft' | 'active' | 'archived';
 }
 
-export interface SubpillarDocument extends BaseDocument, Omit<Subpillar, 'id'> {}
+export interface SubpillarDocument extends BaseDatabase["public"]["Tables"][TableName]["Row"], Omit<Subpillar, 'id'> {}
 
 export interface Article extends BaseEntity {
     title: string;
@@ -74,7 +74,7 @@ export interface Article extends BaseEntity {
     metaDescription?: string;
 }
 
-export interface ArticleDocument extends BaseDocument, Omit<Article, 'id'> {}
+export interface ArticleDocument extends BaseDatabase["public"]["Tables"][TableName]["Row"], Omit<Article, 'id'> {}
 
 export interface Research extends BaseEntity {
     subpillarId: string;
@@ -86,7 +86,7 @@ export interface Research extends BaseEntity {
     articleId?: string;
 }
 
-export interface ResearchDocument extends BaseDocument, Omit<Research, 'id'> {}
+export interface ResearchDocument extends BaseDatabase["public"]["Tables"][TableName]["Row"], Omit<Research, 'id'> {}
 
 export interface OutlineSection {
     title: string;
@@ -105,7 +105,7 @@ export interface Outline extends BaseEntity {
     createdById: string;
 }
 
-export interface OutlineDocument extends BaseDocument, Omit<Outline, 'id'> {}
+export interface OutlineDocument extends BaseDatabase["public"]["Tables"][TableName]["Row"], Omit<Outline, 'id'> {}
 
 // Input interfaces
 export interface UserCreateInput extends Omit<User, keyof BaseEntity> {}
@@ -175,7 +175,7 @@ export interface Session extends BaseEntity {
     ipAddress?: string;
 }
 
-export interface SessionDocument extends BaseDocument, Omit<Session, 'id'> {}
+export interface SessionDocument extends BaseDatabase["public"]["Tables"][TableName]["Row"], Omit<Session, 'id'> {}
 
 export interface SessionCreateInput extends Omit<Session, keyof BaseEntity> {}
 export interface SessionUpdateInput extends Partial<Omit<Session, keyof BaseEntity>> {}

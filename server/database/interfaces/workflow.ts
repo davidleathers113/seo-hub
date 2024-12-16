@@ -1,4 +1,5 @@
 import { LLM, WorkflowStep, UserStepSettings } from '../../types/workflow';
+import { Niche, Pillar, Article, Research, Outline } from '../types'
 
 export { LLM, WorkflowStep, UserStepSettings };
 
@@ -46,4 +47,26 @@ export interface WorkflowClient {
     retryGeneration(id: string): Promise<ContentGeneration>;
     updateGenerationStatus(id: string, status: ContentGeneration['status'], error?: string): Promise<ContentGeneration>;
     updateGenerationMetadata(id: string, metadata: Record<string, any>): Promise<ContentGeneration>;
+}
+
+export interface IWorkflowClient {
+  createWorkflowForNiche(nicheId: string, userId: string): Promise<void>
+  getWorkflowStatus(nicheId: string): Promise<{
+    niche: Niche
+    pillars: Pillar[]
+    articles: Article[]
+    research: Research[]
+    outlines: Outline[]
+  }>
+  updateWorkflowStatus(nicheId: string, status: string, progress: number): Promise<void>
+  getWorkflowProgress(nicheId: string): Promise<{
+    total: number
+    completed: number
+    inProgress: number
+  }>
+  getWorkflowTimeline(nicheId: string): Promise<{
+    createdAt: string
+    lastUpdated: string
+    estimatedCompletion: string
+  }>
 }

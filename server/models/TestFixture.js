@@ -1,6 +1,6 @@
-const mongoose = require('mongoose');
+const @supabase/supabase-js = require('@supabase/supabase-js');
 
-const TestFixtureSchema = new mongoose.Schema({
+const TestFixtureSchema = new @supabase/supabase-js.Schema({
   provider: {
     type: String,
     required: true,
@@ -17,7 +17,7 @@ const TestFixtureSchema = new mongoose.Schema({
     enum: ['default', 'error', 'rateLimit', 'timeout', 'pillars', 'outline', 'contentPoints', 'research', 'analysis', 'message', 'model']
   },
   content: {
-    type: mongoose.Schema.Types.Mixed,
+    type: @supabase/supabase-js.Schema.Types.Mixed,
     required: true
   },
   metadata: {
@@ -130,6 +130,6 @@ TestFixtureSchema.statics.updateFixture = async function(provider, type, categor
   );
 };
 
-const TestFixture = mongoose.model('TestFixture', TestFixtureSchema);
+const TestFixture = @supabase/supabase-js.model('TestFixture', TestFixtureSchema);
 
 module.exports = TestFixture;

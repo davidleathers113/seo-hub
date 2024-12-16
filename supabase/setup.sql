@@ -142,3 +142,145 @@ CREATE POLICY "Users can update their own articles" ON articles
 
 CREATE POLICY "Users can delete their own articles" ON articles
   FOR DELETE USING (auth.uid() = user_id);
+
+-- Create function to get RLS policies
+CREATE OR REPLACE FUNCTION get_policies()
+RETURNS TABLE (
+  table_name text,
+  command text,
+  policy_name text,
+  definition text,
+  permissive text,
+  roles text[]
+) 
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    pc.relname::text as table_name,
+    pg_policy.cmd::text as command,
+    pg_policy.polname::text as policy_name,
+    pg_policy.polqual::text as definition,
+    pg_policy.polpermissive::text as permissive,
+    ARRAY_AGG(pg_roles.rolname)::text[] as roles
+  FROM pg_policy
+  JOIN pg_class pc ON pc.oid = pg_policy.polrelid
+  JOIN pg_roles ON pg_roles.oid = ANY(pg_policy.polroles)
+  GROUP BY 1, 2, 3, 4, 5;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create auth settings table
+CREATE TABLE IF NOT EXISTS auth_settings (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  email_confirmation_required boolean DEFAULT true,
+  enable_signup boolean DEFAULT true,
+  min_password_length integer DEFAULT 8,
+  jwt_expiry_seconds integer DEFAULT 3600,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Insert default auth settings
+INSERT INTO auth_settings (
+  email_confirmation_required,
+  enable_signup,
+  min_password_length,
+  jwt_expiry_seconds
+) VALUES (
+  true,  -- Require email confirmation
+  true,  -- Enable signups
+  8,     -- Minimum password length
+  3600   -- JWT expiry in seconds (1 hour)
+) ON CONFLICT DO NOTHING;
+
+-- Enable RLS on auth_settings
+ALTER TABLE auth_settings ENABLE ROW LEVEL SECURITY;
+
+-- Only allow service role to access auth settings
+CREATE POLICY "Service role can manage auth settings"
+ON auth_settings
+USING (auth.jwt()->>'role' = 'service_role');
+
+-- Storage bucket policies
+-- Article images policies
+CREATE POLICY "Public can view article images"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'public_article_images');
+
+CREATE POLICY "Authenticated users can upload article images"
+ON storage.objects FOR INSERT
+WITH CHECK (
+  bucket_id = 'public_article_images'
+  AND auth.role() = 'authenticated'
+);
+
+CREATE POLICY "Users can update their own article images"
+ON storage.objects FOR UPDATE
+USING (
+  bucket_id = 'public_article_images'
+  AND auth.uid()::text = (storage.foldername(name))[1]
+);
+
+CREATE POLICY "Users can delete their own article images"
+ON storage.objects FOR DELETE
+USING (
+  bucket_id = 'public_article_images'
+  AND auth.uid()::text = (storage.foldername(name))[1]
+);
+
+-- User avatars policies
+CREATE POLICY "Public can view user avatars"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'public_user_avatars');
+
+CREATE POLICY "Users can upload their own avatar"
+ON storage.objects FOR INSERT
+WITH CHECK (
+  bucket_id = 'public_user_avatars'
+  AND auth.uid()::text = (storage.foldername(name))[1]
+);
+
+CREATE POLICY "Users can update their own avatar"
+ON storage.objects FOR UPDATE
+USING (
+  bucket_id = 'public_user_avatars'
+  AND auth.uid()::text = (storage.foldername(name))[1]
+);
+
+CREATE POLICY "Users can delete their own avatar"
+ON storage.objects FOR DELETE
+USING (
+  bucket_id = 'public_user_avatars'
+  AND auth.uid()::text = (storage.foldername(name))[1]
+);
+
+-- Private documents policies
+CREATE POLICY "Users can access their own documents"
+ON storage.objects FOR SELECT
+USING (
+  bucket_id = 'documents'
+  AND auth.uid()::text = (storage.foldername(name))[1]
+);
+
+CREATE POLICY "Users can upload their own documents"
+ON storage.objects FOR INSERT
+WITH CHECK (
+  bucket_id = 'documents'
+  AND auth.uid()::text = (storage.foldername(name))[1]
+);
+
+CREATE POLICY "Users can update their own documents"
+ON storage.objects FOR UPDATE
+USING (
+  bucket_id = 'documents'
+  AND auth.uid()::text = (storage.foldername(name))[1]
+);
+
+CREATE POLICY "Users can delete their own documents"
+ON storage.objects FOR DELETE
+USING (
+  bucket_id = 'documents'
+  AND auth.uid()::text = (storage.foldername(name))[1]
+);

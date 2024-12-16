@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const log = require('../utils/log');
-const mongoose = require('mongoose');
+const @supabase/supabase-js = require('@supabase/supabase-js');
 const Article = require('../models/Article');
 
 // SEO scoring criteria and weights

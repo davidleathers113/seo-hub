@@ -1,4 +1,4 @@
-import { Document } from 'mongoose';
+import { Document } from '@supabase/supabase-js';
 
 export interface BaseEntity {
     id: string;

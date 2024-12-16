@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const @supabase/supabase-js = require('@supabase/supabase-js');
 const request = require('supertest');
 const { createTestServer } = require('../../test/testServer');
 const UserService = require('../../services/user');
@@ -8,7 +8,7 @@ const Article = require('../../models/Article');
 // Mock UserService
 jest.mock('../../services/user');
 
-const testUserId = new mongoose.Types.ObjectId().toString();
+const testUserId = new @supabase/supabase-js.Types.ObjectId().toString();
 const testUser = {
   _id: testUserId,
   email: 'test@example.com',
@@ -50,7 +50,7 @@ describe('Articles API', () => {
       // Clear collections with proper error handling
       await Promise.all([
         Article.deleteMany({}),
-        mongoose.connection.collection('users').deleteMany({})
+        @supabase/supabase-js.connection.collection('users').deleteMany({})
       ]);
 
       // Reset mocks
@@ -135,7 +135,7 @@ describe('Articles API', () => {
 
     it('should handle non-existent article', async () => {
       // Arrange
-      const nonExistentId = new mongoose.Types.ObjectId();
+      const nonExistentId = new @supabase/supabase-js.Types.ObjectId();
 
       // Act
       const response = await request(testServer.app)

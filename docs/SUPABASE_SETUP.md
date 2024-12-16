@@ -116,6 +116,36 @@ For local development, you can use the Supabase CLI:
    SUPABASE_ANON_KEY=your_local_anon_key
    ```
 
+## M1/ARM64 Compatibility
+
+If you're using an M1 Mac or any ARM64-based system, you'll need to configure Docker to use the correct platform:
+
+1. **Set Platform for Docker**
+   ```bash
+   export DOCKER_DEFAULT_PLATFORM=linux/amd64
+   ```
+
+2. **Start Supabase with Platform Setting**
+   ```bash
+   export DOCKER_DEFAULT_PLATFORM=linux/amd64 && supabase start
+   ```
+
+3. **Link Project with Platform Setting**
+   ```bash
+   export DOCKER_DEFAULT_PLATFORM=linux/amd64 && \
+   export SUPABASE_DB_PASSWORD='your_db_password' && \
+   supabase link --project-ref your_project_ref
+   ```
+
+4. **Push Database Changes**
+   ```bash
+   export DOCKER_DEFAULT_PLATFORM=linux/amd64 && \
+   export SUPABASE_DB_PASSWORD='your_db_password' && \
+   supabase db push
+   ```
+
+Note: The platform setting is required because Supabase's Docker images are primarily built for AMD64 architecture. Setting this ensures compatibility with ARM-based systems like M1 Macs.
+
 ## Production Deployment
 
 1. **Environment Setup**

@@ -15,7 +15,7 @@ const { sendLLMRequest } = require('../services/llm');
 const { logger } = require('../utils/log');
 const Pillar = require('../models/Pillar');
 const Subpillar = require('../models/Subpillar');
-const mongoose = require('mongoose');
+const @supabase/supabase-js = require('@supabase/supabase-js');
 const routeConfig = require('../utils/routeConfig');
 
 const log = logger('api/routes/subpillarsRoutes');
@@ -75,7 +75,7 @@ const handlers = {
 
     async updateSubpillar(req, res) {
         try {
-            if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            if (!@supabase/supabase-js.Types.ObjectId.isValid(req.params.id)) {
                 return res.status(404).json({ error: 'Subpillar not found' });
             }
 
@@ -105,7 +105,7 @@ const handlers = {
 
     async deleteSubpillar(req, res) {
         try {
-            if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            if (!@supabase/supabase-js.Types.ObjectId.isValid(req.params.id)) {
                 return res.status(404).json({ error: 'Subpillar not found' });
             }
 

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const @supabase/supabase-js = require('@supabase/supabase-js');
 const request = require('supertest');
 const { createTestServer } = require('../../test/testServer');
 const Pillar = require('../../models/Pillar');
@@ -139,7 +139,7 @@ describe('Subpillar Routes', () => {
     });
 
     it('should handle invalid pillar IDs', async () => {
-      const invalidId = new mongoose.Types.ObjectId();
+      const invalidId = new @supabase/supabase-js.Types.ObjectId();
       const response = await request(app)
         .post(`/api/pillars/${invalidId}/subpillars/generate`)
         .set('x-test-user-id', testUser._id.toString());
@@ -215,7 +215,7 @@ describe('Subpillar Routes', () => {
     });
 
     it('should handle invalid pillar IDs', async () => {
-      const invalidId = new mongoose.Types.ObjectId();
+      const invalidId = new @supabase/supabase-js.Types.ObjectId();
       const response = await request(app)
         .get(`/api/pillars/${invalidId}/subpillars`)
         .set('x-test-user-id', testUser._id.toString());
@@ -303,7 +303,7 @@ describe('Subpillar Routes', () => {
     });
 
     it('should handle non-existent subpillars', async () => {
-      const nonExistentId = new mongoose.Types.ObjectId();
+      const nonExistentId = new @supabase/supabase-js.Types.ObjectId();
       const response = await request(app)
         .put(`/api/pillars/subpillar/${nonExistentId}`)
         .set('x-test-user-id', testUser._id.toString())
@@ -359,7 +359,7 @@ describe('Subpillar Routes', () => {
     });
 
     it('should handle non-existent subpillars', async () => {
-      const nonExistentId = new mongoose.Types.ObjectId();
+      const nonExistentId = new @supabase/supabase-js.Types.ObjectId();
       const response = await request(app)
         .delete(`/api/pillars/subpillar/${nonExistentId}`)
         .set('x-test-user-id', testUser._id.toString());

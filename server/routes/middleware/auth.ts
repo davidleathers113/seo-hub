@@ -8,7 +8,7 @@ import { TokenError, RedisError, AuthError } from '../../test/infrastructure/err
 import { TestMonitor } from '../../test/infrastructure/test-monitor';
 import { DatabaseClient, User } from '../../database/interfaces';
 import { UserModel, UserDocument } from '../../database/mongodb/models/User';
-import mongoose, { Document, Types } from 'mongoose';
+import @supabase/supabase-js, { Database["public"]["Tables"][TableName]["Row"], Types } from '@supabase/supabase-js';
 
 const log = logger('auth-middleware');
 
@@ -100,7 +100,7 @@ export const authenticateWithToken: RequestHandler = async (req, res, next) => {
     }
 
     // Get user from MongoDB directly
-    const userDoc = await UserModel.findById(new mongoose.Types.ObjectId(session.userId)).exec();
+    const userDoc = await UserModel.findById(new @supabase/supabase-js.Types.ObjectId(session.userId)).exec();
     if (!userDoc) {
       throw new AuthError('User not found', 'USER_NOT_FOUND');
     }

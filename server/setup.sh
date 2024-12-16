@@ -1,56 +1,35 @@
 #!/bin/bash
 
-# Check if PostgreSQL is installed
-if ! command -v psql &> /dev/null; then
-    echo "PostgreSQL is not installed. Installing..."
+# Check if Supabase CLI is installed
+if ! command -v supabase &> /dev/null; then
+    echo "Supabase CLI is not installed. Installing..."
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        # macOS
-        brew install postgresql@14
-    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        # Linux
-        sudo apt-get update
-        sudo apt-get install -y postgresql postgresql-contrib
-        sudo service postgresql start
+        brew install supabase/tap/supabase
     else
-        echo "Unsupported operating system"
-        exit 1
+        curl -s https://raw.githubusercontent.com/supabase/supabase/master/install.sh | bash
     fi
 fi
 
-# Start PostgreSQL service
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    brew services restart postgresql@14
-    # Wait for PostgreSQL to start
-    sleep 5
-    # Create postgres user if it doesn't exist
-    createuser -s postgres || true
-elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    sudo service postgresql restart
-    sleep 5
+# Check if Docker is installed
+if ! command -v docker &> /dev/null; then
+    echo "Docker is not installed. Please install Docker Desktop from https://www.docker.com/products/docker-desktop"
+    exit 1
 fi
 
-# Install PostgreSQL dependencies
-npm install pg @types/pg
+# Start Supabase services
+echo "Starting Supabase services..."
+supabase start
 
-# Create .env file if it doesn't exist
+# Set environment variables
+echo "Setting up environment variables..."
 if [ ! -f .env ]; then
-    echo "Creating .env file..."
-    cat > .env << EOL
-DB_USER=postgres
-DB_HOST=localhost
-DB_NAME=content_creation_app
-DB_PASSWORD=postgres
-DB_PORT=5432
-JWT_SECRET=your-secret-key
-EOL
+    cp .env.example .env
+    echo "Created .env file from .env.example"
 fi
 
-# Create database if it doesn't exist
-echo "Creating database..."
-createdb -U postgres content_creation_app || true
+# Install dependencies
+echo "Installing dependencies..."
+npm install
 
-# Run migrations
-echo "Running migrations..."
-npx ts-node database/migrations/run.ts
-
-echo "Setup complete!"
+echo "Setup completed successfully!"
+echo "You can now run 'npm run dev' to start the development server"

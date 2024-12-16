@@ -3,25 +3,31 @@ import path from 'path'
 import { glob } from 'glob'
 
 const MONGODB_PATTERNS = [
-  'mongoose',
-  'MongoClient',
-  'mongodb://',
-  'mongoose.connect',
-  'mongoose.model',
-  'mongoose.Schema',
-  'new Schema',
-  'Document,',
-  'Model<',
-  'mongodb-memory-server'
-]
+  '@supabase/supabase-js',
+  'SupabaseClient',
+  'postgresql://',
+  '@supabase/supabase-js.connect',
+  '@supabase/supabase-js.model',
+  '@supabase/supabase-js.Schema',
+  'Database["public"]["Tables"]',
+  'Database["public"]["Tables"][TableName]["Row"],',
+  'SupabaseClient<Database>',
+  '@supabase/supabase-js'
+] as const
 
-const REPLACEMENT_MAP = {
-  'mongoose.Schema': 'Database["public"]["Tables"]',
-  'mongoose.model': 'supabase.from',
-  'mongoose.connect': 'supabase.connect',
-  'Document,': 'Database["public"]["Tables"][TableName]["Row"],',
-  'Model<': 'SupabaseClient<Database>',
-  'mongodb-memory-server': '@supabase/supabase-js'
+type MongoPattern = typeof MONGODB_PATTERNS[number]
+
+const REPLACEMENT_MAP: Record<MongoPattern, string> = {
+  '@supabase/supabase-js': '@supabase/supabase-js',
+  'SupabaseClient': 'SupabaseClient',
+  'postgresql://': 'postgresql://',
+  '@supabase/supabase-js.connect': 'supabase.connect',
+  '@supabase/supabase-js.model': 'supabase.from',
+  '@supabase/supabase-js.Schema': 'Database["public"]["Tables"]',
+  'Database["public"]["Tables"]': 'Database["public"]["Tables"]',
+  'Database["public"]["Tables"][TableName]["Row"],': 'Database["public"]["Tables"][TableName]["Row"],',
+  'SupabaseClient<Database>': 'SupabaseClient<Database>',
+  '@supabase/supabase-js': '@supabase/supabase-js'
 }
 
 async function findFiles(pattern: string): Promise<string[]> {
@@ -41,7 +47,7 @@ async function processFile(filePath: string): Promise<void> {
         hasChanges = true
 
         // Apply replacements if available
-        if (REPLACEMENT_MAP[pattern]) {
+        if (pattern in REPLACEMENT_MAP) {
           newContent = newContent.replace(
             new RegExp(pattern, 'g'),
             REPLACEMENT_MAP[pattern]

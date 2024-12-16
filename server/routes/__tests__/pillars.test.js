@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const { MongoMemoryServer } = require('mongodb-memory-server');
+const @supabase/supabase-js = require('@supabase/supabase-js');
+const { MongoMemoryServer } = require('@supabase/supabase-js');
 const request = require('supertest');
 const { createTestServer } = require('../../test/testServer');
 const Pillar = require('../../models/Pillar');
@@ -22,7 +22,7 @@ beforeAll(async () => {
   // Set up MongoDB Memory Server
   mongoServer = await MongoMemoryServer.create();
   const mongoUri = mongoServer.getUri();
-  await mongoose.connect(mongoUri);
+  await @supabase/supabase-js.connect(mongoUri);
 
   // Create test user and niche using helpers
   testUser = await createTestUser();
@@ -36,7 +36,7 @@ beforeAll(async () => {
 afterAll(async () => {
   // Close server and database connections
   await new Promise(resolve => server.close(resolve));
-  await mongoose.disconnect();
+  await @supabase/supabase-js.disconnect();
   await mongoServer.stop();
 });
 
@@ -151,7 +151,7 @@ describe('Pillar Routes', () => {
     });
 
     it('should return empty array for non-existent niche', async () => {
-      const nonExistentId = new mongoose.Types.ObjectId();
+      const nonExistentId = new @supabase/supabase-js.Types.ObjectId();
       const response = await request(app)
         .get(`/api/niches/${nonExistentId}/pillars`)
         .set('x-test-user-id', testUser._id.toString());
@@ -215,7 +215,7 @@ describe('Pillar Routes', () => {
     });
 
     it('should handle non-existent pillar', async () => {
-      const nonExistentId = new mongoose.Types.ObjectId();
+      const nonExistentId = new @supabase/supabase-js.Types.ObjectId();
       const response = await request(app)
         .put(`/api/pillars/${nonExistentId}/approve`)
         .set('x-test-user-id', testUser._id.toString());
@@ -319,7 +319,7 @@ describe('Pillar Routes', () => {
     });
 
     it('should handle non-existent pillar', async () => {
-      const nonExistentId = new mongoose.Types.ObjectId();
+      const nonExistentId = new @supabase/supabase-js.Types.ObjectId();
       const response = await request(app)
         .delete(`/api/pillars/${nonExistentId}`)
         .set('x-test-user-id', testUser._id.toString());

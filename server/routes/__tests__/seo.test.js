@@ -1,5 +1,5 @@
 const request = require('supertest');
-const mongoose = require('mongoose');
+const @supabase/supabase-js = require('@supabase/supabase-js');
 const { setupTestServer, teardownTestServer } = require('../../test/testServer');
 const Article = require('../../models/Article');
 
@@ -19,7 +19,7 @@ beforeAll(async () => {
       content: '<h1>Main Title</h1><p>This is a test article content that needs improvement. It lacks proper keyword density and structure.</p>',
       metaDescription: 'A basic meta description that could use some SEO improvements to better describe the content and attract more readers.',
       keywords: ['test', 'article', 'seo'],
-      author: new mongoose.Types.ObjectId()
+      author: new @supabase/supabase-js.Types.ObjectId()
     });
   } catch (error) {
     console.error('Test setup failed:', error);
@@ -54,7 +54,7 @@ describe('SEO Grade Endpoint', () => {
   }, 10000);
 
   it('should return 404 for non-existent article', async () => {
-    const fakeId = new mongoose.Types.ObjectId();
+    const fakeId = new @supabase/supabase-js.Types.ObjectId();
     const response = await request(app)
       .post(`/api/articles/${fakeId}/seo-grade`);
 
@@ -81,7 +81,7 @@ describe('SEO Improve Endpoint', () => {
   }, 10000);
 
   it('should return 404 for non-existent article', async () => {
-    const fakeId = new mongoose.Types.ObjectId();
+    const fakeId = new @supabase/supabase-js.Types.ObjectId();
     const response = await request(app)
       .post(`/api/articles/${fakeId}/seo-improve`);
 

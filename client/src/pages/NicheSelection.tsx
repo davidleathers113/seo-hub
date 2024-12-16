@@ -1,27 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AxiosError } from 'axios';
 import { getNiches, createNiche } from '../api/niches';
-import { onRetryStatusUpdate, retryRequest } from '../api/api';
+import { supabase } from '../lib/supabase';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { useToast } from '../hooks/useToast';
+import { useToast } from '../components/ui/use-toast';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-import { Niche } from '../types/niche';
+import type { Niche } from '../types/niche';
 
-interface ApiErrorResponse {
-  message?: string;
-  error?: string;
-}
-
-interface RetryState {
-  isRetrying: boolean;
-  attempt: number;
-  maxRetries: number;
-  nextRetryMs: number;
-  requestId?: string;
+function isNetworkError(error: any) {
+  return error.message?.includes('network') ||
+         error.message?.includes('internet') ||
+         error.message?.includes('Failed to fetch');
 }
 
 export function NicheSelection() {
@@ -30,73 +22,52 @@ export function NicheSelection() {
   const [error, setError] = useState('');
   const [nicheName, setNicheName] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [retryState, setRetryState] = useState<RetryState>({
-    isRetrying: false,
-    attempt: 0,
-    maxRetries: 0,
-    nextRetryMs: 0,
-  });
+  const [isRetrying, setIsRetrying] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set up retry status listener
-    const unsubscribe = onRetryStatusUpdate((status) => {
-      setRetryState({
-        isRetrying: true,
-        attempt: status.attempt,
-        maxRetries: status.maxRetries,
-        nextRetryMs: status.nextRetryMs,
-        requestId: status.requestId,
-      });
+    const checkSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error || !session) {
+        toast({
+          variant: 'destructive',
+          title: 'Authentication Error',
+          description: 'Please sign in again to continue.',
+        });
+        navigate('/login');
+      }
+    };
 
-      // Show retry toast
-      toast({
-        variant: 'default',
-        title: 'Retrying Connection',
-        description: `Attempt ${status.attempt} of ${status.maxRetries}. Next retry in ${Math.ceil(status.nextRetryMs / 1000)}s`,
-      });
-    });
-
-    return () => unsubscribe();
-  }, [toast]);
+    checkSession();
+  }, [navigate]);
 
   const fetchNiches = async () => {
     try {
-      const response = await getNiches();
-      if (Array.isArray(response.data)) {
-        setNiches(response.data);
-        setError('');
-        setRetryState({
-          isRetrying: false,
-          attempt: 0,
-          maxRetries: 0,
-          nextRetryMs: 0,
+      setLoading(true);
+      setError('');
+      const { data } = await getNiches();
+      setNiches(data || []);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to load niches';
+      setError(message);
+
+      if (isNetworkError(error)) {
+        toast({
+          variant: 'destructive',
+          title: 'Network Error',
+          description: 'Please check your internet connection and try again.',
         });
       } else {
-        throw new Error('Invalid data format received for niches');
+        toast({
+          variant: 'destructive',
+          title: 'Error Loading Niches',
+          description: message,
+        });
       }
-    } catch (err) {
-      const error = err as AxiosError<ApiErrorResponse>;
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to load niches';
-      setError(errorMessage);
-      // Store the request ID for retry
-      const requestId = error.config?.headers?.['X-Request-ID'] as string;
-      if (requestId) {
-        setRetryState(prev => ({
-          ...prev,
-          requestId,
-          isRetrying: false,
-          attempt: 0,
-        }));
-      }
-      toast({
-        variant: 'destructive',
-        title: 'Error Loading Niches',
-        description: errorMessage,
-      });
     } finally {
       setLoading(false);
+      setIsRetrying(false);
     }
   };
 
@@ -104,37 +75,9 @@ export function NicheSelection() {
     fetchNiches();
   }, []);
 
-  const handleRetry = async () => {
-    if (!retryState.requestId) return;
-
-    setLoading(true);
-    try {
-      const response = await retryRequest(retryState.requestId);
-      if (Array.isArray(response.data)) {
-        setNiches(response.data);
-        setError('');
-        setRetryState({
-          isRetrying: false,
-          attempt: 0,
-          maxRetries: 0,
-          nextRetryMs: 0,
-        });
-        toast({
-          variant: 'default',
-          title: 'Success',
-          description: 'Successfully loaded niches',
-        });
-      }
-    } catch (err) {
-      const error = err as Error;
-      toast({
-        variant: 'destructive',
-        title: 'Retry Failed',
-        description: error.message,
-      });
-    } finally {
-      setLoading(false);
-    }
+  const handleRetry = () => {
+    setIsRetrying(true);
+    fetchNiches();
   };
 
   const validateForm = (): boolean => {
@@ -166,9 +109,18 @@ export function NicheSelection() {
 
     setSubmitting(true);
     try {
-      const response = await createNiche(nicheName);
-      const newNiche = response.data;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          variant: 'destructive',
+          title: 'Authentication Error',
+          description: 'Please sign in to create a niche.',
+        });
+        navigate('/login');
+        return;
+      }
 
+      const { data: newNiche } = await createNiche(nicheName);
       toast({
         variant: 'default',
         title: 'Success',
@@ -177,14 +129,23 @@ export function NicheSelection() {
 
       setNiches(prevNiches => [...prevNiches, newNiche]);
       setNicheName('');
-    } catch (err) {
-      const error = err as AxiosError<ApiErrorResponse>;
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to create niche';
-      toast({
-        variant: 'destructive',
-        title: 'Error Creating Niche',
-        description: errorMessage,
-      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to create niche';
+
+      if (message.includes('sign in') || message.includes('authenticated')) {
+        toast({
+          variant: 'destructive',
+          title: 'Authentication Error',
+          description: 'Please sign in again to continue.',
+        });
+        navigate('/login');
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Error Creating Niche',
+          description: message,
+        });
+      }
     } finally {
       setSubmitting(false);
     }
@@ -193,12 +154,12 @@ export function NicheSelection() {
   const handleNicheClick = (nicheId: string) => {
     try {
       navigate(`/niches/${nicheId}`);
-    } catch (err) {
-      const error = err as Error;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Navigation failed';
       toast({
         variant: 'destructive',
         title: 'Navigation Error',
-        description: error.message || 'Unable to view niche details. Please try again.',
+        description: message,
       });
     }
   };
@@ -212,41 +173,11 @@ export function NicheSelection() {
     >
       <div className="p-4">
         <h3 className="text-lg font-medium">{niche.name}</h3>
-        <p>{`${niche.pillars.length} Pillars`}</p>
+        <p>{`${niche.pillars?.length || 0} Pillars`}</p>
         <p>Progress: {niche.progress}%</p>
         <p>Status: {niche.status}</p>
       </div>
     </Card>
-  );
-
-  const renderError = () => (
-    <div className="text-center p-4">
-      <p className="text-destructive">{error}</p>
-      {retryState.requestId && (
-        <div className="mt-4">
-          <Button
-            onClick={handleRetry}
-            variant="outline"
-            disabled={loading || retryState.isRetrying}
-            className="w-full sm:w-auto"
-          >
-            {retryState.isRetrying ? (
-              <>
-                <LoadingSpinner className="mr-2 h-4 w-4" />
-                Retrying... ({retryState.attempt}/{retryState.maxRetries})
-              </>
-            ) : (
-              'Retry Loading Niches'
-            )}
-          </Button>
-          {retryState.isRetrying && (
-            <p className="text-xs text-muted-foreground mt-2">
-              Next retry in {Math.ceil(retryState.nextRetryMs / 1000)} seconds
-            </p>
-          )}
-        </div>
-      )}
-    </div>
   );
 
   return (
@@ -299,7 +230,15 @@ export function NicheSelection() {
               <LoadingSpinner />
             </div>
           ) : error ? (
-            renderError()
+            <div className="text-center p-4">
+              <p className="text-destructive mb-4">{error}</p>
+              <Button
+                onClick={handleRetry}
+                disabled={isRetrying}
+              >
+                {isRetrying ? 'Retrying...' : 'Retry'}
+              </Button>
+            </div>
           ) : niches.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {niches.map(renderNiche)}

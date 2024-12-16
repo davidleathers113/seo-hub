@@ -1,6 +1,6 @@
 // Consolidated test setup file
-const mongoose = require('mongoose');
-const { MongoMemoryServer } = require('mongodb-memory-server');
+const @supabase/supabase-js = require('@supabase/supabase-js');
+const { MongoMemoryServer } = require('@supabase/supabase-js');
 const path = require('path');
 const { mockRedis, clearAllMocks } = require('./server/test/mocks/redis');
 const { testValidator } = require('./server/test/infrastructure/test-validator');
@@ -41,14 +41,14 @@ beforeAll(async () => {
     // Set the MongoDB URI for other parts of the application
     process.env.MONGO_URI = mongoUri;
 
-    // Connect mongoose with proper options
-    await mongoose.connect(mongoUri, {
+    // Connect @supabase/supabase-js with proper options
+    await @supabase/supabase-js.connect(mongoUri, {
       useNewUrlParser: true,
       useUnifiedTopology: true
     });
 
     // Verify connection
-    const isConnected = mongoose.connection.readyState === 1;
+    const isConnected = @supabase/supabase-js.connection.readyState === 1;
     if (!isConnected) {
       throw new Error('Failed to connect to MongoDB');
     }
@@ -67,7 +67,7 @@ beforeAll(async () => {
       mongoUri,
       redisUrl: process.env.REDIS_URL,
       nodeEnv: process.env.NODE_ENV,
-      models: Object.keys(mongoose.models)
+      models: Object.keys(@supabase/supabase-js.models)
     });
   } catch (error) {
     console.error('Test environment setup failed:', error);
@@ -79,7 +79,7 @@ beforeAll(async () => {
 beforeEach(async () => {
   try {
     // Clear all collections
-    const collections = mongoose.connection.collections;
+    const collections = @supabase/supabase-js.connection.collections;
     for (const key in collections) {
       await collections[key].deleteMany();
     }
@@ -97,7 +97,7 @@ beforeEach(async () => {
 afterAll(async () => {
   try {
     // Cleanup MongoDB
-    await mongoose.disconnect();
+    await @supabase/supabase-js.disconnect();
     await mongoServer.stop();
 
     // Cleanup Redis

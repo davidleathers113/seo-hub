@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const { MongoMemoryServer } = require('mongodb-memory-server');
+const @supabase/supabase-js = require('@supabase/supabase-js');
+const { MongoMemoryServer } = require('@supabase/supabase-js');
 const request = require('supertest');
 const app = require('../../test/testServer');
 const Outline = require('../../models/Outline');
@@ -47,11 +47,11 @@ let server;
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
   const mongoUri = mongoServer.getUri();
-  await mongoose.connect(mongoUri);
+  await @supabase/supabase-js.connect(mongoUri);
 
   testUser = await createTestUser();
   testNiche = await createTestNiche({}, testUser);
-  testPillar = await mongoose.model('Pillar').create({
+  testPillar = await @supabase/supabase-js.model('Pillar').create({
     title: 'Test Pillar',
     niche: testNiche._id,
     createdBy: testUser._id,
@@ -77,7 +77,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await new Promise(resolve => server.close(resolve));
-  await mongoose.disconnect();
+  await @supabase/supabase-js.disconnect();
   await mongoServer.stop();
 });
 
