@@ -1,4 +1,4 @@
-import { useState } from "react"
+import React, { useState } from "react"
 import {
   Card,
   CardContent,
@@ -17,6 +17,7 @@ import {
   History,
   ThumbsUp,
   ThumbsDown,
+  Trash2,
 } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -127,7 +128,7 @@ export function ContentReview({ content, onUpdateContent }: ContentReviewProps) 
                       <Badge className={getStatusBadge(section.status).className}>
                         {getStatusBadge(section.status).icon && (
                           <span className="mr-2">
-                            <getStatusBadge(section.status).icon className="h-4 w-4" />
+                            {React.createElement(getStatusBadge(section.status).icon, { className: "h-4 w-4" })}
                           </span>
                         )}
                         {section.status}

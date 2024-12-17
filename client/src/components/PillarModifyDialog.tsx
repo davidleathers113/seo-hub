@@ -16,7 +16,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@/components/ui/alert"
-import { InfoIcon } from "lucide-react"
+import { InfoIcon, AlertCircle } from "lucide-react"
 
 interface PillarModifyDialogProps {
   isOpen: boolean
@@ -57,16 +57,11 @@ export function PillarModifyDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <Alert variant="info" className="bg-blue-500/10 text-blue-500">
-            <InfoIcon className="h-4 w-4" />
-            <AlertTitle>Guidelines for Content Pillars</AlertTitle>
-            <AlertDescription className="mt-2 text-sm text-muted-foreground">
-              <ul className="list-disc pl-4 space-y-1">
-                <li>Be specific and descriptive</li>
-                <li>Ensure it aligns with your niche</li>
-                <li>Keep it concise but meaningful</li>
-                <li>Avoid overlapping with other pillars</li>
-              </ul>
+          <Alert variant="default" className="bg-blue-500/10 text-blue-500">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Info</AlertTitle>
+            <AlertDescription>
+              This will modify the pillar and all its subpillars.
             </AlertDescription>
           </Alert>
 

@@ -6,13 +6,11 @@
   "scripts": {
     "start": "npm run dev",
     "dev": "vite",
-    "build": "tsc && vite build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "build": "vite build",
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "test": "vitest run --reporter verbose",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage",
-    "test:watch": "vitest"
+    "test": "jest",
+    "type-check": "tsc"
   },
   "dependencies": {
     "@fontsource/open-sans": "^5.1.0",
@@ -76,12 +74,15 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.5.2",
+    "@types/chai": "^5.0.1",
     "@types/node": "^22.9.1",
     "@types/react": "^18.3.12",
+    "@types/react-beautiful-dnd": "^13.1.8",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.1",
     "@vitest/coverage-v8": "^0.34.6",
     "autoprefixer": "^10.4.20",
+    "chai": "^5.1.2",
     "cypress": "^13.16.1",
     "eslint": "^9.13.0",
     "eslint-plugin-react-hooks": "^5.0.0",

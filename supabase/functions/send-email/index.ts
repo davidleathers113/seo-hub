@@ -1,5 +1,4 @@
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
-import { SmtpClient } from 'https://deno.land/x/smtp@v0.7.0/mod.ts';
+import { serve, SmtpClient } from './deps.ts';
 
 interface EmailPayload {
   to: string;
@@ -9,48 +8,60 @@ interface EmailPayload {
 }
 
 serve(async (req) => {
+  // CORS headers for preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '86400',
+      },
+    });
+  }
+
   try {
-    // CORS headers
-    if (req.method === 'OPTIONS') {
-      return new Response('ok', {
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        },
-      });
+    // Validate request method
+    if (req.method !== 'POST') {
+      throw new Error('Method not allowed');
     }
 
-    // Get the request payload
+    // Get and validate the request payload
     const payload: EmailPayload = await req.json();
-
-    // Validate the payload
     if (!payload.to || !payload.subject || (!payload.html && !payload.text)) {
-      return new Response(
-        JSON.stringify({
-          error: 'Missing required fields',
-        }),
-        {
-          status: 400,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+      throw new Error('Missing required fields');
     }
 
-    // Initialize SMTP client
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(payload.to)) {
+      throw new Error('Invalid email format');
+    }
+
+    // Initialize SMTP client with environment variables
     const client = new SmtpClient();
+    const hostname = Deno.env.get('SMTP_HOSTNAME');
+    const port = parseInt(Deno.env.get('SMTP_PORT') || '587');
+    const username = Deno.env.get('SMTP_USERNAME');
+    const password = Deno.env.get('SMTP_PASSWORD');
+    const from = Deno.env.get('SMTP_FROM');
+
+    // Validate SMTP configuration
+    if (!hostname || !username || !password || !from) {
+      throw new Error('Missing SMTP configuration');
+    }
 
     // Connect to SMTP server
     await client.connectTLS({
-      hostname: Deno.env.get('SMTP_HOSTNAME') || '',
-      port: parseInt(Deno.env.get('SMTP_PORT') || '587'),
-      username: Deno.env.get('SMTP_USERNAME') || '',
-      password: Deno.env.get('SMTP_PASSWORD') || '',
+      hostname,
+      port,
+      username,
+      password,
     });
 
     // Send the email
     await client.send({
-      from: Deno.env.get('SMTP_FROM') || '',
+      from,
       to: payload.to,
       subject: payload.subject,
       content: payload.html,
@@ -63,9 +74,7 @@ serve(async (req) => {
 
     // Return success response
     return new Response(
-      JSON.stringify({
-        success: true,
-      }),
+      JSON.stringify({ success: true }),
       {
         headers: {
           'Content-Type': 'application/json',
@@ -74,17 +83,15 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    // Log the error
-    console.error('Failed to send email:', error);
+    console.error('Email sending error:', error);
 
-    // Return error response
+    // Return appropriate error response
     return new Response(
       JSON.stringify({
-        error: 'Failed to send email',
-        details: error.message,
+        error: error instanceof Error ? error.message : 'Internal server error',
       }),
       {
-        status: 500,
+        status: error instanceof Error && error.message.includes('Missing') ? 400 : 500,
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',

@@ -1,5 +1,6 @@
 // Import commands.js using ES2015 syntax:
 import './commands'
+import { expect } from 'chai'
 
 declare global {
   namespace Cypress {
@@ -9,6 +10,10 @@ declare global {
     }
   }
 }
+
+// Configure Chai
+chai.use(require('chai-jquery'))
+global.expect = expect
 
 // Hide fetch/XHR requests from command log
 const app = window.top;

@@ -1,35 +1,21 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 import { AuthProvider } from '@/contexts/AuthContext';
-import { WorkspaceProvider } from '@/providers/workspace';
 import { ThemeProvider } from '@/components/ui/theme-provider';
 import { ToastProvider } from '@/components/ui/toast';
 
-interface WrapperProps {
-  children: React.ReactNode;
-  theme?: 'light' | 'dark';
-}
-
-export function TestWrapper({ children, theme = 'light' }: WrapperProps) {
+const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
   return (
-    <ThemeProvider defaultTheme={theme} storageKey="ui-theme">
-      <ToastProvider>
-        <AuthProvider>
-          <WorkspaceProvider>
-            {children}
-          </WorkspaceProvider>
-        </AuthProvider>
-      </ToastProvider>
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider>
+        <ToastProvider>{children}</ToastProvider>
+      </ThemeProvider>
+    </AuthProvider>
   );
-}
+};
 
-export function renderWithProviders(ui: React.ReactElement, options = {}) {
-  return render(ui, {
-    wrapper: ({ children }) => <TestWrapper>{children}</TestWrapper>,
-    ...options,
-  });
-}
+const customRender = (ui: React.ReactElement) =>
+  render(ui, { wrapper: AllTheProviders });
 
 export * from '@testing-library/react';
-export { renderWithProviders as render };
+export { customRender as render };
