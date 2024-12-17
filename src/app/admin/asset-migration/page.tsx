@@ -7,8 +7,22 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useState } from 'react'
+
+interface Data {
+  // Define your data structure here
+  id: string
+  // Add other required fields
+}
 
 export default function AssetMigrationPage() {
+  const [isLoading, setIsLoading] = useState(false)
+  const [migrationData, setMigrationData] = useState<Data | undefined>()
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [isMigrating, setIsMigrating] = useState(false)
+  const [migrationProgress, setMigrationProgress] = useState<number>(0)
+  const [error, setError] = useState<string | null>(null)
+
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-8">Asset Migration</h1>

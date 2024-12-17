@@ -1,0 +1,2199 @@
+{
+  "command": "Supabase CLI 2.0.0",
+  "timestamp": "2024/12/17 00:08:04",
+  "database_operations": [
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"CREATE TABLE IF NOT EXISTS supabase_migrations.schema_migrations (version text NOT NULL PRIMARY KEY)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE supabase_migrations.schema_migrations ADD COLUMN IF NOT EXISTS statements text[]\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE supabase_migrations.schema_migrations ADD COLUMN IF NOT EXISTS name text\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "extension_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Enable required extensions\\nCREATE EXTENSION IF NOT EXISTS \\\"uuid-ossp\\\"\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "extension_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"CREATE EXTENSION IF NOT EXISTS \\\"pgcrypto\\\"\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create users table\\nCREATE TABLE IF NOT EXISTS users (\\n    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n    email TEXT UNIQUE NOT NULL,\\n    name TEXT,\\n    password TEXT NOT NULL,\\n    token TEXT,\\n    role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin')),\\n    last_login_at TIMESTAMPTZ,\\n    is_active BOOLEAN DEFAULT true,\\n    created_at TIMESTAMPTZ DEFAULT now(),\\n    updated_at TIMESTAMPTZ DEFAULT now()\\n)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create niches table\\nCREATE TABLE IF NOT EXISTS niches (\\n    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n    name TEXT NOT NULL,\\n    user_id UUID REFERENCES users(id) ON DELETE CASCADE,\\n    description TEXT,\\n    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'in_progress')),\\n    created_at TIMESTAMPTZ DEFAULT now(),\\n    updated_at TIMESTAMPTZ DEFAULT now()\\n)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create pillars table\\nCREATE TABLE IF NOT EXISTS pillars (\\n    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n    title TEXT NOT NULL,\\n    niche_id UUID REFERENCES niches(id) ON DELETE CASCADE,\\n    user_id UUID REFERENCES users(id) ON DELETE CASCADE,\\n    status TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'active', 'archived')),\\n    created_at TIMESTAMPTZ DEFAULT now(),\\n    updated_at TIMESTAMPTZ DEFAULT now()\\n)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create articles table\\nCREATE TABLE IF NOT EXISTS articles (\\n    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n    title TEXT NOT NULL,\\n    content TEXT NOT NULL,\\n    pillar_id UUID REFERENCES pillars(id) ON DELETE CASCADE,\\n    user_id UUID REFERENCES users(id) ON DELETE CASCADE,\\n    status TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'review', 'published')),\\n    keywords TEXT[] DEFAULT ARRAY[]::TEXT[],\\n    meta_description TEXT,\\n    created_at TIMESTAMPTZ DEFAULT now(),\\n    updated_at TIMESTAMPTZ DEFAULT now()\\n)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create indexes\\nCREATE INDEX IF NOT EXISTS idx_users_email ON users(email)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"CREATE INDEX IF NOT EXISTS idx_niches_user_id ON niches(user_id)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"CREATE INDEX IF NOT EXISTS idx_pillars_niche_id ON pillars(niche_id)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"CREATE INDEX IF NOT EXISTS idx_pillars_user_id ON pillars(user_id)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"CREATE INDEX IF NOT EXISTS idx_articles_pillar_id ON articles(pillar_id)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"CREATE INDEX IF NOT EXISTS idx_articles_user_id ON articles(user_id)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Enable RLS on all tables\\nALTER TABLE users ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE niches ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE pillars ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE articles ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "extension_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE EXTENSION\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "extension_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE EXTENSION\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "extension_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE EXTENSION\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "extension_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE EXTENSION\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "extension_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE EXTENSION\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "extension_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE EXTENSION\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create workspace invitations table\\nCREATE TABLE IF NOT EXISTS workspace_invitations (\\n    id UUID DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,\\n    workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,\\n    email TEXT NOT NULL,\\n    role TEXT NOT NULL CHECK (role IN ('admin', 'member')),\\n    token TEXT NOT NULL UNIQUE,\\n    expires_at TIMESTAMPTZ NOT NULL,\\n    created_at TIMESTAMPTZ DEFAULT now(),\\n    updated_at TIMESTAMPTZ DEFAULT now()\\n)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Enable RLS\\nALTER TABLE workspace_invitations ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create email_domains table\\nCREATE TABLE email_domains (\\n    id UUID DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,\\n    workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n    domain TEXT NOT NULL,\\n    verified BOOLEAN DEFAULT FALSE,\\n    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()),\\n    updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()),\\n    UNIQUE(workspace_id, domain)\\n)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Enable RLS\\nALTER TABLE email_domains ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create email_domain_verifications table\\nCREATE TABLE email_domain_verifications (\\n    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,\\n    email_domain_id UUID NOT NULL REFERENCES email_domains(id) ON DELETE CASCADE,\\n    verification_type TEXT NOT NULL, -- 'MX', 'SPF', 'DKIM'\\n    verification_value TEXT NOT NULL,\\n    verified BOOLEAN DEFAULT FALSE,\\n    verified_at TIMESTAMP WITH TIME ZONE,\\n    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,\\n    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP\\n)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Enable RLS for email_domain_verifications\\nALTER TABLE email_domain_verifications ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create workspace_stats table\\nCREATE TABLE workspace_stats (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n  storage_used BIGINT DEFAULT 0,\\n  api_calls_count INTEGER DEFAULT 0,\\n  active_users_count INTEGER DEFAULT 0,\\n  last_activity_at TIMESTAMPTZ DEFAULT NOW(),\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create workspace_quotas table\\nCREATE TABLE workspace_quotas (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n  max_storage_gb INTEGER DEFAULT 5,\\n  max_members INTEGER DEFAULT 5,\\n  max_api_calls INTEGER DEFAULT 1000,\\n  quota_reset_at TIMESTAMPTZ,\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create workspace_audit_logs table\\nCREATE TABLE workspace_audit_logs (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,\\n  action VARCHAR(255) NOT NULL,\\n  resource_type VARCHAR(255),\\n  resource_id UUID,\\n  metadata JSONB,\\n  created_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create workspace_backups table\\nCREATE TABLE workspace_backups (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n  backup_path TEXT NOT NULL,\\n  size_bytes BIGINT,\\n  status VARCHAR(50) DEFAULT 'pending',\\n  started_at TIMESTAMPTZ DEFAULT NOW(),\\n  completed_at TIMESTAMPTZ,\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create workspace_templates table\\nCREATE TABLE workspace_templates (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n  name VARCHAR(255) NOT NULL,\\n  description TEXT,\\n  content JSONB NOT NULL,\\n  is_public BOOLEAN DEFAULT false,\\n  category VARCHAR(100),\\n  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create workspace_settings table\\nCREATE TABLE workspace_settings (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n  theme VARCHAR(50) DEFAULT 'light',\\n  notifications_enabled BOOLEAN DEFAULT true,\\n  default_language VARCHAR(10) DEFAULT 'en',\\n  custom_domain TEXT,\\n  features JSONB DEFAULT '{}',\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW(),\\n  UNIQUE(workspace_id)\\n)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create workspace_invoices table\\nCREATE TABLE workspace_invoices (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n  amount_cents INTEGER NOT NULL,\\n  currency VARCHAR(3) DEFAULT 'USD',\\n  status VARCHAR(50) DEFAULT 'pending',\\n  billing_period_start TIMESTAMPTZ,\\n  billing_period_end TIMESTAMPTZ,\\n  paid_at TIMESTAMPTZ,\\n  invoice_url TEXT,\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Add RLS policies\\nALTER TABLE workspace_stats ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE workspace_quotas ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE workspace_audit_logs ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE workspace_backups ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE workspace_templates ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE workspace_settings ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE workspace_invoices ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create team_groups table\\nCREATE TABLE team_groups (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n  name VARCHAR(255) NOT NULL,\\n  description TEXT,\\n  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create team_group_members table\\nCREATE TABLE team_group_members (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  group_id UUID NOT NULL REFERENCES team_groups(id) ON DELETE CASCADE,\\n  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,\\n  role VARCHAR(50) DEFAULT 'member',\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW(),\\n  UNIQUE(group_id, user_id)\\n)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create team_discussions table\\nCREATE TABLE team_discussions (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n  group_id UUID REFERENCES team_groups(id) ON DELETE SET NULL,\\n  title VARCHAR(255) NOT NULL,\\n  content TEXT NOT NULL,\\n  is_pinned BOOLEAN DEFAULT false,\\n  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create discussion_comments table\\nCREATE TABLE discussion_comments (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  discussion_id UUID NOT NULL REFERENCES team_discussions(id) ON DELETE CASCADE,\\n  content TEXT NOT NULL,\\n  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,\\n  parent_comment_id UUID REFERENCES discussion_comments(id) ON DELETE CASCADE,\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create team_tasks table\\nCREATE TABLE team_tasks (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n  group_id UUID REFERENCES team_groups(id) ON DELETE SET NULL,\\n  title VARCHAR(255) NOT NULL,\\n  description TEXT,\\n  status VARCHAR(50) DEFAULT 'pending',\\n  priority VARCHAR(50) DEFAULT 'medium',\\n  due_date TIMESTAMPTZ,\\n  assigned_to UUID REFERENCES auth.users(id) ON DELETE SET NULL,\\n  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create task_comments table\\nCREATE TABLE task_comments (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  task_id UUID NOT NULL REFERENCES team_tasks(id) ON DELETE CASCADE,\\n  content TEXT NOT NULL,\\n  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create team_documents table\\nCREATE TABLE team_documents (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n  group_id UUID REFERENCES team_groups(id) ON DELETE SET NULL,\\n  title VARCHAR(255) NOT NULL,\\n  content TEXT NOT NULL,\\n  is_template BOOLEAN DEFAULT false,\\n  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create document_versions table\\nCREATE TABLE document_versions (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  document_id UUID NOT NULL REFERENCES team_documents(id) ON DELETE CASCADE,\\n  content TEXT NOT NULL,\\n  version_number INTEGER NOT NULL,\\n  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  UNIQUE(document_id, version_number)\\n)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Enable RLS\\nALTER TABLE team_groups ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE team_group_members ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE team_discussions ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE discussion_comments ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE team_tasks ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE task_comments ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE team_documents ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE document_versions ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Drop foreign key constraints before table rename\\nALTER TABLE niches DROP CONSTRAINT IF EXISTS niches_user_id_fkey CASCADE\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE pillars DROP CONSTRAINT IF EXISTS pillars_user_id_fkey CASCADE\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE articles DROP CONSTRAINT IF EXISTS articles_user_id_fkey CASCADE\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Rename users table to avoid reserved name conflict\\nALTER TABLE users RENAME TO app_users\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Verify column types (now safe to do since policies are dropped)\\nALTER TABLE app_users\\n    ALTER COLUMN id SET DATA TYPE UUID USING id::UUID,\\n    ALTER COLUMN id SET DEFAULT uuid_generate_v4(),\\n    ALTER COLUMN id SET NOT NULL,\\n    ALTER COLUMN created_at SET DATA TYPE TIMESTAMPTZ USING created_at::TIMESTAMPTZ,\\n    ALTER COLUMN created_at SET DEFAULT CURRENT_TIMESTAMP,\\n    ALTER COLUMN created_at SET NOT NULL,\\n    ALTER COLUMN updated_at SET DATA TYPE TIMESTAMPTZ USING updated_at::TIMESTAMPTZ,\\n    ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP,\\n    ALTER COLUMN updated_at SET NOT NULL,\\n    ALTER COLUMN email SET DATA TYPE VARCHAR USING email::VARCHAR,\\n    ALTER COLUMN email SET NOT NULL\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"CREATE INDEX idx_app_users_created_at ON app_users(created_at)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Update foreign key references to point to app_users with explicit ON DELETE clauses\\nALTER TABLE niches ADD CONSTRAINT niches_user_id_fkey FOREIGN KEY (user_id) REFERENCES app_users(id) ON DELETE CASCADE\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE pillars ADD CONSTRAINT pillars_user_id_fkey FOREIGN KEY (user_id) REFERENCES app_users(id) ON DELETE CASCADE\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE articles ADD CONSTRAINT articles_user_id_fkey FOREIGN KEY (user_id) REFERENCES app_users(id) ON DELETE CASCADE\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "index_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_alteration",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"CREATE TABLE IF NOT EXISTS supabase_migrations.seed_files (path text NOT NULL PRIMARY KEY, hash text NOT NULL)\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "table_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "extension_creation",
+      "details": "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"lrupsc_1_1\",\"Query\":\"-- Enable pgcrypto extension for password hashing\\nCREATE EXTENSION IF NOT EXISTS pgcrypto\",\"ParameterOIDs\":null}",
+      "timestamp": "2024/12/17 00:08:25"
+    },
+    {
+      "type": "extension_creation",
+      "details": "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE EXTENSION\"}",
+      "timestamp": "2024/12/17 00:08:25"
+    }
+  ],
+  "network_operations": [
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:04",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:04",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:05",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:05",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:05",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:05",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:05",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:05",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:05",
+      "headers": {
+        "Content-Length": "301"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:05",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:05",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:05",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:05",
+      "headers": {
+        "Content-Length": "157"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:05",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:05",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:05",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:05",
+      "headers": {
+        "Content-Length": "161"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:05",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:05",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:05",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:05",
+      "headers": {
+        "Content-Length": "12774"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:05",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:05",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:05",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:05",
+      "headers": {
+        "Content-Length": "0"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:06",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:06",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:07",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:07",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:08",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:08",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:09",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:09",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:10",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:10",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:11",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:11",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:12",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:12",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:13",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:13",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:14",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:14",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:15",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:15",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:16",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:16",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:16",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:16",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:16",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:16",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:16",
+      "headers": {
+        "Content-Length": "301"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:16",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:16",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:16",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:16",
+      "headers": {
+        "Content-Length": "2406"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:16",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:16",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:16",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:16",
+      "headers": {
+        "Content-Length": "0"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:16",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:16",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:21",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:21",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:21",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:21",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:21",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:21",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:21",
+      "headers": {
+        "Content-Length": "301"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:21",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:21",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:21",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:21",
+      "headers": {
+        "Content-Length": "2387"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:21",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:21",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:21",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:21",
+      "headers": {
+        "Content-Length": "0"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:22",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:22",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:23",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:23",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:23",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:23",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:23",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:23",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:23",
+      "headers": {
+        "Content-Length": "301"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:23",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:23",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:23",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:23",
+      "headers": {
+        "Content-Length": "2000"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:23",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:23",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:23",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:23",
+      "headers": {
+        "Content-Length": "0"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:24",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:24",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:25",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:25",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:25",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:25",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:25",
+      "headers": {
+        "Content-Length": "0"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:25",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:25",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:25",
+      "headers": {
+        "Content-Length": "0"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:25",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:25",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:25",
+      "headers": {
+        "Content-Length": "0"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:25",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:25",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:25",
+      "headers": {
+        "Content-Length": "0"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:27",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:27",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:27",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:27",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:28",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:28",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:29",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:29",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:30",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:30",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:31",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:31",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:32",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:32",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:33",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:33",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:34",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:34",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:35",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:35",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "Host": "api.moby.localhost"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "User-Agent": "Docker-Client/unknown-version (darwin)"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "Host": "127.0.0.1:54321"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "User-Agent": "SupabaseCLI/2.0.0"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "Accept-Encoding": "gzip"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "Host": "127.0.0.1:54321"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "User-Agent": "SupabaseCLI/2.0.0"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "Content-Length": "134"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "Accept-Encoding": "gzip"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "Host": "127.0.0.1:54321"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "User-Agent": "SupabaseCLI/2.0.0"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "Content-Length": "132"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "Accept-Encoding": "gzip"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "Host": "127.0.0.1:54321"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "User-Agent": "SupabaseCLI/2.0.0"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "Content-Length": "199"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "Content-Type": "application/json"
+      }
+    },
+    {
+      "type": "header_sent",
+      "timestamp": "2024/12/17 00:08:36",
+      "headers": {
+        "Accept-Encoding": "gzip"
+      }
+    }
+  ],
+  "migrations": [
+    {
+      "name": "20240101000000_initial_schema.sql",
+      "sql_operations": [
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Enable required extensions\\nCREATE EXTENSION IF NOT EXISTS \\\"uuid-ossp\\\"\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"CREATE EXTENSION IF NOT EXISTS \\\"pgcrypto\\\"\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create users table\\nCREATE TABLE IF NOT EXISTS users (\\n    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n    email TEXT UNIQUE NOT NULL,\\n    name TEXT,\\n    password TEXT NOT NULL,\\n    token TEXT,\\n    role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin')),\\n    last_login_at TIMESTAMPTZ,\\n    is_active BOOLEAN DEFAULT true,\\n    created_at TIMESTAMPTZ DEFAULT now(),\\n    updated_at TIMESTAMPTZ DEFAULT now()\\n)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create niches table\\nCREATE TABLE IF NOT EXISTS niches (\\n    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n    name TEXT NOT NULL,\\n    user_id UUID REFERENCES users(id) ON DELETE CASCADE,\\n    description TEXT,\\n    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'in_progress')),\\n    created_at TIMESTAMPTZ DEFAULT now(),\\n    updated_at TIMESTAMPTZ DEFAULT now()\\n)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create pillars table\\nCREATE TABLE IF NOT EXISTS pillars (\\n    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n    title TEXT NOT NULL,\\n    niche_id UUID REFERENCES niches(id) ON DELETE CASCADE,\\n    user_id UUID REFERENCES users(id) ON DELETE CASCADE,\\n    status TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'active', 'archived')),\\n    created_at TIMESTAMPTZ DEFAULT now(),\\n    updated_at TIMESTAMPTZ DEFAULT now()\\n)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create articles table\\nCREATE TABLE IF NOT EXISTS articles (\\n    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n    title TEXT NOT NULL,\\n    content TEXT NOT NULL,\\n    pillar_id UUID REFERENCES pillars(id) ON DELETE CASCADE,\\n    user_id UUID REFERENCES users(id) ON DELETE CASCADE,\\n    status TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'review', 'published')),\\n    keywords TEXT[] DEFAULT ARRAY[]::TEXT[],\\n    meta_description TEXT,\\n    created_at TIMESTAMPTZ DEFAULT now(),\\n    updated_at TIMESTAMPTZ DEFAULT now()\\n)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create indexes\\nCREATE INDEX IF NOT EXISTS idx_users_email ON users(email)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"CREATE INDEX IF NOT EXISTS idx_niches_user_id ON niches(user_id)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"CREATE INDEX IF NOT EXISTS idx_pillars_niche_id ON pillars(niche_id)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"CREATE INDEX IF NOT EXISTS idx_pillars_user_id ON pillars(user_id)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"CREATE INDEX IF NOT EXISTS idx_articles_pillar_id ON articles(pillar_id)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"CREATE INDEX IF NOT EXISTS idx_articles_user_id ON articles(user_id)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Enable RLS on all tables\\nALTER TABLE users ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE niches ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE pillars ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE articles ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE EXTENSION\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE EXTENSION\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}"
+      ],
+      "status": "applied"
+    },
+    {
+      "name": "20240315000000_content_schema.sql",
+      "sql_operations": [
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE EXTENSION\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}"
+      ],
+      "status": "applied"
+    },
+    {
+      "name": "20240320000000_add_workspace_features.sql",
+      "sql_operations": [
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE EXTENSION\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}"
+      ],
+      "status": "applied"
+    },
+    {
+      "name": "20240320000001_add_workspace_core.sql",
+      "sql_operations": [
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE EXTENSION\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE EXTENSION\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}"
+      ],
+      "status": "applied"
+    },
+    {
+      "name": "20240320000002_add_workspace_invitations.sql",
+      "sql_operations": [
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create workspace invitations table\\nCREATE TABLE IF NOT EXISTS workspace_invitations (\\n    id UUID DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,\\n    workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE,\\n    email TEXT NOT NULL,\\n    role TEXT NOT NULL CHECK (role IN ('admin', 'member')),\\n    token TEXT NOT NULL UNIQUE,\\n    expires_at TIMESTAMPTZ NOT NULL,\\n    created_at TIMESTAMPTZ DEFAULT now(),\\n    updated_at TIMESTAMPTZ DEFAULT now()\\n)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Enable RLS\\nALTER TABLE workspace_invitations ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}"
+      ],
+      "status": "applied"
+    },
+    {
+      "name": "20240320000003_email_domains.sql",
+      "sql_operations": [
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create email_domains table\\nCREATE TABLE email_domains (\\n    id UUID DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,\\n    workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n    domain TEXT NOT NULL,\\n    verified BOOLEAN DEFAULT FALSE,\\n    created_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()),\\n    updated_at TIMESTAMPTZ DEFAULT timezone('utc'::text, now()),\\n    UNIQUE(workspace_id, domain)\\n)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Enable RLS\\nALTER TABLE email_domains ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create email_domain_verifications table\\nCREATE TABLE email_domain_verifications (\\n    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,\\n    email_domain_id UUID NOT NULL REFERENCES email_domains(id) ON DELETE CASCADE,\\n    verification_type TEXT NOT NULL, -- 'MX', 'SPF', 'DKIM'\\n    verification_value TEXT NOT NULL,\\n    verified BOOLEAN DEFAULT FALSE,\\n    verified_at TIMESTAMP WITH TIME ZONE,\\n    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,\\n    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP\\n)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Enable RLS for email_domain_verifications\\nALTER TABLE email_domain_verifications ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}"
+      ],
+      "status": "applied"
+    },
+    {
+      "name": "20240325000000_add_workspace_additional_tables.sql",
+      "sql_operations": [
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create workspace_stats table\\nCREATE TABLE workspace_stats (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n  storage_used BIGINT DEFAULT 0,\\n  api_calls_count INTEGER DEFAULT 0,\\n  active_users_count INTEGER DEFAULT 0,\\n  last_activity_at TIMESTAMPTZ DEFAULT NOW(),\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create workspace_quotas table\\nCREATE TABLE workspace_quotas (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n  max_storage_gb INTEGER DEFAULT 5,\\n  max_members INTEGER DEFAULT 5,\\n  max_api_calls INTEGER DEFAULT 1000,\\n  quota_reset_at TIMESTAMPTZ,\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create workspace_audit_logs table\\nCREATE TABLE workspace_audit_logs (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,\\n  action VARCHAR(255) NOT NULL,\\n  resource_type VARCHAR(255),\\n  resource_id UUID,\\n  metadata JSONB,\\n  created_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create workspace_backups table\\nCREATE TABLE workspace_backups (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n  backup_path TEXT NOT NULL,\\n  size_bytes BIGINT,\\n  status VARCHAR(50) DEFAULT 'pending',\\n  started_at TIMESTAMPTZ DEFAULT NOW(),\\n  completed_at TIMESTAMPTZ,\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create workspace_templates table\\nCREATE TABLE workspace_templates (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n  name VARCHAR(255) NOT NULL,\\n  description TEXT,\\n  content JSONB NOT NULL,\\n  is_public BOOLEAN DEFAULT false,\\n  category VARCHAR(100),\\n  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create workspace_settings table\\nCREATE TABLE workspace_settings (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n  theme VARCHAR(50) DEFAULT 'light',\\n  notifications_enabled BOOLEAN DEFAULT true,\\n  default_language VARCHAR(10) DEFAULT 'en',\\n  custom_domain TEXT,\\n  features JSONB DEFAULT '{}',\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW(),\\n  UNIQUE(workspace_id)\\n)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create workspace_invoices table\\nCREATE TABLE workspace_invoices (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n  amount_cents INTEGER NOT NULL,\\n  currency VARCHAR(3) DEFAULT 'USD',\\n  status VARCHAR(50) DEFAULT 'pending',\\n  billing_period_start TIMESTAMPTZ,\\n  billing_period_end TIMESTAMPTZ,\\n  paid_at TIMESTAMPTZ,\\n  invoice_url TEXT,\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Add RLS policies\\nALTER TABLE workspace_stats ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE workspace_quotas ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE workspace_audit_logs ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE workspace_backups ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE workspace_templates ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE workspace_settings ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE workspace_invoices ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}"
+      ],
+      "status": "applied"
+    },
+    {
+      "name": "20240325000001_add_team_collaboration_tables.sql",
+      "sql_operations": [
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create team_groups table\\nCREATE TABLE team_groups (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n  name VARCHAR(255) NOT NULL,\\n  description TEXT,\\n  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create team_group_members table\\nCREATE TABLE team_group_members (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  group_id UUID NOT NULL REFERENCES team_groups(id) ON DELETE CASCADE,\\n  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,\\n  role VARCHAR(50) DEFAULT 'member',\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW(),\\n  UNIQUE(group_id, user_id)\\n)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create team_discussions table\\nCREATE TABLE team_discussions (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n  group_id UUID REFERENCES team_groups(id) ON DELETE SET NULL,\\n  title VARCHAR(255) NOT NULL,\\n  content TEXT NOT NULL,\\n  is_pinned BOOLEAN DEFAULT false,\\n  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create discussion_comments table\\nCREATE TABLE discussion_comments (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  discussion_id UUID NOT NULL REFERENCES team_discussions(id) ON DELETE CASCADE,\\n  content TEXT NOT NULL,\\n  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,\\n  parent_comment_id UUID REFERENCES discussion_comments(id) ON DELETE CASCADE,\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create team_tasks table\\nCREATE TABLE team_tasks (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n  group_id UUID REFERENCES team_groups(id) ON DELETE SET NULL,\\n  title VARCHAR(255) NOT NULL,\\n  description TEXT,\\n  status VARCHAR(50) DEFAULT 'pending',\\n  priority VARCHAR(50) DEFAULT 'medium',\\n  due_date TIMESTAMPTZ,\\n  assigned_to UUID REFERENCES auth.users(id) ON DELETE SET NULL,\\n  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create task_comments table\\nCREATE TABLE task_comments (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  task_id UUID NOT NULL REFERENCES team_tasks(id) ON DELETE CASCADE,\\n  content TEXT NOT NULL,\\n  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create team_documents table\\nCREATE TABLE team_documents (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  workspace_id UUID NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,\\n  group_id UUID REFERENCES team_groups(id) ON DELETE SET NULL,\\n  title VARCHAR(255) NOT NULL,\\n  content TEXT NOT NULL,\\n  is_template BOOLEAN DEFAULT false,\\n  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  updated_at TIMESTAMPTZ DEFAULT NOW()\\n)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Create document_versions table\\nCREATE TABLE document_versions (\\n  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),\\n  document_id UUID NOT NULL REFERENCES team_documents(id) ON DELETE CASCADE,\\n  content TEXT NOT NULL,\\n  version_number INTEGER NOT NULL,\\n  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,\\n  created_at TIMESTAMPTZ DEFAULT NOW(),\\n  UNIQUE(document_id, version_number)\\n)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Enable RLS\\nALTER TABLE team_groups ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE team_group_members ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE team_discussions ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE discussion_comments ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE team_tasks ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE task_comments ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE team_documents ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE document_versions ENABLE ROW LEVEL SECURITY\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}"
+      ],
+      "status": "applied"
+    },
+    {
+      "name": "20240326000000_fix_validation_issues.sql",
+      "sql_operations": [
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Drop foreign key constraints before table rename\\nALTER TABLE niches DROP CONSTRAINT IF EXISTS niches_user_id_fkey CASCADE\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE pillars DROP CONSTRAINT IF EXISTS pillars_user_id_fkey CASCADE\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE articles DROP CONSTRAINT IF EXISTS articles_user_id_fkey CASCADE\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Rename users table to avoid reserved name conflict\\nALTER TABLE users RENAME TO app_users\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Verify column types (now safe to do since policies are dropped)\\nALTER TABLE app_users\\n    ALTER COLUMN id SET DATA TYPE UUID USING id::UUID,\\n    ALTER COLUMN id SET DEFAULT uuid_generate_v4(),\\n    ALTER COLUMN id SET NOT NULL,\\n    ALTER COLUMN created_at SET DATA TYPE TIMESTAMPTZ USING created_at::TIMESTAMPTZ,\\n    ALTER COLUMN created_at SET DEFAULT CURRENT_TIMESTAMP,\\n    ALTER COLUMN created_at SET NOT NULL,\\n    ALTER COLUMN updated_at SET DATA TYPE TIMESTAMPTZ USING updated_at::TIMESTAMPTZ,\\n    ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP,\\n    ALTER COLUMN updated_at SET NOT NULL,\\n    ALTER COLUMN email SET DATA TYPE VARCHAR USING email::VARCHAR,\\n    ALTER COLUMN email SET NOT NULL\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"CREATE INDEX idx_app_users_created_at ON app_users(created_at)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"-- Update foreign key references to point to app_users with explicit ON DELETE clauses\\nALTER TABLE niches ADD CONSTRAINT niches_user_id_fkey FOREIGN KEY (user_id) REFERENCES app_users(id) ON DELETE CASCADE\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE pillars ADD CONSTRAINT pillars_user_id_fkey FOREIGN KEY (user_id) REFERENCES app_users(id) ON DELETE CASCADE\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"ALTER TABLE articles ADD CONSTRAINT articles_user_id_fkey FOREIGN KEY (user_id) REFERENCES app_users(id) ON DELETE CASCADE\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE INDEX\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"ALTER TABLE\"}"
+      ],
+      "status": "applied"
+    },
+    {
+      "name": "20240326000005_setup_roles.sql",
+      "sql_operations": [
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"\",\"Query\":\"CREATE TABLE IF NOT EXISTS supabase_migrations.seed_files (path text NOT NULL PRIMARY KEY, hash text NOT NULL)\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE TABLE\"}",
+        "2024/12/17 00:08:25 PG Send: {\"Type\":\"Parse\",\"Name\":\"lrupsc_1_1\",\"Query\":\"-- Enable pgcrypto extension for password hashing\\nCREATE EXTENSION IF NOT EXISTS pgcrypto\",\"ParameterOIDs\":null}",
+        "2024/12/17 00:08:25 PG Recv: {\"Type\":\"CommandComplete\",\"CommandTag\":\"CREATE EXTENSION\"}"
+      ],
+      "status": "applied"
+    }
+  ],
+  "storage_operations": [
+    {
+      "type": "bucket_creation",
+      "bucket_name": "public_article_images",
+      "status": "created"
+    },
+    {
+      "type": "bucket_creation",
+      "bucket_name": "public_user_avatars",
+      "status": "created"
+    },
+    {
+      "type": "bucket_creation",
+      "bucket_name": "documents",
+      "status": "created"
+    }
+  ],
+  "status": "completed",
+  "completion_message": "Finished supabase db reset on branch main."
+}

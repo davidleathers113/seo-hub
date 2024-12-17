@@ -1,0 +1,2 @@
+-- Rename this file to avoid conflict with existing migration
+-- This is just a placeholder to indicate we need to rename the file

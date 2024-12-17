@@ -35,22 +35,37 @@ async function runSecurityAudit() {
       {
         table: 'users',
         operations: ['SELECT', 'UPDATE'],
-        expectedPolicies: ['Users can view their own data', 'Users can update their own data']
+        expectedPolicies: ['select_users_policy', 'update_users_policy']
       },
       {
         table: 'niches',
         operations: ['SELECT', 'INSERT', 'UPDATE', 'DELETE'],
-        expectedPolicies: ['Users can view their own niches', 'Users can insert their own niches', 'Users can update their own niches', 'Users can delete their own niches']
+        expectedPolicies: [
+          'select_niches_policy',
+          'insert_niches_policy',
+          'update_niches_policy',
+          'delete_niches_policy'
+        ]
       },
       {
         table: 'pillars',
         operations: ['SELECT', 'INSERT', 'UPDATE', 'DELETE'],
-        expectedPolicies: ['Users can view their own pillars', 'Users can insert their own pillars', 'Users can update their own pillars', 'Users can delete their own pillars']
+        expectedPolicies: [
+          'select_pillars_policy',
+          'insert_pillars_policy',
+          'update_pillars_policy',
+          'delete_pillars_policy'
+        ]
       },
       {
         table: 'articles',
         operations: ['SELECT', 'INSERT', 'UPDATE', 'DELETE'],
-        expectedPolicies: ['Users can view their own articles', 'Users can insert their own articles', 'Users can update their own articles', 'Users can delete their own articles']
+        expectedPolicies: [
+          'select_articles_policy',
+          'insert_articles_policy',
+          'update_articles_policy',
+          'delete_articles_policy'
+        ]
       }
     ]
 
@@ -71,21 +86,27 @@ async function runSecurityAudit() {
         passed.push(`✅ RLS is enabled on table ${check.table}`)
       }
 
-      // Check policies
-      const { data: policies, error: policiesError } = await supabase
-        .from('pg_policies')
-        .select('polname, cmd')
-        .eq('tablename', check.table)
+      // Check policies using validation_policies view
+      for (const operation of check.operations) {
+        const { data, error } = await supabase
+          .from('validation_policies')
+          .select('policy_name')
+          .eq('table_name', check.table)
+          .eq('action_name', operation.toLowerCase())
 
-      if (policiesError) {
-        warnings.push(`⚠️ Unable to verify policies for ${check.table}`)
-      } else if (policies) {
-        const policyNames = new Set(policies.map(p => p.polname))
-        for (const expectedPolicy of check.expectedPolicies) {
-          if (policyNames.has(expectedPolicy)) {
-            passed.push(`✅ Policy "${expectedPolicy}" exists on ${check.table}`)
+        if (error) {
+          issues.push(`❌ Error fetching policies for ${operation} on table ${check.table}: ${error.message}`)
+          continue
+        }
+
+        if (!data || data.length === 0) {
+          issues.push(`❌ Missing RLS policy for ${operation} on table ${check.table}`)
+        } else {
+          const policyName = data[0].policy_name
+          if (!check.expectedPolicies.includes(policyName)) {
+            issues.push(`❌ Unexpected policy name '${policyName}' for ${operation} on table ${check.table}`)
           } else {
-            issues.push(`❌ Missing policy "${expectedPolicy}" on ${check.table}`)
+            passed.push(`✅ Policy '${policyName}' exists for ${operation} on table ${check.table}`)
           }
         }
       }

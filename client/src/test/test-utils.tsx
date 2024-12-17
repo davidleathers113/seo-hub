@@ -1,38 +1,35 @@
-import { render } from '@testing-library/react'
-import { BrowserRouter } from 'react-router-dom'
-import { ThemeProvider } from '@/components/ui/theme-provider'
-import { mockConfig } from './test-config'
-import type { RenderOptions } from '@testing-library/react'
+import React from 'react';
+import { render } from '@testing-library/react';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { WorkspaceProvider } from '@/providers/workspace';
+import { ThemeProvider } from '@/components/ui/theme-provider';
+import { ToastProvider } from '@/components/ui/toast';
 
-interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
-  route?: string
-  theme?: 'light' | 'dark'
+interface WrapperProps {
+  children: React.ReactNode;
+  theme?: 'light' | 'dark';
 }
 
-export const renderWithProviders = (
-  ui: React.ReactElement,
-  options: CustomRenderOptions = {}
-) => {
-  const {
-    route = '/',
-    theme = 'light',
-    ...renderOptions
-  } = options
-
-  window.history.pushState({}, 'Test page', route)
-
-  return render(
-    <BrowserRouter>
-      <ThemeProvider defaultTheme={theme} storageKey="ui-theme">
-        {ui}
-      </ThemeProvider>
-    </BrowserRouter>,
-    renderOptions
-  )
+export function TestWrapper({ children, theme = 'light' }: WrapperProps) {
+  return (
+    <ThemeProvider defaultTheme={theme} storageKey="ui-theme">
+      <ToastProvider>
+        <AuthProvider>
+          <WorkspaceProvider>
+            {children}
+          </WorkspaceProvider>
+        </AuthProvider>
+      </ToastProvider>
+    </ThemeProvider>
+  );
 }
 
-// Export mocks
-export const { api: mockApi, toast: mockToast } = mockConfig
+export function renderWithProviders(ui: React.ReactElement, options = {}) {
+  return render(ui, {
+    wrapper: ({ children }) => <TestWrapper>{children}</TestWrapper>,
+    ...options,
+  });
+}
 
-// Re-export everything
-export * from '@testing-library/react'
+export * from '@testing-library/react';
+export { renderWithProviders as render };

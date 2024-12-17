@@ -1,116 +1,128 @@
-// Consolidated test setup file
-const @supabase/supabase-js = require('@supabase/supabase-js');
-const { MongoMemoryServer } = require('@supabase/supabase-js');
-const path = require('path');
-const { mockRedis, clearAllMocks } = require('./server/test/mocks/redis');
-const { testValidator } = require('./server/test/infrastructure/test-validator');
+import '@testing-library/jest-dom'
+import { TextEncoder, TextDecoder } from 'util'
+import React from 'react';
 
-// Set up environment variables for testing
-process.env.NODE_ENV = 'test';
-process.env.JWT_SECRET = 'test-secret';
-process.env.REDIS_URL = 'redis://localhost:6379';
-process.env.LOG_LEVEL = 'silent';
+// Polyfills
+global.TextEncoder = TextEncoder
+global.TextDecoder = TextDecoder
 
-// Increase timeout for all tests
-jest.setTimeout(30000);
+// Mock React hooks
+global.React = React;
 
-// Helper to clear require cache for project files
-const clearProjectModuleCache = () => {
-  const projectRoot = path.resolve(__dirname);
-  Object.keys(require.cache).forEach(key => {
-    if (key.startsWith(projectRoot)) {
-      delete require.cache[key];
-    }
-  });
+// Mock window.matchMedia
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: jest.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  })),
+});
+
+// Mock window.ResizeObserver
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
 };
 
-let mongoServer;
-
-// Setup before all tests
-beforeAll(async () => {
-  try {
-    // Set test environment
-    process.env.NODE_ENV = 'test';
-    process.env.JWT_SECRET = 'test-secret-key';
-    process.env.REDIS_URL = 'redis://localhost:6379';
-
-    // Setup MongoDB Memory Server
-    mongoServer = await MongoMemoryServer.create();
-    const mongoUri = mongoServer.getUri();
-    
-    // Set the MongoDB URI for other parts of the application
-    process.env.MONGO_URI = mongoUri;
-
-    // Connect @supabase/supabase-js with proper options
-    await @supabase/supabase-js.connect(mongoUri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
-
-    // Verify connection
-    const isConnected = @supabase/supabase-js.connection.readyState === 1;
-    if (!isConnected) {
-      throw new Error('Failed to connect to MongoDB');
-    }
-
-    // Initialize models
-    require('./server/models/init');
-
-    // Register MongoDB server with test validator
-    testValidator.setGlobalMongoServer(mongoServer);
-
-    // Setup Redis Mock
-    await mockRedis.connect();
-
-    // Log successful setup
-    console.log('Test environment initialized:', {
-      mongoUri,
-      redisUrl: process.env.REDIS_URL,
-      nodeEnv: process.env.NODE_ENV,
-      models: Object.keys(@supabase/supabase-js.models)
-    });
-  } catch (error) {
-    console.error('Test environment setup failed:', error);
-    throw error;
-  }
+// Mock window dimensions
+Object.defineProperty(window, 'innerWidth', {
+  writable: true,
+  value: 1024,
 });
 
-// Clean up after each test
-beforeEach(async () => {
-  try {
-    // Clear all collections
-    const collections = @supabase/supabase-js.connection.collections;
-    for (const key in collections) {
-      await collections[key].deleteMany();
-    }
-
-    // Reset all mocks
-    jest.clearAllMocks();
-    clearAllMocks();
-  } catch (error) {
-    console.error('Test reset failed:', error);
-    throw error;
-  }
+Object.defineProperty(window, 'innerHeight', {
+  writable: true,
+  value: 768,
 });
 
-// Clean up after all tests
-afterAll(async () => {
-  try {
-    // Cleanup MongoDB
-    await @supabase/supabase-js.disconnect();
-    await mongoServer.stop();
+// Mock Intersection Observer
+global.IntersectionObserver = class IntersectionObserver {
+  constructor() {}
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
 
-    // Cleanup Redis
-    await mockRedis.quit();
+// Mock requestAnimationFrame
+global.requestAnimationFrame = callback => setTimeout(callback, 0);
+global.cancelAnimationFrame = id => clearTimeout(id);
 
-    console.log('Test environment cleaned up');
-  } catch (error) {
-    console.error('Test environment cleanup failed:', error);
-    throw error;
+// Mock next/router
+jest.mock('next/router', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+    query: {},
+    pathname: '/',
+    route: '/',
+    asPath: '/',
+    events: {
+      on: jest.fn(),
+      off: jest.fn(),
+      emit: jest.fn(),
+    },
+  }),
+}));
+
+// Mock next/navigation
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    prefetch: jest.fn(),
+    back: jest.fn(),
+    forward: jest.fn(),
+  }),
+  usePathname: () => '/',
+  useSearchParams: () => new URLSearchParams(),
+}));
+
+// Mock @supabase/auth-helpers-nextjs
+jest.mock('@supabase/auth-helpers-nextjs', () => ({
+  createClientComponentClient: () => ({
+    auth: {
+      getSession: jest.fn().mockResolvedValue({ data: { session: null }, error: null }),
+      signInWithPassword: jest.fn(),
+      signUp: jest.fn(),
+      signOut: jest.fn(),
+    },
+  }),
+}));
+
+// Mock environment variables
+process.env = {
+  ...process.env,
+  NEXT_PUBLIC_SUPABASE_URL: 'https://test.supabase.co',
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: 'test-key',
+};
+
+// Suppress console errors during tests
+const originalError = console.error;
+console.error = (...args) => {
+  if (
+    /Warning: ReactDOM.render is no longer supported in React 18/.test(args[0]) ||
+    /Warning: Invalid hook call/.test(args[0])
+  ) {
+    return;
   }
-});
+  originalError.call(console, ...args);
+};
+
+// Global test cleanup
+afterEach(() => {
+  jest.clearAllMocks()
+  localStorage.clear()
+})
 
 // Handle test errors
 process.on('unhandledRejection', (error) => {
-  console.error('Unhandled Promise Rejection in tests:', error);
-});
+  console.error('Unhandled Promise Rejection in tests:', error)
+})

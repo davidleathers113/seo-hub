@@ -28,10 +28,24 @@ interface TableConstraintConfig {
   }>;
 }
 
+interface TableConstraintData {
+  table_name: string;
+  constraint_name: string;
+  constraint_type: string;
+}
+
+interface KeyColumnUsageData {
+  constraint_name: string;
+  table_name: string;
+  column_name: string;
+  referenced_table_name: string | null;
+  referenced_column_name: string | null;
+}
+
 const tableConstraints: Record<string, TableConstraintConfig> = {
-  users: {
-    required: ['users_pkey', 'users_email_key'],
-    recommended: ['users_username_key'],
+  app_users: {
+    required: ['app_users_pkey', 'app_users_email_key'],
+    recommended: ['app_users_username_key'],
     foreignKeys: []
   },
   profiles: {
@@ -39,7 +53,7 @@ const tableConstraints: Record<string, TableConstraintConfig> = {
     foreignKeys: [
       {
         name: 'fk_profiles_user',
-        referencedTable: 'users',
+        referencedTable: 'app_users',
         referencedColumn: 'id',
       },
     ],
@@ -49,7 +63,7 @@ const tableConstraints: Record<string, TableConstraintConfig> = {
     foreignKeys: [
       {
         name: 'fk_workspaces_owner',
-        referencedTable: 'users',
+        referencedTable: 'app_users',
         referencedColumn: 'id',
       },
     ],
@@ -60,20 +74,18 @@ export async function validateDatabaseConstraints(
   supabase: SupabaseClient
 ): Promise<ValidationResult> {
   try {
-    // Fetch constraints from information_schema
+    // Fetch constraints using validation views
     const { data: constraintsData, error: constraintsError } = await supabase
-      .from('information_schema.table_constraints')
-      .select('table_name, constraint_name, constraint_type')
-      .eq('constraint_schema', 'public');
+      .from('validation_columns')
+      .select('*');
 
     if (constraintsError || !constraintsData) {
       throw new Error(`Failed to fetch constraints: ${constraintsError?.message || 'Unknown error'}`);
     }
 
     const { data: keyUsageData, error: keyUsageError } = await supabase
-      .from('information_schema.key_column_usage')
-      .select('constraint_name, table_name, column_name, referenced_table_name, referenced_column_name')
-      .eq('constraint_schema', 'public');
+      .from('validation_indexes')
+      .select('*');
 
     if (keyUsageError || !keyUsageData) {
       throw new Error(`Failed to fetch key column usage: ${keyUsageError?.message || 'Unknown error'}`);
@@ -82,7 +94,7 @@ export async function validateDatabaseConstraints(
     // Map constraints and foreign keys
     const constraintsMap = new Map<string, DatabaseConstraint>();
 
-    constraintsData.forEach((constraint) => {
+    (constraintsData as TableConstraintData[]).forEach((constraint) => {
       constraintsMap.set(constraint.constraint_name, {
         table_name: constraint.table_name,
         constraint_name: constraint.constraint_name,
@@ -90,11 +102,11 @@ export async function validateDatabaseConstraints(
       });
     });
 
-    keyUsageData.forEach((keyUsage) => {
+    (keyUsageData as KeyColumnUsageData[]).forEach((keyUsage) => {
       const constraint = constraintsMap.get(keyUsage.constraint_name);
       if (constraint && constraint.constraint_type === ConstraintType.ForeignKey) {
-        constraint.referenced_table = keyUsage.referenced_table_name;
-        constraint.referenced_column = keyUsage.referenced_column_name;
+        constraint.referenced_table = keyUsage.referenced_table_name || undefined;
+        constraint.referenced_column = keyUsage.referenced_column_name || undefined;
       }
     });
 

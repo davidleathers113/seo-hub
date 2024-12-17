@@ -1,128 +1,129 @@
-# Nextacular Integration Status
+# Database Validation System Enhancement
 
-## Task Overview
-- **Core Problem**: Integrating Nextacular's workspace features into existing Supabase-based content creation app
-- **Current Status**: Migration files created, awaiting successful execution
-- **Key Decisions**: 
-  - Keeping existing Supabase direct client setup instead of switching to Next.js's built-in integration
-  - Adding workspace support to existing tables rather than recreating schema
-  - Using RLS policies for multi-tenant data isolation
+## Core Problem
+We're working on fixing validation issues in the database migration system, specifically:
+1. Inability to access system tables for validation
+2. Missing ON DELETE clauses in foreign keys
+3. Incorrect policy and index naming patterns
 
-## Codebase Navigation
+## Current Implementation Status
 
-### Key Files (By Priority)
-1. `supabase/migrations/20240320000000_add_workspace_features.sql`
-   - Adds workspace tables and columns
-   - Implements RLS policies
-   - Modifies existing tables to support workspaces
+### Completed Work
+1. Created series of migrations to fix issues:
+   - 20240326000000_fix_validation_issues.sql: Fixed ON DELETE clauses
+   - 20240326000001_grant_validator_access.sql: Granted system table access
+   - 20240326000002_add_exec_function.sql: Added exec function
+   - 20240326000003_setup_validation_helpers.sql: Created validation views
 
-2. `types/supabase.ts`
-   - Updated with workspace-related types
-   - Added workspace_id to existing table types
-   - Maintains compatibility with existing code
+2. Updated validators to use helper views:
+   - rls-validator.ts: Uses validation_policies view
+   - type-validator.ts: Uses validation_columns view
+   - index-validator.ts: Uses validation_indexes view
 
-3. `lib/supabase.ts`
-   - Main Supabase client configuration
-   - Contains helper functions for data access
-   - Needs workspace-related helpers added
+### Current Issues
+1. Views not accessible:
+   ```
+   relation "public.validation_policies" does not exist
+   relation "public.validation_columns" does not exist
+   relation "public.validation_indexes" does not exist
+   ```
 
-4. `src/utils/supabase/server.ts` & `client.ts`
-   - New Next.js 13+ Supabase utilities
-   - Currently not in use (keeping existing setup)
+2. Function not found:
+   ```
+   Could not find the function public.exec(query) in the schema cache
+   ```
 
-5. `src/app/dashboard/page.tsx`
-   - Main dashboard implementation
-   - Uses existing Supabase client
-   - Will need workspace context added
+## Key Files
+
+### Migrations
+1. `supabase/migrations/20240326000001_grant_validator_access.sql`
+   - Grants SELECT permissions on system tables
+   - Working correctly
+
+2. `supabase/migrations/20240326000002_add_exec_function.sql`
+   - Creates exec function for dynamic SQL
+   - Returns TABLE (result json)
+   - Appears to be working
+
+3. `supabase/migrations/20240326000003_setup_validation_helpers.sql`
+   - Creates helper views
+   - Currently failing to create views properly
+
+### Validators
+1. `scripts/validators/rls-validator.ts`
+   - Validates RLS policies
+   - Updated to use validation_policies view
+   - Added type safety with type guards
+
+2. `scripts/validators/type-validator.ts`
+   - Validates column types
+   - Updated to use validation_columns view
+   - Added type safety
+
+3. `scripts/validators/index-validator.ts`
+   - Validates index naming and structure
+   - Updated to use validation_indexes view
+   - Added type safety
 
 ## Technical Context
 
-### External Services
-- Supabase (PostgreSQL + Auth)
-  - URL: https://hylrjzwgqwzlrlunhuom.supabase.co
-  - Using service role key for migrations
-  - RLS enabled for multi-tenant security
+### System Table Access
+- Need access to:
+  - pg_catalog.pg_policies
+  - information_schema.columns
+  - pg_catalog.pg_indexes
+  - information_schema.table_constraints
 
-### Security Considerations
-- Row Level Security (RLS) policies implemented for:
-  - Workspace access control
-  - Member management
-  - Resource isolation
-- Service role access limited to migrations
+### Helper Views
+- validation_policies: Maps pg_policies for RLS validation
+- validation_columns: Maps information_schema.columns for type validation
+- validation_indexes: Maps pg_indexes for index validation
 
-### Failed Approaches
-1. Prisma with Supabase
-   - Connection issues with pooler
-   - RLS compatibility problems
-2. Next.js built-in Supabase integration
-   - Would require significant refactoring
-   - Current setup working well
+### Exec Function
+- Purpose: Execute dynamic SQL with JSON results
+- Security: Uses SECURITY DEFINER
+- Search Path: Set to public schema
 
-## Development Progress
+## Next Steps
 
-### Completed
-1. Created workspace database schema
-2. Updated TypeScript types
-3. Added RLS policies
-4. Created migration scripts
-5. Verified existing Supabase connection
+1. Debug View Creation
+   - Verify SQL syntax in setup_validation_helpers.sql
+   - Check if views are being created in correct schema
+   - Verify permissions after view creation
 
-### Next Steps
-1. Execute workspace migration
-   - Using new `scripts/apply-workspace-migration.ts`
-   - Handles SQL statement splitting
-   - Includes error handling
+2. Verify Function Access
+   - Check if exec function is accessible to service_role
+   - Verify function signature matches validator expectations
 
-2. Add workspace context
-   - Create workspace context provider
-   - Update existing components
-   - Add workspace selection UI
+3. Test Individual Components
+   - Test system table access directly
+   - Test exec function with simple query
+   - Test view creation separately
 
-3. Update API routes
-   - Add workspace filtering
-   - Implement member management
-   - Add domain handling
-
-### Known Issues
-1. Migration script execution failing
-   - RPC function not available
-   - Working on direct SQL execution
-2. Existing data needs workspace assignment
-   - Migration should handle null workspace_ids
-   - Need to consider data migration strategy
+## Failed Approaches
+1. Using direct system table access (failed due to permissions)
+2. Using REST API calls (too complex, preferred direct DB access)
+3. Multiple exec function implementations (settled on JSON results)
 
 ## Developer Notes
 
-### Architecture Insights
-- App uses hybrid approach:
-  - Server-side: Next.js App Router
-  - Client-side: Direct Supabase client
-  - Real-time: Supabase subscriptions
+### Important Considerations
+1. Order of operations is critical:
+   - Grant permissions first
+   - Create exec function
+   - Create views last
 
-### Critical Areas
-1. Data Migration
-   - Existing content needs workspace assignment
-   - Consider default workspace creation
+2. Type safety:
+   - All validators now use type guards
+   - Runtime validation of query results
+   - Proper TypeScript interfaces
 
-2. Authentication Flow
-   - Needs workspace context after login
-   - Consider workspace invitation flow
+3. Permissions:
+   - service_role needs SELECT on system tables
+   - service_role needs EXECUTE on exec function
+   - service_role needs SELECT on helper views
 
-3. Real-time Updates
-   - Existing subscriptions need workspace filtering
-   - Consider performance with multiple workspaces
-
-### Environment Setup
-```env
-VITE_SUPABASE_URL=https://hylrjzwgqwzlrlunhuom.supabase.co
-VITE_SUPABASE_ANON_KEY=[your-anon-key]
-SUPABASE_SERVICE_ROLE_KEY=[your-service-key]
-```
-
-### Migration Commands
-```bash
-# Test connection
-ts-node scripts/test-supabase.ts
-
-# Apply workspace migration
-ts-node scripts/apply-workspace-migration.ts
+### Areas Needing Attention
+1. View creation in setup_validation_helpers.sql
+2. Function schema caching issue
+3. Permission verification after migration

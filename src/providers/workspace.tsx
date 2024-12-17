@@ -58,7 +58,7 @@ interface WorkspaceContextType {
   workspace: Workspace | null;
   workspaces: Workspace[];
   isLoading: boolean;
-  error: string | null;
+  error: Error | null;
   setWorkspace: (workspace: Workspace | null) => void;
   switchWorkspace: (workspaceId: string) => Promise<void>;
   createWorkspace: (name: string) => Promise<Workspace>;
@@ -149,7 +149,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   const router = useRouter();
   const supabase = createClientComponentClient<Database>();
   const [workspaceStats, setWorkspaceStats] = useState<Record<string, WorkspaceStats>>({});
@@ -179,7 +179,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         setWorkspace(workspacesData[0]);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load workspaces');
+      setError(err instanceof Error ? err : 'Failed to load workspaces');
     }
   };
 
@@ -208,7 +208,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       await refreshWorkspaces();
       return workspace;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create workspace');
+      setError(err instanceof Error ? err : 'Failed to create workspace');
       throw err;
     }
   };
@@ -224,7 +224,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
       await refreshWorkspaces();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update workspace');
+      setError(err instanceof Error ? err : 'Failed to update workspace');
       throw err;
     }
   };
@@ -250,7 +250,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete workspace');
+      setError(err instanceof Error ? err : 'Failed to delete workspace');
       throw err;
     }
   };
@@ -265,7 +265,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       if (archiveError) throw archiveError;
       await refreshWorkspaces();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to archive workspace');
+      setError(err instanceof Error ? err : 'Failed to archive workspace');
       throw err;
     }
   };
@@ -282,7 +282,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       setWorkspaceStats(prev => ({ ...prev, [id]: stats }));
       return stats;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch workspace stats');
+      setError(err instanceof Error ? err : 'Failed to fetch workspace stats');
       throw err;
     }
   };
@@ -299,7 +299,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       setWorkspaceQuotas(prev => ({ ...prev, [id]: quota }));
       return quota;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch workspace quota');
+      setError(err instanceof Error ? err : 'Failed to fetch workspace quota');
       throw err;
     }
   };
@@ -315,7 +315,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       if (searchError) throw searchError;
       return searchResults || [];
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to search workspaces');
+      setError(err instanceof Error ? err : 'Failed to search workspaces');
       throw err;
     }
   };
@@ -331,7 +331,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       if (filterError) throw filterError;
       return filteredWorkspaces || [];
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to filter workspaces');
+      setError(err instanceof Error ? err : 'Failed to filter workspaces');
       throw err;
     }
   };
@@ -344,7 +344,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       if (exportError) throw exportError;
       return new Blob([JSON.stringify(exportData)], { type: 'application/json' });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to export workspace data');
+      setError(err instanceof Error ? err : 'Failed to export workspace data');
       throw err;
     }
   };
@@ -361,7 +361,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       if (importError) throw importError;
       await refreshWorkspaces();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to import workspace data');
+      setError(err instanceof Error ? err : 'Failed to import workspace data');
       throw err;
     }
   };
@@ -377,7 +377,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
       return plans;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch subscription plans');
+      setError(err instanceof Error ? err : 'Failed to fetch subscription plans');
       throw err;
     }
   };
@@ -394,7 +394,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       if (error && error.code !== 'PGRST116') throw error;
       return subscription;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch subscription');
+      setError(err instanceof Error ? err : 'Failed to fetch subscription');
       throw err;
     }
   };
@@ -418,7 +418,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
       await refreshWorkspaces();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to subscribe to plan');
+      setError(err instanceof Error ? err : 'Failed to subscribe to plan');
       throw err;
     }
   };
@@ -441,7 +441,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
       await refreshWorkspaces();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to cancel subscription');
+      setError(err instanceof Error ? err : 'Failed to cancel subscription');
       throw err;
     }
   };
@@ -462,7 +462,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Failed to update payment method');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update payment method');
+      setError(err instanceof Error ? err : 'Failed to update payment method');
       throw err;
     }
   };
@@ -480,7 +480,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
       return templates;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch templates');
+      setError(err instanceof Error ? err : 'Failed to fetch templates');
       throw err;
     }
   };
@@ -505,7 +505,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
       return workspace;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create workspace from template');
+      setError(err instanceof Error ? err : 'Failed to create workspace from template');
       throw err;
     }
   };
@@ -530,7 +530,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
       return template;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save template');
+      setError(err instanceof Error ? err : 'Failed to save template');
       throw err;
     }
   };
@@ -544,7 +544,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update template');
+      setError(err instanceof Error ? err : 'Failed to update template');
       throw err;
     }
   };
@@ -558,7 +558,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
       if (error) throw error;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete template');
+      setError(err instanceof Error ? err : 'Failed to delete template');
       throw err;
     }
   };
@@ -583,7 +583,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
           }
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to initialize workspace');
+        setError(err instanceof Error ? err : 'Failed to initialize workspace');
       } finally {
         setIsLoading(false);
       }

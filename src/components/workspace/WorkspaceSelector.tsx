@@ -41,6 +41,8 @@ export function WorkspaceSelector() {
     workspaces,
     switchWorkspace,
     createWorkspace,
+    isLoading,
+    error,
   } = useWorkspace();
 
   const handleCreateWorkspace = async (e: React.FormEvent) => {
@@ -63,6 +65,14 @@ export function WorkspaceSelector() {
     }
   };
 
+  if (isLoading) {
+    return <div data-testid="workspace-selector-loading">Loading...</div>;
+  }
+
+  if (error) {
+    return <div data-testid="workspace-selector-error">Failed to load workspaces</div>;
+  }
+
   return (
     <Dialog open={showNewWorkspaceDialog} onOpenChange={setShowNewWorkspaceDialog}>
       <Popover open={open} onOpenChange={setOpen}>
@@ -73,6 +83,7 @@ export function WorkspaceSelector() {
             aria-expanded={open}
             aria-label="Select a workspace"
             className="w-[200px] justify-between"
+            data-testid="workspace-selector-trigger"
           >
             {workspace ? workspace.name : "Select workspace..."}
             <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
@@ -92,6 +103,7 @@ export function WorkspaceSelector() {
                       setOpen(false);
                     }}
                     className="text-sm"
+                    data-testid={`workspace-item-${ws.id}`}
                   >
                     <Check
                       className={cn(
@@ -110,6 +122,7 @@ export function WorkspaceSelector() {
                     setOpen(false);
                     setShowNewWorkspaceDialog(true);
                   }}
+                  data-testid="create-workspace-button"
                 >
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Create Workspace
@@ -120,7 +133,7 @@ export function WorkspaceSelector() {
         </PopoverContent>
       </Popover>
 
-      <DialogContent>
+      <DialogContent data-testid="create-workspace-dialog">
         <DialogHeader>
           <DialogTitle>Create Workspace</DialogTitle>
           <DialogDescription>
@@ -135,6 +148,7 @@ export function WorkspaceSelector() {
                 placeholder="Workspace name"
                 value={newWorkspaceName}
                 onChange={(e) => setNewWorkspaceName(e.target.value)}
+                data-testid="workspace-name-input"
               />
             </div>
           </div>
@@ -146,7 +160,11 @@ export function WorkspaceSelector() {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={!newWorkspaceName.trim()}>
+            <Button
+              type="submit"
+              disabled={!newWorkspaceName.trim()}
+              data-testid="create-workspace-submit"
+            >
               Create
             </Button>
           </DialogFooter>

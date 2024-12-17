@@ -10,6 +10,13 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+interface ExtendedUser {
+  id: string
+  email?: string | null
+  name?: string | null
+  image?: string | null
+}
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -64,26 +71,36 @@ export const authOptions: NextAuthOptions = {
     error: "/auth/error",
   },
   callbacks: {
-    async session({ session, user }) {
-      // Add user ID to session
-      if (session.user) {
-        session.user.id = user.id;
+    async session({ session }) {
+      if (session?.user?.email) {
+        const { data: userData } = await supabase
+          .from('users')
+          .select('id')
+          .eq('email', session.user.email)
+          .single()
+
+        if (userData) {
+          return {
+            ...session,
+            user: {
+              ...session.user,
+              id: userData.id
+            } as ExtendedUser
+          }
+        }
       }
-      return session;
+      return session
     },
     async signIn({ user }) {
       // Sync with Supabase
       if (user.email) {
-        const { data: supabaseUser, error: supabaseError } = await supabase.auth.admin.getUserByEmail(
-          user.email
-        );
+        const user = await supabase.auth.admin.listUsers({
+          filter: {
+            email: 'eq.' + user.email
+          }
+        }).then(({ data }) => data?.users[0])
 
-        if (supabaseError) {
-          console.error("Error getting Supabase user:", supabaseError);
-          return false;
-        }
-
-        if (!supabaseUser) {
+        if (!user) {
           // Create Supabase user if doesn't exist
           const { error: createError } = await supabase.auth.admin.createUser({
             email: user.email,

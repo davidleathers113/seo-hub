@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Download, Upload, Archive, BarChart2, Settings2 } from 'lucide-react';
+import { Download, Upload, Archive, BarChart2, Settings2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function WorkspaceSettings() {
@@ -22,11 +22,13 @@ export function WorkspaceSettings() {
     getWorkspaceQuota,
     exportWorkspaceData,
     importWorkspaceData,
+    isLoading,
+    error,
   } = useWorkspace();
 
   const [stats, setStats] = useState<any>(null);
   const [quota, setQuota] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isOperationLoading, setIsOperationLoading] = useState(false);
 
   useEffect(() => {
     if (workspace) {
@@ -51,7 +53,7 @@ export function WorkspaceSettings() {
   const handleExport = async () => {
     if (!workspace) return;
     try {
-      setIsLoading(true);
+      setIsOperationLoading(true);
       const blob = await exportWorkspaceData(workspace.id);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -63,36 +65,54 @@ export function WorkspaceSettings() {
     } catch (error) {
       toast.error('Failed to export workspace data');
     } finally {
-      setIsLoading(false);
+      setIsOperationLoading(false);
     }
   };
 
   const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!workspace || !event.target.files?.[0]) return;
     try {
-      setIsLoading(true);
+      setIsOperationLoading(true);
       await importWorkspaceData(workspace.id, event.target.files[0]);
       toast.success('Workspace data imported successfully');
       loadWorkspaceData();
     } catch (error) {
       toast.error('Failed to import workspace data');
     } finally {
-      setIsLoading(false);
+      setIsOperationLoading(false);
     }
   };
 
   const handleArchive = async () => {
     if (!workspace) return;
     try {
-      setIsLoading(true);
+      setIsOperationLoading(true);
       await archiveWorkspace(workspace.id);
       toast.success('Workspace archived successfully');
     } catch (error) {
       toast.error('Failed to archive workspace');
     } finally {
-      setIsLoading(false);
+      setIsOperationLoading(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8" data-testid="workspace-settings-loading">
+        <Loader2 className="w-6 h-6 animate-spin" />
+        <span className="ml-2">Loading workspace settings...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert variant="destructive" data-testid="workspace-settings-error">
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{error.message}</AlertDescription>
+      </Alert>
+    );
+  }
 
   if (!workspace) return null;
 
@@ -193,21 +213,24 @@ export function WorkspaceSettings() {
             <div className="flex space-x-4">
               <Button
                 onClick={handleExport}
-                disabled={isLoading}
+                disabled={isOperationLoading}
                 className="flex items-center"
               >
                 <Download className="w-4 h-4 mr-2" />
                 Export Data
               </Button>
               <div className="relative">
+                <Label htmlFor="import-file" className="sr-only">Import Data</Label>
                 <input
+                  id="import-file"
                   type="file"
                   accept=".json"
                   onChange={handleImport}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  disabled={isLoading}
+                  disabled={isOperationLoading}
+                  aria-label="Import Data"
                 />
-                <Button disabled={isLoading} className="flex items-center">
+                <Button disabled={isOperationLoading} className="flex items-center">
                   <Upload className="w-4 h-4 mr-2" />
                   Import Data
                 </Button>
@@ -224,7 +247,7 @@ export function WorkspaceSettings() {
               <Button
                 variant="destructive"
                 onClick={handleArchive}
-                disabled={isLoading}
+                disabled={isOperationLoading}
                 className="mt-2"
               >
                 Archive Workspace

@@ -31,12 +31,28 @@ interface PolicySecurityResult {
   valid: boolean;
 }
 
-interface PolicyData {
+// Interface matching the validation_policies view structure
+interface ValidationPolicy {
   tablename: string;
   policyname: string;
   operation: string;
   definition: string;
   roles: string[];
+}
+
+// Type guard for ValidationPolicy
+function isValidationPolicy(obj: unknown): obj is ValidationPolicy {
+  const p = obj as ValidationPolicy;
+  return (
+    typeof p === 'object' &&
+    p !== null &&
+    typeof p.tablename === 'string' &&
+    typeof p.policyname === 'string' &&
+    typeof p.operation === 'string' &&
+    typeof p.definition === 'string' &&
+    Array.isArray(p.roles) &&
+    p.roles.every(role => typeof role === 'string')
+  );
 }
 
 // Main Validation Function
@@ -103,22 +119,26 @@ export async function validate(supabase: ReturnType<typeof createClient>): Promi
 
 // Helper Functions
 async function fetchRLSPolicies(supabase: ReturnType<typeof createClient>): Promise<RLSPolicy[]> {
-  const { data: policies, error } = await supabase
-    .from('pg_policies')
-    .select(`
-      tablename,
-      policyname,
-      operation,
-      definition,
-      roles
-    `)
-    .eq('schemaname', 'public');
+  const { data, error } = await supabase
+    .from('validation_policies')
+    .select('*');
 
   if (error) {
     throw new Error(`Failed to fetch RLS policies: ${error.message}`);
   }
 
-  return (policies as PolicyData[]).map((policy): RLSPolicy => ({
+  if (!data) {
+    return [];
+  }
+
+  // Type assertion with runtime validation
+  const unknownPolicies = data as unknown[];
+  if (!unknownPolicies.every(isValidationPolicy)) {
+    throw new Error('Invalid policy data structure');
+  }
+
+  const policies = unknownPolicies as ValidationPolicy[];
+  return policies.map((policy): RLSPolicy => ({
     tableName: policy.tablename,
     policyName: policy.policyname,
     operation: policy.operation,

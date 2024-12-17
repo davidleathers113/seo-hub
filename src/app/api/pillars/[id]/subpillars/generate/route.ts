@@ -2,6 +2,23 @@ import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 
+interface Line {
+  content: string
+  type: string
+}
+
+function processLines(lines: Line[]) {
+  return lines.map((line: Line) => {
+    // Process each line with proper typing
+    return line.content
+  })
+}
+
+function processTitle(title: string): string {
+  // Process title with proper typing
+  return title.trim()
+}
+
 // POST /api/pillars/[id]/subpillars/generate - Generate subpillars for a pillar
 export async function POST(
   request: Request,

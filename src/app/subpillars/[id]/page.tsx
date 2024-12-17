@@ -9,6 +9,28 @@ import { SubpillarContent } from "@/components/subpillars/subpillar-content"
 import { ResearchResults } from "@/components/research/research-results"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
+interface Subpillar {
+  id: string
+  title: string
+  description: string
+  pillarId: string
+  createdAt: string
+  updatedAt: string
+  pillar?: {
+    id: string
+    title: string
+    // Add other pillar fields as needed
+  }
+}
+
+interface SubpillarHeaderProps {
+  subpillar: Subpillar
+}
+
+interface SubpillarContentProps {
+  subpillar: Subpillar
+}
+
 interface SubpillarPageProps {
   params: {
     id: string
@@ -20,7 +42,7 @@ export async function generateMetadata({ params }: SubpillarPageProps): Promise<
 
   const { data: subpillar } = await supabase
     .from("subpillars")
-    .select("title")
+    .select("title, description")
     .eq("id", params.id)
     .single()
 
@@ -77,9 +99,7 @@ export default async function SubpillarPage({ params }: SubpillarPageProps) {
         <TabsContent value="research" className="space-y-4">
           <div className="grid gap-6 md:grid-cols-2">
             <div>
-              <WebResearch
-                subpillarId={params.id}
-              />
+              <WebResearch subpillarId={params.id} />
             </div>
             <div>
               <ResearchResults

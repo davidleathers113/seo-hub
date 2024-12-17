@@ -10,12 +10,27 @@ interface ColumnType {
   hasDefault: boolean;
 }
 
-interface InformationSchemaColumn {
+// Interface matching the validation_columns view structure
+interface ValidationColumn {
   table_name: string;
   column_name: string;
   data_type: string;
   is_nullable: string;
-  column_default: any;
+  column_default: unknown;
+}
+
+// Type guard for ValidationColumn
+function isValidationColumn(obj: unknown): obj is ValidationColumn {
+  const c = obj as ValidationColumn;
+  return (
+    typeof c === 'object' &&
+    c !== null &&
+    typeof c.table_name === 'string' &&
+    typeof c.column_name === 'string' &&
+    typeof c.data_type === 'string' &&
+    typeof c.is_nullable === 'string'
+    // column_default can be null or any type
+  );
 }
 
 // Main Validation Function
@@ -79,17 +94,20 @@ export async function validate(supabase: SupabaseClient): Promise<ValidationResu
 // Helper Functions
 async function fetchColumnTypes(supabase: SupabaseClient): Promise<ColumnType[]> {
   const { data, error } = await supabase
-    .from('information_schema.columns')
-    .select('table_name, column_name, data_type, is_nullable, column_default')
-    .eq('table_schema', 'public');
+    .from('validation_columns')
+    .select('*');
 
   if (error || !data) {
     throw new Error(`Failed to fetch column types: ${error?.message || 'Unknown error'}`);
   }
 
-  // Assert the type of 'data' as InformationSchemaColumn[]
-  const columns = data as InformationSchemaColumn[];
+  // Type assertion with runtime validation
+  const unknownColumns = data as unknown[];
+  if (!unknownColumns.every(isValidationColumn)) {
+    throw new Error('Invalid column data structure');
+  }
 
+  const columns = unknownColumns as ValidationColumn[];
   return columns.map((column): ColumnType => ({
     tableName: column.table_name,
     columnName: column.column_name,

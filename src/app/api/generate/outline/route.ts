@@ -1,9 +1,22 @@
-import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
+import { z } from 'zod';
 
-export async function POST(request: Request) {
+const requestSchema = z.object({
+  content: z.string(),
+  articleId: z.string(),
+  title: z.string(),
+  description: z.string(),
+  subpillarTitle: z.string(),
+  options: z.object({}).optional()
+});
+
+export async function POST(req: NextRequest) {
   try {
+    const body = await req.json();
+    const validated = requestSchema.parse(body);
+
     const supabase = createRouteHandlerClient({ cookies });
 
     // Check authentication
@@ -15,7 +28,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { articleId, title, description, subpillarTitle } = await request.json();
+    const { articleId, title, description, subpillarTitle } = validated;
 
     // Generate outline using OpenRouter
     const prompt = `Generate a detailed article outline for:
